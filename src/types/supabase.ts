@@ -1,0 +1,303 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          name: string;
+          username: string;
+          email: string;
+          phone: string;
+          avatar_url: string | null;
+          role: "user" | "admin";
+          violation_count: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          username: string;
+          email: string;
+          phone: string;
+          avatar_url?: string | null;
+          role?: "user" | "admin";
+          violation_count?: number;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          avatar_url?: string | null;
+          role?: "user" | "admin";
+          violation_count?: number;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      categories: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          description: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          description?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          slug?: string;
+          description?: string | null;
+        };
+        Relationships: [];
+      };
+      auctions: {
+        Row: {
+          id: string;
+          seller_id: string;
+          category_id: string;
+          title: string;
+          description: string | null;
+          condition:
+            | "mint"
+            | "near_mint"
+            | "excellent"
+            | "good"
+            | "light_play"
+            | "heavy_play"
+            | "damaged";
+          images: string[];
+          starting_price: number;
+          current_price: number;
+          buy_now_price: number | null;
+          min_bid_increment: number;
+          status: "draft" | "active" | "closed" | "completed" | "cancelled";
+          start_time: string | null;
+          end_time: string | null;
+          winner_id: string | null;
+          view_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          category_id: string;
+          title: string;
+          description?: string | null;
+          condition:
+            | "mint"
+            | "near_mint"
+            | "excellent"
+            | "good"
+            | "light_play"
+            | "heavy_play"
+            | "damaged";
+          images?: string[];
+          starting_price: number;
+          current_price: number;
+          buy_now_price?: number | null;
+          min_bid_increment?: number;
+          status?: "draft" | "active" | "closed" | "completed" | "cancelled";
+          start_time?: string | null;
+          end_time?: string | null;
+          winner_id?: string | null;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          condition?:
+            | "mint"
+            | "near_mint"
+            | "excellent"
+            | "good"
+            | "light_play"
+            | "heavy_play"
+            | "damaged";
+          images?: string[];
+          buy_now_price?: number | null;
+          min_bid_increment?: number;
+          status?: "draft" | "active" | "closed" | "completed" | "cancelled";
+          start_time?: string | null;
+          end_time?: string | null;
+          current_price?: number;
+          winner_id?: string | null;
+          view_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      bids: {
+        Row: {
+          id: string;
+          auction_id: string;
+          bidder_id: string;
+          amount: number;
+          is_winning: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          auction_id: string;
+          bidder_id: string;
+          amount: number;
+          is_winning?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          is_winning?: boolean;
+        };
+        Relationships: [];
+      };
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_user_id: string;
+          auction_id: string | null;
+          reason:
+            | "bid_run"
+            | "seller_close_no_reason"
+            | "fraud"
+            | "scam"
+            | "no_payment"
+            | "other";
+          description: string | null;
+          status: "pending" | "reviewed" | "approved" | "rejected";
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_user_id: string;
+          auction_id?: string | null;
+          reason:
+            | "bid_run"
+            | "seller_close_no_reason"
+            | "fraud"
+            | "scam"
+            | "no_payment"
+            | "other";
+          description?: string | null;
+          status?: "pending" | "reviewed" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: "pending" | "reviewed" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      blacklist: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          name: string;
+          username: string | null;
+          email: string | null;
+          phone: string | null;
+          reason: string;
+          type: "automatic" | "manual";
+          added_by_admin: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          name: string;
+          username?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          reason: string;
+          type: "automatic" | "manual";
+          added_by_admin?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string | null;
+          name?: string;
+          username?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          reason?: string;
+        };
+        Relationships: [];
+      };
+      watchlist: {
+        Row: {
+          id: string;
+          user_id: string;
+          auction_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          auction_id: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      chatbot_usage: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          session_id: string | null;
+          message_count: number;
+          reset_date: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          session_id?: string | null;
+          message_count?: number;
+          reset_date?: string;
+        };
+        Update: {
+          message_count?: number;
+        };
+        Relationships: [];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: {
+      check_blacklist_on_signup: {
+        Args: { p_email: string; p_phone: string };
+        Returns: boolean;
+      };
+    };
+    Enums: Record<string, never>;
+  };
+};
+
+// Convenience row types
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type Auction = Database["public"]["Tables"]["auctions"]["Row"];
+export type Bid = Database["public"]["Tables"]["bids"]["Row"];
+export type Report = Database["public"]["Tables"]["reports"]["Row"];
+export type BlacklistEntry = Database["public"]["Tables"]["blacklist"]["Row"];
+export type WatchlistItem = Database["public"]["Tables"]["watchlist"]["Row"];
