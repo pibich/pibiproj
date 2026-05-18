@@ -8,13 +8,17 @@ import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatIDR, formatDate } from "@/lib/utils";
-import { Gavel, Package, AlertTriangle, Plus, Trophy, Clock } from "lucide-react";
+import { Gavel, Package, AlertTriangle, Plus, Trophy, Clock, CheckCircle2, ShoppingBag } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 type AuctionWithRelations = Auction & {
   seller: Pick<Profile, "username" | "name">;
   category: Pick<Category, "name" | "slug">;
   _count: { bids: number };
+};
+
+type PendingConfirmAuction = Pick<Auction, "id" | "title" | "images" | "status" | "transaction_confirmed"> & {
+  winner: Pick<Profile, "username" | "name"> | null;
 };
 
 type BidWithAuction = {
@@ -47,6 +51,8 @@ export default async function DashboardPage({
     { data: myAuctions },
     { data: myBids },
     { data: wonAuctions },
+    { data: pendingConfirmAuctions },
+    { data: buyerPendingAuctions },
   ] = await Promise.all([
     supabase
       .from("auctions")
@@ -66,15 +72,35 @@ export default async function DashboardPage({
       .eq("winner_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(4),
+    // Seller: auctions needing transaction confirmation
+    supabase
+      .from("auctions")
+      .select(`id, title, images, status, transaction_confirmed, winner:profiles!winner_id(username, name)`)
+      .eq("seller_id", user.id)
+      .eq("transaction_confirmed", false)
+      .not("winner_id", "is", null)
+      .in("status", ["completed", "closed"])
+      .order("updated_at", { ascending: false }),
+    // Buyer: won auctions awaiting seller confirmation
+    supabase
+      .from("auctions")
+      .select(`id, title, images, status, transaction_confirmed`)
+      .eq("winner_id", user.id)
+      .eq("transaction_confirmed", false)
+      .in("status", ["completed", "closed"])
+      .order("updated_at", { ascending: false }),
   ]);
 
   const typedBids = (myBids ?? []) as unknown as BidWithAuction[];
+  const typedPendingConfirm = (pendingConfirmAuctions ?? []) as unknown as PendingConfirmAuction[];
   const activeAuctions = (myAuctions ?? []).filter((a) => a.status === "active");
 
   const stats = [
     { label: "Lelang Aktif", value: activeAuctions.length, icon: Gavel, color: "text-blue-600" },
     { label: "Total Bid", value: typedBids.length, icon: Package, color: "text-purple-600" },
     { label: "Lelang Dimenangkan", value: wonAuctions?.length ?? 0, icon: Trophy, color: "text-green-600" },
+    { label: "Penjualan Sukses", value: user.successful_sales ?? 0, icon: CheckCircle2, color: "text-emerald-600" },
+    { label: "Pembelian Sukses", value: user.successful_purchases ?? 0, icon: ShoppingBag, color: "text-teal-600" },
     {
       label: "Peringatan",
       value: user.buyer_warning_count,
@@ -102,7 +128,7 @@ export default async function DashboardPage({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {stats.map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -139,6 +165,82 @@ export default async function DashboardPage({
             Akun Anda memiliki <strong>{user.buyer_warning_count} peringatan</strong> terkonfirmasi.
             Setelah 3 peringatan, akun akan masuk masa timeout 1 minggu.
           </span>
+        </div>
+      )}
+
+      {/* Seller: pending transaction confirmations */}
+      {typedPendingConfirm.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Perlu Konfirmasi Transaksi</h2>
+          </div>
+          <div className="bg-white rounded-xl border border-emerald-200 divide-y divide-gray-100">
+            {typedPendingConfirm.map((auction) => (
+              <Link
+                key={auction.id}
+                href={`/${locale}/auctions/${auction.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                    {auction.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={auction.images[0]} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Gavel className="h-4 w-4 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">{auction.title}</p>
+                    {auction.winner && (
+                      <p className="text-xs text-gray-500">Pemenang: @{auction.winner.username}</p>
+                    )}
+                  </div>
+                </div>
+                <Badge variant="warning" className="text-xs shrink-0">Konfirmasi →</Badge>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Buyer: waiting for seller confirmation */}
+      {(buyerPendingAuctions ?? []).length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-5 w-5 text-blue-400" />
+            <h2 className="text-lg font-semibold text-gray-900">Menunggu Konfirmasi Penjual</h2>
+          </div>
+          <div className="bg-white rounded-xl border border-blue-100 divide-y divide-gray-100">
+            {(buyerPendingAuctions ?? []).map((auction) => (
+              <Link
+                key={auction.id}
+                href={`/${locale}/auctions/${auction.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                    {auction.images?.[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={auction.images[0]} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Gavel className="h-4 w-4 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 line-clamp-1">{auction.title}</p>
+                    <p className="text-xs text-gray-500">Menunggu konfirmasi pembayaran dari penjual</p>
+                  </div>
+                </div>
+                <Badge variant="info" className="text-xs shrink-0">Menunggu</Badge>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 

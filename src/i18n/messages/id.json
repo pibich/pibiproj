@@ -249,6 +249,23 @@
     "noAuctionHistory": "Belum ada riwayat lelang",
     "reportUser": "Laporkan Pengguna"
   },
+  "notifications": {
+    "title": "Notifikasi",
+    "noNotifications": "Belum ada notifikasi",
+    "markAllRead": "Tandai semua dibaca",
+    "auctionWon": "Anda memenangkan: \"{title}\"",
+    "auctionEnded": "Lelang Anda telah berakhir: \"{title}\"",
+    "transactionConfirmed": "Transaksi terkonfirmasi: \"{title}\"",
+    "newMessage": "1 pesan baru"
+  },
+  "transaction": {
+    "confirmButton": "Konfirmasi Transaksi",
+    "confirmTitle": "Konfirmasi Transaksi",
+    "confirmBody": "Konfirmasi bahwa @{winner} telah menyelesaikan pembayaran?",
+    "confirmed": "Transaksi Terkonfirmasi",
+    "successMessage": "Transaksi dikonfirmasi! Rating telah diperbarui.",
+    "waitingConfirmation": "Menunggu konfirmasi penjual"
+  },
   "footer": {
     "about": "Tentang",
     "aboutText": "TCG Marketplace adalah platform lelang kartu TCG terpercaya di Indonesia.",

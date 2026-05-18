@@ -21,6 +21,8 @@ export type Database = {
           buyer_warning_count: number;
           buyer_timeout_until: string | null;
           is_middleman: boolean;
+          successful_purchases: number;
+          successful_sales: number;
           created_at: string;
         };
         Insert: {
@@ -34,6 +36,8 @@ export type Database = {
           buyer_warning_count?: number;
           buyer_timeout_until?: string | null;
           is_middleman?: boolean;
+          successful_purchases?: number;
+          successful_sales?: number;
           created_at?: string;
         };
         Update: {
@@ -43,6 +47,8 @@ export type Database = {
           buyer_warning_count?: number;
           buyer_timeout_until?: string | null;
           is_middleman?: boolean;
+          successful_purchases?: number;
+          successful_sales?: number;
         };
         Relationships: [];
       };
@@ -93,6 +99,7 @@ export type Database = {
           end_time: string | null;
           winner_id: string | null;
           view_count: number;
+          transaction_confirmed: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -120,6 +127,7 @@ export type Database = {
           end_time?: string | null;
           winner_id?: string | null;
           view_count?: number;
+          transaction_confirmed?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -143,6 +151,7 @@ export type Database = {
           current_price?: number;
           winner_id?: string | null;
           view_count?: number;
+          transaction_confirmed?: boolean;
           updated_at?: string;
         };
         Relationships: [];
@@ -249,6 +258,28 @@ export type Database = {
         };
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "auction_won" | "auction_ended" | "transaction_confirmed";
+          auction_id: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "auction_won" | "auction_ended" | "transaction_confirmed";
+          auction_id?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          is_read?: boolean;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -263,3 +294,4 @@ export type Auction = Database["public"]["Tables"]["auctions"]["Row"];
 export type Bid = Database["public"]["Tables"]["bids"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];
 export type WatchlistItem = Database["public"]["Tables"]["watchlist"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];

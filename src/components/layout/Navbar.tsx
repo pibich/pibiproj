@@ -21,6 +21,7 @@ import {
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import type { Profile } from "@/types/supabase";
 
 interface NavbarProps {
@@ -90,6 +91,9 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                 >
                   <MessageSquare className="h-5 w-5" />
                 </Link>
+
+                {/* Notification bell */}
+                <NotificationBell userId={user.id} />
 
                 {/* User menu */}
                 <div className="relative">

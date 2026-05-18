@@ -8,7 +8,7 @@ import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileReportSection } from "@/components/profile/ProfileReportSection";
 import { formatDate, getInitials } from "@/lib/utils";
-import { Calendar, Gavel, AlertTriangle, ShieldCheck, TrendingUp, Clock } from "lucide-react";
+import { Calendar, Gavel, AlertTriangle, ShieldCheck, TrendingUp, Clock, Trophy, ShoppingBag } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 type AuctionWithRelations = Auction & {
@@ -124,6 +124,19 @@ export default async function ProfilePage({
                   <Badge variant="success" className="flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3" />
                     Middleman
+                  </Badge>
+                )}
+                {/* Positive rating badges */}
+                {(profile.successful_sales ?? 0) > 0 && (
+                  <Badge variant="success" className="flex items-center gap-1">
+                    <Trophy className="h-3 w-3" />
+                    {profile.successful_sales} penjualan sukses
+                  </Badge>
+                )}
+                {(profile.successful_purchases ?? 0) > 0 && (
+                  <Badge variant="success" className="flex items-center gap-1">
+                    <ShoppingBag className="h-3 w-3" />
+                    {profile.successful_purchases} pembelian sukses
                   </Badge>
                 )}
                 {canReport && (

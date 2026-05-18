@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -66,6 +67,11 @@ export async function POST(
       .from("auctions")
       .update({ status: "closed" })
       .eq("id", auctionId);
+    // Notify seller and winner (idempotent via UNIQUE constraint)
+    await createNotification(supabase, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
+    if (auction.winner_id) {
+      await createNotification(supabase, { user_id: auction.winner_id, type: "auction_won", auction_id: auctionId });
+    }
     return NextResponse.json({ error: "Lelang sudah berakhir" }, { status: 400 });
   }
 
@@ -90,6 +96,10 @@ export async function POST(
         winner_id: user.id,
       })
       .eq("id", auctionId);
+
+    // Notify seller and buyer
+    await createNotification(supabase, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
+    await createNotification(supabase, { user_id: user.id, type: "auction_won", auction_id: auctionId });
 
     return NextResponse.json({ success: true });
   }

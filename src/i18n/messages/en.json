@@ -249,6 +249,23 @@
     "noAuctionHistory": "No auction history",
     "reportUser": "Report User"
   },
+  "notifications": {
+    "title": "Notifications",
+    "noNotifications": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "auctionWon": "You won: \"{title}\"",
+    "auctionEnded": "Your auction has ended: \"{title}\"",
+    "transactionConfirmed": "Transaction confirmed: \"{title}\"",
+    "newMessage": "1 new message"
+  },
+  "transaction": {
+    "confirmButton": "Confirm Transaction",
+    "confirmTitle": "Confirm Transaction",
+    "confirmBody": "Confirm that @{winner} has completed payment for this auction?",
+    "confirmed": "Transaction Confirmed",
+    "successMessage": "Transaction confirmed! Ratings have been updated.",
+    "waitingConfirmation": "Waiting for seller confirmation"
+  },
   "footer": {
     "about": "About",
     "aboutText": "TCG Marketplace is Indonesia's trusted TCG card auction platform.",

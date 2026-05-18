@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/dal";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { BidForm } from "@/components/auction/BidForm";
+import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
 import { Badge } from "@/components/ui/Badge";
 import { formatIDR, formatDate, getInitials } from "@/lib/utils";
 import {
@@ -18,6 +19,7 @@ import {
   AlertTriangle,
   TrendingUp,
   Info,
+  CheckCircle2,
 } from "lucide-react";
 import type { Auction, Category, Profile, Bid } from "@/types/supabase";
 
@@ -26,6 +28,7 @@ type BidWithBidder = Bid & {
 };
 type FullAuction = Auction & {
   seller: Pick<Profile, "id" | "username" | "name" | "avatar_url">;
+  winner: Pick<Profile, "id" | "username" | "name"> | null;
   category: Pick<Category, "name" | "slug">;
   bids: BidWithBidder[];
 };
@@ -56,6 +59,7 @@ export default async function AuctionDetailPage({
     .select(
       `*,
       seller:profiles!seller_id(id, username, name, avatar_url),
+      winner:profiles!winner_id(id, username, name),
       category:categories(name, slug),
       bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`
     )
@@ -290,6 +294,43 @@ export default async function AuctionDetailPage({
               )}
             </div>
           </div>
+
+          {/* Transaction confirmation (seller only, when auction ended with winner) */}
+          {isSeller &&
+            (auction.status === "completed" || auction.status === "closed") &&
+            auction.winner_id && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Konfirmasi Transaksi
+                </p>
+                {auction.winner && (
+                  <p className="text-sm text-gray-600">
+                    Pemenang: <span className="font-semibold">@{auction.winner.username}</span>
+                  </p>
+                )}
+                {auction.transaction_confirmed ? (
+                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    Transaksi telah dikonfirmasi
+                  </div>
+                ) : (
+                  <ConfirmTransactionButton
+                    auctionId={auction.id}
+                    winnerUsername={auction.winner?.username ?? "pembeli"}
+                  />
+                )}
+              </div>
+            )}
+
+          {/* Transaction confirmed badge (visible to buyer) */}
+          {!isSeller &&
+            auction.transaction_confirmed &&
+            auction.winner_id === currentUser?.id && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-2 text-emerald-700 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                Transaksi telah dikonfirmasi oleh penjual. Rating Anda telah diperbarui!
+              </div>
+            )}
 
           {/* Bid history */}
           <div className="bg-white rounded-xl border border-gray-200 p-4">
