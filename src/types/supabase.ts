@@ -18,8 +18,9 @@ export type Database = {
           phone: string;
           avatar_url: string | null;
           role: "user" | "admin";
-          violation_count: number;
-          is_active: boolean;
+          buyer_warning_count: number;
+          buyer_timeout_until: string | null;
+          is_middleman: boolean;
           created_at: string;
         };
         Insert: {
@@ -30,16 +31,18 @@ export type Database = {
           phone: string;
           avatar_url?: string | null;
           role?: "user" | "admin";
-          violation_count?: number;
-          is_active?: boolean;
+          buyer_warning_count?: number;
+          buyer_timeout_until?: string | null;
+          is_middleman?: boolean;
           created_at?: string;
         };
         Update: {
           name?: string;
           avatar_url?: string | null;
           role?: "user" | "admin";
-          violation_count?: number;
-          is_active?: boolean;
+          buyer_warning_count?: number;
+          buyer_timeout_until?: string | null;
+          is_middleman?: boolean;
         };
         Relationships: [];
       };
@@ -210,41 +213,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      blacklist: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          name: string;
-          username: string | null;
-          email: string | null;
-          phone: string | null;
-          reason: string;
-          type: "automatic" | "manual";
-          added_by_admin: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          name: string;
-          username?: string | null;
-          email?: string | null;
-          phone?: string | null;
-          reason: string;
-          type: "automatic" | "manual";
-          added_by_admin?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          user_id?: string | null;
-          name?: string;
-          username?: string | null;
-          email?: string | null;
-          phone?: string | null;
-          reason?: string;
-        };
-        Relationships: [];
-      };
       watchlist: {
         Row: {
           id: string;
@@ -283,12 +251,7 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: {
-      check_blacklist_on_signup: {
-        Args: { p_email: string; p_phone: string };
-        Returns: boolean;
-      };
-    };
+    Functions: Record<string, never>;
     Enums: Record<string, never>;
   };
 };
@@ -299,5 +262,4 @@ export type Category = Database["public"]["Tables"]["categories"]["Row"];
 export type Auction = Database["public"]["Tables"]["auctions"]["Row"];
 export type Bid = Database["public"]["Tables"]["bids"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];
-export type BlacklistEntry = Database["public"]["Tables"]["blacklist"]["Row"];
 export type WatchlistItem = Database["public"]["Tables"]["watchlist"]["Row"];

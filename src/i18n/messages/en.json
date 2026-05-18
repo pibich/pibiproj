@@ -26,7 +26,7 @@
   "nav": {
     "home": "Home",
     "auctions": "Auctions",
-    "blacklist": "Blacklist",
+    "middleman": "Middleman",
     "contact": "Contact Us",
     "dashboard": "Dashboard",
     "chat": "Messages",
@@ -63,7 +63,6 @@
     "verifyEmailMessage": "We've sent a verification link to your email. Please check your inbox or spam folder.",
     "loginWithGoogle": "Sign in with Google",
     "usernameNote": "Username, email, and phone number cannot be changed after registration.",
-    "blacklistedError": "This email or phone number has been blacklisted. Please contact customer service for more information.",
     "usernameExists": "Username already taken",
     "emailExists": "Email already registered",
     "phoneExists": "Phone number already registered",
@@ -135,23 +134,12 @@
       "most_bids": "Most Bids"
     }
   },
-  "blacklist": {
-    "title": "Blacklist",
-    "subtitle": "List of buyers/sellers who have violated platform rules",
-    "disclaimer": "This list is provided for community reference only. This information must not be used to harass or intimidate anyone.",
-    "name": "Name",
-    "username": "Username",
-    "email": "Email",
-    "phone": "Phone Number",
-    "reason": "Reason",
-    "date": "Date",
-    "type": "Type",
-    "typeAutomatic": "Automatic",
-    "typeManual": "Admin Manual",
-    "searchPlaceholder": "Search by name, email, or phone...",
-    "noResults": "No matching results",
-    "totalEntries": "{count} entries found",
-    "violationCount": "{count}x violations"
+  "middleman": {
+    "title": "Middleman List",
+    "subtitle": "Verified middlemen to help facilitate safe transactions",
+    "noMiddlemen": "No middlemen registered yet",
+    "verified": "Verified",
+    "chatWith": "Chat with {name}"
   },
   "report": {
     "title": "Report User",
@@ -177,7 +165,11 @@
     "inputPlaceholder": "Type a message...",
     "chatWithSeller": "Chat with {name}",
     "online": "Online",
-    "offline": "Offline"
+    "offline": "Offline",
+    "inviteMiddleman": "Invite Middleman",
+    "selectMiddleman": "Select Middleman",
+    "middlemanAdded": "{name} has been added",
+    "groupMembers": "{count} members"
   },
   "chatbot": {
     "title": "Help",
@@ -185,7 +177,11 @@
     "inputPlaceholder": "Ask something...",
     "greeting": "Hello! I'm the TCG Marketplace assistant. I can help you with how to bid, how to sell, how to report users, or how to contact customer service. How can I help?",
     "limitReached": "You've reached your daily message limit ({limit} messages/day). Please contact customer service for further assistance.",
-    "offTopic": "Sorry, I can only help with TCG Marketplace usage. For other questions, please contact our customer service."
+    "offTopic": "Sorry, I can only help with TCG Marketplace usage. For other questions, please contact our customer service.",
+    "introTitle": "Need Help?",
+    "introDesc": "I'm here to help you navigate TCG Marketplace with ease.",
+    "introFeatures": ["How to bid & sell cards", "How to report problematic users", "Contact customer service"],
+    "introButton": "Start Chat"
   },
   "contact": {
     "title": "Contact Us",
@@ -216,26 +212,31 @@
   "admin": {
     "title": "Admin Panel",
     "reports": "User Reports",
-    "blacklistManagement": "Blacklist Management",
+    "middlemanManagement": "Manage Middlemen",
+    "userManagement": "Manage Users",
     "pendingReports": "Pending Reports",
-    "addManualBlacklist": "Add Manual Blacklist",
     "approve": "Approve",
     "reject": "Reject",
     "reporter": "Reporter",
     "reported": "Reported User",
+    "setMiddleman": "Make Middleman",
+    "removeMiddleman": "Remove Middleman",
+    "warningCount": "Warnings",
+    "timeoutUntil": "Timeout Until",
+    "promoteToAdmin": "Make Admin",
+    "demoteToUser": "Demote to User",
+    "resetTimeout": "Reset Timeout",
+    "totalUsers": "Total Users",
+    "activeMiddlemen": "Active Middlemen",
+    "timedOutUsers": "Timed Out Users",
+    "noUsers": "No users found",
+    "cannotDemoteSelf": "Cannot change your own role",
     "status": {
       "pending": "Pending",
       "reviewed": "Reviewed",
       "approved": "Approved",
       "rejected": "Rejected"
-    },
-    "manualBlacklistName": "Name",
-    "manualBlacklistEmail": "Email",
-    "manualBlacklistPhone": "Phone Number",
-    "manualBlacklistReason": "Blacklist Reason",
-    "addToBlacklist": "Add to Blacklist",
-    "removeFromBlacklist": "Remove from Blacklist",
-    "confirmRemove": "Are you sure you want to remove this entry from the blacklist?"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -243,16 +244,17 @@
     "joinedAt": "Joined {date}",
     "activeAuctions": "Active Auctions",
     "completedAuctions": "Completed Auctions",
-    "violationCount": "Violation Count",
-    "reportUser": "Report User",
-    "blockedAccount": "This account has been deactivated"
+    "buyerWarnings": "{count}x warnings",
+    "buyerTimeout": "Timeout until {date}",
+    "noAuctionHistory": "No auction history",
+    "reportUser": "Report User"
   },
   "footer": {
     "about": "About",
     "aboutText": "TCG Marketplace is Indonesia's trusted TCG card auction platform.",
     "links": "Links",
     "contact": "Contact",
-    "blacklist": "Blacklist",
+    "middleman": "Middleman",
     "rights": "© {year} TCG Marketplace. All rights reserved."
   }
 }

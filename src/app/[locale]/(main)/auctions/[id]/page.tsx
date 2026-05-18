@@ -15,12 +15,17 @@ import {
   Flag,
   Calendar,
   ChevronLeft,
+  AlertTriangle,
+  TrendingUp,
+  Info,
 } from "lucide-react";
 import type { Auction, Category, Profile, Bid } from "@/types/supabase";
 
-type BidWithBidder = Bid & { bidder: Pick<Profile, "username" | "name"> | null };
+type BidWithBidder = Bid & {
+  bidder: Pick<Profile, "username" | "name" | "buyer_warning_count"> | null;
+};
 type FullAuction = Auction & {
-  seller: Pick<Profile, "id" | "username" | "name" | "avatar_url" | "violation_count">;
+  seller: Pick<Profile, "id" | "username" | "name" | "avatar_url">;
   category: Pick<Category, "name" | "slug">;
   bids: BidWithBidder[];
 };
@@ -32,12 +37,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("auctions")
-    .select("title")
-    .eq("id", id)
-    .single();
-
+  const { data } = await supabase.from("auctions").select("title").eq("id", id).single();
   return { title: (data as { title: string } | null)?.title ?? "Lelang" };
 }
 
@@ -55,9 +55,9 @@ export default async function AuctionDetailPage({
     .from("auctions")
     .select(
       `*,
-      seller:profiles!seller_id(id, username, name, avatar_url, violation_count),
+      seller:profiles!seller_id(id, username, name, avatar_url),
       category:categories(name, slug),
-      bids(*, bidder:profiles!bidder_id(username, name))`
+      bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`
     )
     .eq("id", id)
     .single();
@@ -65,6 +65,20 @@ export default async function AuctionDetailPage({
   if (result.error || !result.data) notFound();
 
   const auction = result.data as unknown as FullAuction;
+
+  // Seller success rate
+  const { data: sellerStats } = await supabase
+    .from("auctions")
+    .select("status")
+    .eq("seller_id", auction.seller.id)
+    .neq("status", "cancelled");
+
+  const totalSellerAuctions = sellerStats?.length ?? 0;
+  const completedSellerAuctions = sellerStats?.filter((a) => a.status === "completed").length ?? 0;
+  const sellerSuccessRate =
+    totalSellerAuctions > 0
+      ? Math.round((completedSellerAuctions / totalSellerAuctions) * 100)
+      : null;
 
   // Increment view count (fire and forget)
   supabase
@@ -252,12 +266,29 @@ export default async function AuctionDetailPage({
                 )}
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">
-                  {auction.seller.name}
-                </p>
+                <p className="font-semibold text-gray-900 text-sm">{auction.seller.name}</p>
                 <p className="text-xs text-gray-500">@{auction.seller.username}</p>
               </div>
             </Link>
+            {/* Seller success rate */}
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              {sellerSuccessRate !== null ? (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <TrendingUp className={`h-3.5 w-3.5 ${sellerSuccessRate >= 60 ? "text-green-500" : "text-yellow-500"}`} />
+                  <span className={`font-medium ${sellerSuccessRate >= 60 ? "text-green-700" : "text-yellow-700"}`}>
+                    {sellerSuccessRate}% keberhasilan
+                  </span>
+                  <span className="text-gray-400">
+                    ({completedSellerAuctions}/{totalSellerAuctions} lelang)
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                  <Info className="h-3.5 w-3.5" />
+                  Belum ada riwayat lelang
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Bid history */}
@@ -281,6 +312,15 @@ export default async function AuctionDetailPage({
                         {i + 1}
                       </span>
                       <span>@{bid.bidder?.username ?? "unknown"}</span>
+                      {(bid.bidder?.buyer_warning_count ?? 0) > 0 && (
+                        <span
+                          title={`Pembeli ini memiliki ${bid.bidder?.buyer_warning_count}x peringatan`}
+                          className="flex items-center gap-0.5 text-orange-500"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          <span className="text-xs">{bid.bidder?.buyer_warning_count}</span>
+                        </span>
+                      )}
                     </div>
                     <span>{formatIDR(bid.amount)}</span>
                   </div>

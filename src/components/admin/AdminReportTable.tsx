@@ -14,7 +14,7 @@ export type ReportRow = {
   status: "pending" | "reviewed" | "approved" | "rejected";
   created_at: string;
   reporter: { id: string; username: string; name: string } | null;
-  reported: { id: string; username: string; name: string; violation_count: number } | null;
+  reported: { id: string; username: string; name: string; buyer_warning_count: number } | null;
   auction: { id: string; title: string } | null;
 };
 
@@ -121,10 +121,10 @@ export function AdminReportTable({
                         <p className="font-medium text-gray-900">
                           {report.reported?.name ?? "Unknown"}
                         </p>
-                        {(report.reported?.violation_count ?? 0) > 0 && (
+                        {(report.reported?.buyer_warning_count ?? 0) > 0 && (
                           <span className="flex items-center gap-0.5 text-xs text-orange-600">
                             <AlertTriangle className="h-3 w-3" />
-                            {report.reported?.violation_count}x
+                            {report.reported?.buyer_warning_count}x
                           </span>
                         )}
                       </div>

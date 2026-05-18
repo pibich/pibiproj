@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { MessageCircle, X, Send, Bot } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -11,6 +11,7 @@ interface Message {
 }
 
 const SESSION_KEY = "tcg_chatbot_session";
+const INTRO_SEEN_KEY = "tcg_chatbot_intro_seen";
 
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -25,13 +26,39 @@ function getOrCreateSessionId(): string {
 export function ChatbotWidget() {
   const t = useTranslations("chatbot");
   const [open, setOpen] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const [introSeen, setIntroSeen] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [limitError, setLimitError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // Show greeting on first open
+  useEffect(() => {
+    const seen = localStorage.getItem(INTRO_SEEN_KEY);
+    if (!seen) {
+      setIntroSeen(false);
+      const timer = setTimeout(() => setShowIntro(true), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  function markIntroSeen() {
+    localStorage.setItem(INTRO_SEEN_KEY, "1");
+    setIntroSeen(true);
+    setShowIntro(false);
+  }
+
+  function handleStartChat() {
+    markIntroSeen();
+    setOpen(true);
+  }
+
+  function handleToggle() {
+    if (!introSeen) markIntroSeen();
+    setOpen((prev) => !prev);
+  }
+
   useEffect(() => {
     if (open && messages.length === 0) {
       setMessages([{ role: "model", text: t("greeting") }]);
@@ -92,12 +119,63 @@ export function ChatbotWidget() {
 
   return (
     <>
+      {/* First-time intro popup */}
+      {showIntro && !open && (
+        <div className="fixed bottom-24 right-6 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden animate-fade-in-up">
+          <div className="h-1.5 bg-gradient-to-r from-sky-400 to-blue-600" />
+          <div className="relative p-4">
+            <button
+              onClick={markIntroSeen}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Tutup"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-3 pr-6">
+              <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                <Bot className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-gray-900">{t("introTitle")}</p>
+                <p className="text-xs text-gray-500">{t("subtitle")}</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-3 leading-relaxed">{t("introDesc")}</p>
+
+            <ul className="text-xs text-gray-500 mb-4 space-y-1.5">
+              {(t.raw("introFeatures") as string[]).map((feature, i) => (
+                <li key={i} className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            <button
+              onClick={handleStartChat}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t("introButton")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105"
         aria-label="Bantuan"
       >
+        {!introSeen && !open && (
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500" />
+          </span>
+        )}
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
 

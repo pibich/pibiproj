@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/dal";
 import Link from "next/link";
-import { ShieldCheck, FileWarning, Ban } from "lucide-react";
+import { ShieldCheck, FileWarning, Users, UserCog } from "lucide-react";
 
 export default async function AdminLayout({
   children,
@@ -36,11 +36,18 @@ export default async function AdminLayout({
           Laporan
         </Link>
         <Link
-          href={`/${locale}/admin/blacklist`}
+          href={`/${locale}/admin/middleman`}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
         >
-          <Ban className="h-4 w-4" />
-          Blacklist
+          <Users className="h-4 w-4" />
+          Middleman
+        </Link>
+        <Link
+          href={`/${locale}/admin/users`}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+        >
+          <UserCog className="h-4 w-4" />
+          Pengguna
         </Link>
       </div>
 

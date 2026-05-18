@@ -15,7 +15,7 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, name, username, avatar_url")
+    .select("id, name, username, avatar_url, buyer_warning_count")
     .eq("id", user.id)
     .single();
 
@@ -25,12 +25,13 @@ export async function POST() {
 
   const streamClient = getStreamServerClient();
 
-  // Upsert user in GetStream
+  // Upsert user in GetStream — sync buyer_warning_count for custom message badge
   await streamClient.upsertUser({
     id: profile.id,
     name: profile.name,
     username: profile.username,
     image: profile.avatar_url ?? undefined,
+    buyer_warning_count: profile.buyer_warning_count,
   });
 
   const token = streamClient.createToken(profile.id);

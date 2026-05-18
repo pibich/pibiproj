@@ -8,7 +8,7 @@ import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatIDR, formatDate } from "@/lib/utils";
-import { Gavel, Package, Eye, Plus, Trophy } from "lucide-react";
+import { Gavel, Package, AlertTriangle, Plus, Trophy, Clock } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 type AuctionWithRelations = Auction & {
@@ -75,7 +75,12 @@ export default async function DashboardPage({
     { label: "Lelang Aktif", value: activeAuctions.length, icon: Gavel, color: "text-blue-600" },
     { label: "Total Bid", value: typedBids.length, icon: Package, color: "text-purple-600" },
     { label: "Lelang Dimenangkan", value: wonAuctions?.length ?? 0, icon: Trophy, color: "text-green-600" },
-    { label: "Pelanggaran", value: user.violation_count, icon: Eye, color: user.violation_count > 0 ? "text-red-600" : "text-gray-600" },
+    {
+      label: "Peringatan",
+      value: user.buyer_warning_count,
+      icon: AlertTriangle,
+      color: user.buyer_warning_count > 0 ? "text-orange-500" : "text-gray-400",
+    },
   ];
 
   return (
@@ -109,11 +114,31 @@ export default async function DashboardPage({
         ))}
       </div>
 
-      {/* Violation warning */}
-      {user.violation_count > 0 && (
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-700">
-          ⚠️ Akun Anda memiliki <strong>{user.violation_count} pelanggaran</strong> terkonfirmasi.
-          Setelah 3 pelanggaran, akun akan diblacklist otomatis.
+      {/* Warning / timeout alert */}
+      {user.buyer_timeout_until && new Date(user.buyer_timeout_until) > new Date() && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-start gap-2">
+          <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            Akun Anda sedang dalam masa <strong>timeout</strong>. Anda tidak dapat melakukan bid
+            hingga{" "}
+            <strong>
+              {new Date(user.buyer_timeout_until).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </strong>
+            .
+          </span>
+        </div>
+      )}
+      {!user.buyer_timeout_until && user.buyer_warning_count > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-sm text-orange-700 flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            Akun Anda memiliki <strong>{user.buyer_warning_count} peringatan</strong> terkonfirmasi.
+            Setelah 3 peringatan, akun akan masuk masa timeout 1 minggu.
+          </span>
         </div>
       )}
 

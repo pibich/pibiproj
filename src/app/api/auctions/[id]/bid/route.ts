@@ -43,15 +43,21 @@ export async function POST(
     return NextResponse.json({ error: "Penjual tidak bisa bid di lelang sendiri" }, { status: 400 });
   }
 
-  // Check user is active
+  // Check buyer timeout
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_active")
+    .select("buyer_timeout_until")
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_active) {
-    return NextResponse.json({ error: "Akun Anda telah dinonaktifkan" }, { status: 403 });
+  if (profile?.buyer_timeout_until && new Date(profile.buyer_timeout_until) > new Date()) {
+    const until = new Date(profile.buyer_timeout_until).toLocaleDateString("id-ID", {
+      day: "numeric", month: "long", year: "numeric",
+    });
+    return NextResponse.json(
+      { error: `Akun Anda sedang dalam masa timeout hingga ${until}. Tidak dapat melakukan bid saat ini.` },
+      { status: 403 }
+    );
   }
 
   // Check end time

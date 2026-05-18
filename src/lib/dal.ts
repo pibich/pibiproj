@@ -35,18 +35,3 @@ export const requireAdmin = cache(async (): Promise<Profile> => {
   return profile;
 });
 
-export async function isBlacklisted(
-  email: string,
-  phone: string
-): Promise<boolean> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("blacklist")
-    .select("id")
-    .or(`email.eq.${email},phone.eq.${phone}`)
-    .is("user_id", null)
-    .limit(1)
-    .single();
-
-  return !!data;
-}

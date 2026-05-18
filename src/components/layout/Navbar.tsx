@@ -9,7 +9,7 @@ import {
   X,
   Gavel,
   MessageSquare,
-  ShieldAlert,
+  Users,
   LayoutDashboard,
   LogOut,
   User,
@@ -36,7 +36,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
   const navLinks = [
     { href: `/${locale}/auctions`, label: t("auctions"), icon: Gavel },
-    { href: `/${locale}/blacklist`, label: t("blacklist"), icon: ShieldAlert },
+    { href: `/${locale}/middleman`, label: t("middleman"), icon: Users },
     { href: `/${locale}/contact`, label: t("contact"), icon: MessageSquare },
   ];
 

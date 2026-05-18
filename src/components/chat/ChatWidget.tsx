@@ -12,16 +12,26 @@ import {
   Thread,
   Window,
   ChannelList,
+  Message,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
-import { MessageSquare } from "lucide-react";
+import { Users } from "lucide-react";
 import type { Profile } from "@/types/supabase";
+import { MiddlemanModal } from "./MiddlemanModal";
+import { CustomMessage } from "./CustomMessage";
 
 interface ChatWidgetProps {
   currentUser: Pick<Profile, "id" | "name" | "username" | "avatar_url">;
-  // If provided, open a direct channel with this user (from auction detail)
   targetUserId?: string;
   auctionId?: string;
+}
+
+function buildChannelId(ids: string[]): string {
+  return ids
+    .map((id) => id.replace(/-/g, ""))
+    .sort()
+    .join("")
+    .slice(0, 64);
 }
 
 export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetProps) {
@@ -30,6 +40,10 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
   const [channel, setChannel] = useState<ReturnType<StreamChat["channel"]> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isGroup, setIsGroup] = useState(false);
+  const [memberIds, setMemberIds] = useState<string[]>([]);
+  const [middlemanModalOpen, setMiddlemanModalOpen] = useState(false);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     let chatClient: StreamChat | null = null;
@@ -47,7 +61,6 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
 
         chatClient = StreamChat.getInstance(apiKey);
 
-        // If singleton still has an active user from a previous mount, disconnect first
         if (chatClient.userID && chatClient.userID !== userId) {
           await chatClient.disconnectUser().catch(() => {});
         }
@@ -60,7 +73,6 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
           );
         }
 
-        // No await between here and connected = true, so cleanup cannot interleave
         if (cancelled) {
           chatClient.disconnectUser().catch(() => {});
           return;
@@ -70,19 +82,16 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
         setClient(chatClient);
 
         if (targetUserId && targetUserId !== userId) {
-          // UUIDs are 36 chars with dashes; two joined with "_" = 73 chars > Stream's 64-char limit.
-          // Strip dashes: 32 + 32 = 64 chars exactly.
-          const channelId = [userId, targetUserId]
-            .sort()
-            .map((id) => id.replace(/-/g, ""))
-            .join("");
+          const initialMembers = [userId, targetUserId];
+          const channelId = buildChannelId(initialMembers);
           const ch = chatClient.channel("messaging", channelId, {
-            members: [userId, targetUserId],
+            members: initialMembers,
           });
           if (cancelled) return;
           await ch.watch();
           if (cancelled) return;
           setChannel(ch);
+          setMemberIds(initialMembers);
         }
       } catch (err) {
         if (!cancelled) {
@@ -98,13 +107,30 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
 
     return () => {
       cancelled = true;
-      // Only disconnect if connectUser completed — avoids disconnecting a mid-connecting client
-      // and prevents unhandled rejections from a fire-and-forget disconnect
       if (connected) {
         chatClient?.disconnectUser().catch(() => {});
       }
     };
   }, [currentUser.id, targetUserId, auctionId]);
+
+  async function handleInviteMiddleman(middlemanId: string, middlemanName: string) {
+    if (!client || !targetUserId) return;
+    setMiddlemanModalOpen(false);
+
+    const allMembers = [currentUser.id, targetUserId, middlemanId];
+    const groupChannelId = buildChannelId(allMembers);
+
+    const groupCh = client.channel("messaging", groupChannelId, {
+      members: allMembers,
+      name: "Grup Middleman",
+    });
+    await groupCh.watch();
+    setChannel(groupCh);
+    setMemberIds(allMembers);
+    setIsGroup(true);
+    setInviteSuccess(middlemanName);
+    setTimeout(() => setInviteSuccess(null), 3000);
+  }
 
   if (loading) {
     return (
@@ -126,24 +152,59 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
   }
 
   return (
-    <div className="h-[calc(100vh-10rem)] rounded-xl overflow-hidden border border-gray-200">
+    <div className="h-[calc(100vh-10rem)] rounded-xl overflow-hidden border border-gray-200 relative">
       <Chat client={client} theme="str-chat__theme-light">
         {targetUserId && channel ? (
-          <Channel channel={channel}>
-            <Window>
-              <ChannelHeader />
-              <MessageList />
-              <MessageComposer />
-            </Window>
-            <Thread />
-          </Channel>
+          <>
+            {/* Invite middleman toolbar */}
+            <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                {isGroup && (
+                  <>
+                    <Users className="h-4 w-4" />
+                    <span>{memberIds.length} anggota</span>
+                  </>
+                )}
+                {inviteSuccess && (
+                  <span className="text-green-600 text-xs font-medium">
+                    {inviteSuccess} telah ditambahkan
+                  </span>
+                )}
+              </div>
+              {!isGroup && (
+                <button
+                  onClick={() => setMiddlemanModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg px-3 py-1.5 transition-colors"
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  {t("inviteMiddleman")}
+                </button>
+              )}
+            </div>
+
+            <Channel channel={channel} Message={CustomMessage as typeof Message}>
+              <Window>
+                <ChannelHeader />
+                <MessageList />
+                <MessageComposer />
+              </Window>
+              <Thread />
+            </Channel>
+
+            <MiddlemanModal
+              open={middlemanModalOpen}
+              onClose={() => setMiddlemanModalOpen(false)}
+              onSelect={handleInviteMiddleman}
+              currentMemberIds={memberIds}
+            />
+          </>
         ) : (
           <div className="flex h-full">
             <ChannelList
               filters={{ members: { $in: [currentUser.id] } }}
               sort={{ last_message_at: -1 }}
             />
-            <Channel>
+            <Channel Message={CustomMessage as typeof Message}>
               <Window>
                 <ChannelHeader />
                 <MessageList />

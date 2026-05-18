@@ -38,10 +38,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href={`/${locale}/blacklist`}
+                  href={`/${locale}/middleman`}
                   className="hover:text-sky-300 transition-colors"
                 >
-                  {t("blacklist")}
+                  {t("middleman")}
                 </Link>
               </li>
               <li>

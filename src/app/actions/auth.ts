@@ -80,21 +80,6 @@ export async function registerAction(
     return { fieldErrors: { phone: ["Nomor telepon sudah terdaftar"] } };
   }
 
-  // Check if email/phone is in manual blacklist
-  const { data: blacklisted } = await supabase
-    .from("blacklist")
-    .select("id")
-    .or(`email.eq.${email},phone.eq.${phone}`)
-    .is("user_id", null)
-    .limit(1);
-
-  if (blacklisted && blacklisted.length > 0) {
-    return {
-      error:
-        "Email atau nomor telepon ini telah diblacklist. Hubungi customer service untuk informasi lebih lanjut.",
-    };
-  }
-
   // Register user
   const { error } = await supabase.auth.signUp({
     email,
@@ -135,26 +120,6 @@ export async function loginAction(
 
   if (error) {
     return { error: "Email atau password salah" };
-  }
-
-  // Check if account is active
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_active")
-      .eq("id", user.id)
-      .single();
-
-    if (profile && !profile.is_active) {
-      await supabase.auth.signOut();
-      return {
-        error:
-          "Akun Anda telah dinonaktifkan karena pelanggaran. Hubungi customer service.",
-      };
-    }
   }
 
   revalidatePath("/", "layout");

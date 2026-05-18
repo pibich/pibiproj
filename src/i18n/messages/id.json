@@ -26,7 +26,7 @@
   "nav": {
     "home": "Beranda",
     "auctions": "Lelang",
-    "blacklist": "Daftar Blacklist",
+    "middleman": "Middleman",
     "contact": "Hubungi Kami",
     "dashboard": "Dashboard",
     "chat": "Pesan",
@@ -63,7 +63,6 @@
     "verifyEmailMessage": "Kami telah mengirimkan link verifikasi ke email Anda. Silakan cek inbox atau folder spam.",
     "loginWithGoogle": "Masuk dengan Google",
     "usernameNote": "Username, email, dan nomor telepon tidak dapat diubah setelah pendaftaran.",
-    "blacklistedError": "Email atau nomor telepon ini telah diblacklist. Hubungi customer service untuk informasi lebih lanjut.",
     "usernameExists": "Username sudah digunakan",
     "emailExists": "Email sudah terdaftar",
     "phoneExists": "Nomor telepon sudah terdaftar",
@@ -135,23 +134,12 @@
       "most_bids": "Terbanyak Bid"
     }
   },
-  "blacklist": {
-    "title": "Daftar Blacklist",
-    "subtitle": "Daftar penjual/pembeli yang terbukti melanggar aturan platform",
-    "disclaimer": "Daftar ini disediakan untuk referensi komunitas. Informasi ini tidak boleh digunakan untuk melecehkan atau mengintimidasi siapapun.",
-    "name": "Nama",
-    "username": "Username",
-    "email": "Email",
-    "phone": "Nomor Telepon",
-    "reason": "Alasan",
-    "date": "Tanggal",
-    "type": "Jenis",
-    "typeAutomatic": "Otomatis",
-    "typeManual": "Manual Admin",
-    "searchPlaceholder": "Cari nama, email, atau nomor telepon...",
-    "noResults": "Tidak ada hasil yang cocok",
-    "totalEntries": "{count} entri ditemukan",
-    "violationCount": "{count}x pelanggaran"
+  "middleman": {
+    "title": "Daftar Middleman",
+    "subtitle": "Middleman terverifikasi untuk membantu transaksi aman",
+    "noMiddlemen": "Belum ada middleman terdaftar",
+    "verified": "Terverifikasi",
+    "chatWith": "Chat dengan {name}"
   },
   "report": {
     "title": "Laporkan Pengguna",
@@ -177,7 +165,11 @@
     "inputPlaceholder": "Ketik pesan...",
     "chatWithSeller": "Chat dengan {name}",
     "online": "Online",
-    "offline": "Offline"
+    "offline": "Offline",
+    "inviteMiddleman": "Undang Middleman",
+    "selectMiddleman": "Pilih Middleman",
+    "middlemanAdded": "{name} telah ditambahkan",
+    "groupMembers": "{count} anggota"
   },
   "chatbot": {
     "title": "Bantuan",
@@ -185,7 +177,11 @@
     "inputPlaceholder": "Tanya sesuatu...",
     "greeting": "Halo! Saya asisten TCG Marketplace. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
     "limitReached": "Anda telah mencapai batas pesan harian ({limit} pesan/hari). Silakan hubungi customer service jika perlu bantuan lebih lanjut.",
-    "offTopic": "Maaf, saya hanya dapat membantu terkait penggunaan TCG Marketplace. Untuk pertanyaan lain, silakan hubungi customer service kami."
+    "offTopic": "Maaf, saya hanya dapat membantu terkait penggunaan TCG Marketplace. Untuk pertanyaan lain, silakan hubungi customer service kami.",
+    "introTitle": "Butuh Bantuan?",
+    "introDesc": "Saya siap membantu kamu navigasi TCG Marketplace dengan mudah.",
+    "introFeatures": ["Cara bid & jual kartu", "Cara lapor pengguna bermasalah", "Hubungi customer service"],
+    "introButton": "Mulai Chat"
   },
   "contact": {
     "title": "Hubungi Kami",
@@ -216,26 +212,31 @@
   "admin": {
     "title": "Admin Panel",
     "reports": "Laporan Pengguna",
-    "blacklistManagement": "Kelola Blacklist",
+    "middlemanManagement": "Kelola Middleman",
+    "userManagement": "Kelola Pengguna",
     "pendingReports": "Laporan Pending",
-    "addManualBlacklist": "Tambah Blacklist Manual",
     "approve": "Setujui",
     "reject": "Tolak",
     "reporter": "Pelapor",
     "reported": "Dilaporkan",
+    "setMiddleman": "Jadikan Middleman",
+    "removeMiddleman": "Hapus dari Middleman",
+    "warningCount": "Peringatan",
+    "timeoutUntil": "Timeout Hingga",
+    "promoteToAdmin": "Jadikan Admin",
+    "demoteToUser": "Turunkan ke User",
+    "resetTimeout": "Reset Timeout",
+    "totalUsers": "Total Pengguna",
+    "activeMiddlemen": "Middleman Aktif",
+    "timedOutUsers": "User Timeout",
+    "noUsers": "Tidak ada pengguna ditemukan",
+    "cannotDemoteSelf": "Tidak bisa mengubah role akun sendiri",
     "status": {
       "pending": "Menunggu",
       "reviewed": "Ditinjau",
       "approved": "Disetujui",
       "rejected": "Ditolak"
-    },
-    "manualBlacklistName": "Nama",
-    "manualBlacklistEmail": "Email",
-    "manualBlacklistPhone": "Nomor Telepon",
-    "manualBlacklistReason": "Alasan Blacklist",
-    "addToBlacklist": "Tambahkan ke Blacklist",
-    "removeFromBlacklist": "Hapus dari Blacklist",
-    "confirmRemove": "Apakah Anda yakin ingin menghapus entri ini dari daftar blacklist?"
+    }
   },
   "profile": {
     "title": "Profil",
@@ -243,16 +244,17 @@
     "joinedAt": "Bergabung sejak {date}",
     "activeAuctions": "Lelang Aktif",
     "completedAuctions": "Lelang Selesai",
-    "violationCount": "Jumlah Pelanggaran",
-    "reportUser": "Laporkan Pengguna",
-    "blockedAccount": "Akun ini telah dinonaktifkan"
+    "buyerWarnings": "{count}x peringatan",
+    "buyerTimeout": "Timeout hingga {date}",
+    "noAuctionHistory": "Belum ada riwayat lelang",
+    "reportUser": "Laporkan Pengguna"
   },
   "footer": {
     "about": "Tentang",
     "aboutText": "TCG Marketplace adalah platform lelang kartu TCG terpercaya di Indonesia.",
     "links": "Tautan",
     "contact": "Kontak",
-    "blacklist": "Daftar Blacklist",
+    "middleman": "Middleman",
     "rights": "© {year} TCG Marketplace. Hak cipta dilindungi."
   }
 }
