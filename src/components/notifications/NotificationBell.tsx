@@ -93,7 +93,7 @@ export function NotificationBell({ userId }: { userId: string }) {
         if (cancelled) return;
 
         // Set initial unread count
-        setStreamUnread(streamClient.user?.total_unread_count ?? 0);
+        setStreamUnread((streamClient.user as { total_unread_count?: number })?.total_unread_count ?? 0);
 
         streamClient.on("notification.message_new", (event: StreamMessage) => {
           setStreamUnread((c) => c + (event.unread_count ?? 1));

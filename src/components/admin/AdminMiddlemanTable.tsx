@@ -83,7 +83,7 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
                 )}
                 <Button
                   size="sm"
-                  variant={user.is_middleman ? "outline" : "default"}
+                  variant={user.is_middleman ? "outline" : "primary"}
                   loading={isPending && loadingId === user.id}
                   onClick={() => toggleMiddleman(user.id)}
                 >

@@ -63,7 +63,7 @@ export default async function ProfilePage({
       .neq("status", "cancelled"),
   ]);
 
-  const auctions = auctionsResult.data ?? [];
+  const auctions = (auctionsResult.data ?? []) as AuctionWithRelations[];
   const sellerStats = sellerStatsResult.data ?? [];
 
   const activeAuctions = auctions.filter((a) => a.status === "active");
@@ -184,7 +184,7 @@ export default async function ProfilePage({
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("activeAuctions")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {activeAuctions.map((a) => (
-              <AuctionCard key={a.id} auction={a as unknown as AuctionWithRelations} />
+              <AuctionCard key={a.id} auction={a} />
             ))}
           </div>
         </div>
@@ -196,7 +196,7 @@ export default async function ProfilePage({
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{t("completedAuctions")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {completedAuctions.map((a) => (
-              <AuctionCard key={a.id} auction={a as unknown as AuctionWithRelations} />
+              <AuctionCard key={a.id} auction={a} />
             ))}
           </div>
         </div>

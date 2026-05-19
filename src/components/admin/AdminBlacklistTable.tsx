@@ -14,7 +14,7 @@ export function AdminBlacklistTable({ entries }: { entries: BlacklistEntry[] }) 
   function handleDelete(id: string) {
     setDeletingId(id);
     startTransition(async () => {
-      await fetch(`/api/blacklist/${id}`, { method: "DELETE" });
+      await fetch(`/api/admin/blacklist/${id}`, { method: "DELETE" });
       setDeletingId(null);
       router.refresh();
     });

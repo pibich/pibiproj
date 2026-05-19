@@ -21,6 +21,7 @@ export type Database = {
           buyer_warning_count: number;
           buyer_timeout_until: string | null;
           is_middleman: boolean;
+          is_active: boolean;
           successful_purchases: number;
           successful_sales: number;
           created_at: string;
@@ -36,6 +37,7 @@ export type Database = {
           buyer_warning_count?: number;
           buyer_timeout_until?: string | null;
           is_middleman?: boolean;
+          is_active?: boolean;
           successful_purchases?: number;
           successful_sales?: number;
           created_at?: string;
@@ -47,6 +49,7 @@ export type Database = {
           buyer_warning_count?: number;
           buyer_timeout_until?: string | null;
           is_middleman?: boolean;
+          is_active?: boolean;
           successful_purchases?: number;
           successful_sales?: number;
         };
@@ -277,6 +280,37 @@ export type Database = {
         };
         Update: {
           is_read?: boolean;
+        };
+        Relationships: [];
+      };
+      blacklist: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          type: "auto" | "manual";
+          name: string | null;
+          username: string | null;
+          email: string | null;
+          phone: string | null;
+          reason: string | null;
+          added_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          type?: "auto" | "manual";
+          name?: string | null;
+          username?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          reason?: string | null;
+          added_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          type?: "auto" | "manual";
+          reason?: string | null;
         };
         Relationships: [];
       };

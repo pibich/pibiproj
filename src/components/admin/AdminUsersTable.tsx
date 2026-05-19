@@ -126,7 +126,7 @@ export function AdminUsersTable({
                               Admin
                             </Badge>
                           ) : (
-                            <Badge variant="secondary" className="text-xs">User</Badge>
+                            <Badge variant="default" className="text-xs">User</Badge>
                           )}
                           {user.is_middleman && (
                             <Badge variant="success" className="text-xs">Middleman</Badge>
@@ -176,7 +176,7 @@ export function AdminUsersTable({
                           )}
                           <Button
                             size="sm"
-                            variant={user.role === "admin" ? "outline" : "default"}
+                            variant={user.role === "admin" ? "outline" : "primary"}
                             loading={isLoading && loadingAction === "toggle_role"}
                             disabled={isSelf}
                             onClick={() => handleAction(user.id, "toggle_role")}

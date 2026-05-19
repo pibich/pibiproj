@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { StreamChat } from "stream-chat";
+import type { ComponentType } from "react";
 import {
   Chat,
   Channel,
@@ -12,7 +13,6 @@ import {
   Thread,
   Window,
   ChannelList,
-  Message,
 } from "stream-chat-react";
 import "stream-chat-react/dist/css/index.css";
 import { Users } from "lucide-react";
@@ -182,10 +182,10 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
               )}
             </div>
 
-            <Channel channel={channel} Message={CustomMessage as typeof Message}>
+            <Channel channel={channel}>
               <Window>
                 <ChannelHeader />
-                <MessageList />
+                <MessageList Message={CustomMessage as ComponentType} />
                 <MessageComposer />
               </Window>
               <Thread />
@@ -204,10 +204,10 @@ export function ChatWidget({ currentUser, targetUserId, auctionId }: ChatWidgetP
               filters={{ members: { $in: [currentUser.id] } }}
               sort={{ last_message_at: -1 }}
             />
-            <Channel Message={CustomMessage as typeof Message}>
+            <Channel>
               <Window>
                 <ChannelHeader />
-                <MessageList />
+                <MessageList Message={CustomMessage as ComponentType} />
                 <MessageComposer />
               </Window>
               <Thread />

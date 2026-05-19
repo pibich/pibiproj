@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/supabase";
+
+type NotificationWithAuction = Database["public"]["Tables"]["notifications"]["Row"] & {
+  auction: { id: string; title: string } | null;
+};
 
 export async function GET() {
   const supabase = await createClient();
@@ -23,7 +28,8 @@ export async function GET() {
     return NextResponse.json({ error: "Gagal memuat notifikasi" }, { status: 500 });
   }
 
-  const unread_count = (notifications ?? []).filter((n) => !n.is_read).length;
+  const notifList = (notifications as NotificationWithAuction[] | null) ?? [];
+  const unread_count = notifList.filter((n) => !n.is_read).length;
 
-  return NextResponse.json({ notifications: notifications ?? [], unread_count });
+  return NextResponse.json({ notifications: notifList, unread_count });
 }

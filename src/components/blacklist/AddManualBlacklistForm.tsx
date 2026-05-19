@@ -24,7 +24,7 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await fetch("/api/blacklist", {
+      await fetch("/api/admin/blacklist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, added_by: adminId }),
