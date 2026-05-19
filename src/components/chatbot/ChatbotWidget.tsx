@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
 import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +11,12 @@ interface Message {
 
 const SESSION_KEY = "tcg_chatbot_session";
 const INTRO_SEEN_KEY = "tcg_chatbot_intro_seen";
+
+const INTRO_FEATURES = [
+  "Cara bid & jual kartu",
+  "Cara lapor pengguna bermasalah",
+  "Hubungi customer service",
+];
 
 function getOrCreateSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -24,7 +29,6 @@ function getOrCreateSessionId(): string {
 }
 
 export function ChatbotWidget() {
-  const t = useTranslations("chatbot");
   const [open, setOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [introSeen, setIntroSeen] = useState(true);
@@ -61,9 +65,12 @@ export function ChatbotWidget() {
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      setMessages([{ role: "model", text: t("greeting") }]);
+      setMessages([{
+        role: "model",
+        text: "Halo! Saya asisten TCG Marketplace. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
+      }]);
     }
-  }, [open, messages.length, t]);
+  }, [open, messages.length]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,7 +126,6 @@ export function ChatbotWidget() {
 
   return (
     <>
-      {/* First-time intro popup */}
       {showIntro && !open && (
         <div className="fixed bottom-24 right-6 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden animate-fade-in-up">
           <div className="h-1.5 bg-gradient-to-r from-sky-400 to-blue-600" />
@@ -137,15 +143,17 @@ export function ChatbotWidget() {
                 <Bot className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-gray-900">{t("introTitle")}</p>
-                <p className="text-xs text-gray-500">{t("subtitle")}</p>
+                <p className="font-semibold text-sm text-gray-900">Butuh Bantuan?</p>
+                <p className="text-xs text-gray-500">Asisten TCG Marketplace</p>
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-3 leading-relaxed">{t("introDesc")}</p>
+            <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+              Saya siap membantu kamu navigasi TCG Marketplace dengan mudah.
+            </p>
 
             <ul className="text-xs text-gray-500 mb-4 space-y-1.5">
-              {(t.raw("introFeatures") as string[]).map((feature, i) => (
+              {INTRO_FEATURES.map((feature, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                   {feature}
@@ -158,13 +166,12 @@ export function ChatbotWidget() {
               className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              {t("introButton")}
+              Mulai Chat
             </button>
           </div>
         </div>
       )}
 
-      {/* Floating button */}
       <button
         onClick={handleToggle}
         className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105"
@@ -179,21 +186,18 @@ export function ChatbotWidget() {
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
 
-      {/* Chat panel */}
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[32rem]">
-          {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white shrink-0">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <Bot className="h-4 w-4" />
             </div>
             <div>
-              <p className="font-semibold text-sm">{t("title")}</p>
-              <p className="text-xs text-blue-100">{t("subtitle")}</p>
+              <p className="font-semibold text-sm">Bantuan</p>
+              <p className="text-xs text-blue-100">Asisten TCG Marketplace</p>
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {messages.map((msg, i) => (
               <div
@@ -229,7 +233,6 @@ export function ChatbotWidget() {
             <div ref={endRef} />
           </div>
 
-          {/* Input */}
           <div className="border-t border-gray-200 p-3 flex gap-2 shrink-0">
             <input
               value={input}
@@ -240,7 +243,7 @@ export function ChatbotWidget() {
                   sendMessage();
                 }
               }}
-              placeholder={t("inputPlaceholder")}
+              placeholder="Tanya sesuatu..."
               disabled={loading || !!limitError}
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
             />

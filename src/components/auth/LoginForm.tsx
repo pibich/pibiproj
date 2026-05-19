@@ -1,9 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { loginAction, type ActionState } from "@/app/actions/auth";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,8 +10,6 @@ import { AlertCircle } from "lucide-react";
 const initialState: ActionState = {};
 
 export function LoginForm() {
-  const t = useTranslations("auth");
-  const { locale } = useParams() as { locale: string };
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
   return (
@@ -29,8 +25,8 @@ export function LoginForm() {
         id="email"
         name="email"
         type="email"
-        label={t("email")}
-        placeholder={t("emailPlaceholder")}
+        label="Email"
+        placeholder="contoh@email.com"
         required
         autoComplete="email"
         error={state.fieldErrors?.email?.[0]}
@@ -39,24 +35,21 @@ export function LoginForm() {
         id="password"
         name="password"
         type="password"
-        label={t("password")}
-        placeholder={t("passwordPlaceholder")}
+        label="Password"
+        placeholder="Minimal 8 karakter"
         required
         autoComplete="current-password"
         error={state.fieldErrors?.password?.[0]}
       />
 
       <Button type="submit" loading={isPending} size="lg" className="mt-2">
-        {t("loginButton")}
+        Masuk
       </Button>
 
       <p className="text-center text-sm text-gray-600">
-        {t("noAccount")}{" "}
-        <Link
-          href={`/${locale}/register`}
-          className="font-medium text-blue-600 hover:underline"
-        >
-          {t("registerButton")}
+        Belum punya akun?{" "}
+        <Link href="/register" className="font-medium text-blue-600 hover:underline">
+          Daftar Sekarang
         </Link>
       </p>
     </form>

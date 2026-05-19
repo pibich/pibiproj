@@ -1,9 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { registerAction, type ActionState } from "@/app/actions/auth";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,21 +10,18 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 const initialState: ActionState = {};
 
 export function RegisterForm() {
-  const t = useTranslations("auth");
-  const { locale } = useParams() as { locale: string };
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
 
   if (state.success) {
     return (
       <div className="flex flex-col items-center gap-4 text-center py-4">
         <CheckCircle2 className="h-12 w-12 text-green-500" />
-        <h3 className="text-lg font-semibold text-gray-900">{t("verifyEmail")}</h3>
-        <p className="text-sm text-gray-600 max-w-sm">{t("verifyEmailMessage")}</p>
-        <Link
-          href={`/${locale}/login`}
-          className="text-sm text-blue-600 hover:underline font-medium"
-        >
-          {t("hasAccount")} {t("loginButton")}
+        <h3 className="text-lg font-semibold text-gray-900">Verifikasi Email</h3>
+        <p className="text-sm text-gray-600 max-w-sm">
+          Kami telah mengirimkan link verifikasi ke email Anda. Silakan cek inbox atau folder spam.
+        </p>
+        <Link href="/login" className="text-sm text-blue-600 hover:underline font-medium">
+          Sudah punya akun? Masuk
         </Link>
       </div>
     );
@@ -42,14 +37,14 @@ export function RegisterForm() {
       )}
 
       <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-        {t("usernameNote")}
+        Username, email, dan nomor telepon tidak dapat diubah setelah pendaftaran.
       </p>
 
       <Input
         id="name"
         name="name"
-        label={t("name")}
-        placeholder={t("namePlaceholder")}
+        label="Nama Lengkap"
+        placeholder="Masukkan nama lengkap"
         required
         autoComplete="name"
         error={state.fieldErrors?.name?.[0]}
@@ -57,8 +52,8 @@ export function RegisterForm() {
       <Input
         id="username"
         name="username"
-        label={t("username")}
-        placeholder={t("usernamePlaceholder")}
+        label="Username"
+        placeholder="Masukkan username unik"
         required
         autoComplete="username"
         error={state.fieldErrors?.username?.[0]}
@@ -67,8 +62,8 @@ export function RegisterForm() {
         id="email"
         name="email"
         type="email"
-        label={t("email")}
-        placeholder={t("emailPlaceholder")}
+        label="Email"
+        placeholder="contoh@email.com"
         required
         autoComplete="email"
         error={state.fieldErrors?.email?.[0]}
@@ -77,8 +72,8 @@ export function RegisterForm() {
         id="phone"
         name="phone"
         type="tel"
-        label={t("phone")}
-        placeholder={t("phonePlaceholder")}
+        label="Nomor Telepon"
+        placeholder="08xxxxxxxxxx"
         required
         autoComplete="tel"
         error={state.fieldErrors?.phone?.[0]}
@@ -87,8 +82,8 @@ export function RegisterForm() {
         id="password"
         name="password"
         type="password"
-        label={t("password")}
-        placeholder={t("passwordPlaceholder")}
+        label="Password"
+        placeholder="Minimal 8 karakter"
         required
         autoComplete="new-password"
         error={state.fieldErrors?.password?.[0]}
@@ -97,24 +92,21 @@ export function RegisterForm() {
         id="confirmPassword"
         name="confirmPassword"
         type="password"
-        label={t("confirmPassword")}
-        placeholder={t("confirmPasswordPlaceholder")}
+        label="Konfirmasi Password"
+        placeholder="Ulangi password"
         required
         autoComplete="new-password"
         error={state.fieldErrors?.confirmPassword?.[0]}
       />
 
       <Button type="submit" loading={isPending} size="lg" className="mt-2">
-        {t("registerButton")}
+        Daftar Sekarang
       </Button>
 
       <p className="text-center text-sm text-gray-600">
-        {t("hasAccount")}{" "}
-        <Link
-          href={`/${locale}/login`}
-          className="font-medium text-blue-600 hover:underline"
-        >
-          {t("loginButton")}
+        Sudah punya akun?{" "}
+        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+          Masuk
         </Link>
       </p>
     </form>

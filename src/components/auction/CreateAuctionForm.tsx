@@ -2,25 +2,28 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AlertCircle, ImagePlus, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { containsProfanity } from "@/lib/profanity";
 import type { Category } from "@/types/supabase";
 
 const BUCKET = "auction-images";
 const MAX_IMAGES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const conditionLabels: Record<string, string> = {
+  mint: "Mint", near_mint: "Near Mint", excellent: "Excellent", good: "Good",
+  light_play: "Light Play", heavy_play: "Heavy Play", damaged: "Damaged",
+};
 
 interface CreateAuctionFormProps {
   categories: Category[];
-  locale: string;
 }
 
-export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps) {
-  const t = useTranslations("auction");
+export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -83,17 +86,15 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
     const url = images[index];
     setImages((prev) => prev.filter((_, i) => i !== index));
 
-    // Best-effort delete from storage
     try {
       const supabase = createClient();
       const urlObj = new URL(url);
-      // path after /object/public/{bucket}/
       const parts = urlObj.pathname.split(`/object/public/${BUCKET}/`);
       if (parts[1]) {
         await supabase.storage.from(BUCKET).remove([decodeURIComponent(parts[1])]);
       }
     } catch {
-      // Non-critical — ignore
+      // Non-critical
     }
   }
 
@@ -103,13 +104,37 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
     const form = e.currentTarget;
     const data = new FormData(form);
 
+    const title = data.get("title") as string;
+    if (containsProfanity(title)) {
+      setError("Judul lelang mengandung kata yang tidak pantas.");
+      return;
+    }
+
     const startTime = data.get("start_time") as string;
     const endTime = data.get("end_time") as string;
     const startingPrice = Number(data.get("starting_price"));
     const buyNowPrice = data.get("buy_now_price") ? Number(data.get("buy_now_price")) : null;
 
-    if (new Date(endTime) <= new Date(startTime)) {
-      setError("Waktu selesai harus setelah waktu mulai");
+    const startTimeISO = startTime ? new Date(startTime).toISOString() : null;
+    const endTimeISO = new Date(endTime).toISOString();
+
+    const effectiveStart = startTimeISO ? new Date(startTimeISO) : new Date();
+    const endDate = new Date(endTimeISO);
+
+    if (endDate <= effectiveStart) {
+      setError("Waktu selesai harus setelah waktu mulai.");
+      return;
+    }
+
+    const maxDays = 14;
+    const diffDays = (endDate.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays > maxDays) {
+      setError("Durasi lelang maksimal 2 minggu (14 hari).");
+      return;
+    }
+
+    if (buyNowPrice !== null && buyNowPrice <= startingPrice) {
+      setError("Harga Buy Now harus lebih tinggi dari harga mulai.");
       return;
     }
 
@@ -127,8 +152,8 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
           buy_now_price: buyNowPrice,
           min_bid_increment: Number(data.get("min_bid_increment")) || 1000,
           images,
-          start_time: startTime || null,
-          end_time: endTime,
+          start_time: startTimeISO,
+          end_time: endTimeISO,
           status: "active",
         }),
       });
@@ -137,7 +162,7 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
       if (!res.ok) {
         setError(json.error ?? "Gagal membuat lelang");
       } else {
-        router.push(`/${locale}/auctions/${json.id}`);
+        router.push(`/auctions/${json.id}`);
       }
     });
   }
@@ -175,7 +200,7 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label htmlFor="category_id" className="text-sm font-medium text-gray-700">
-            {t("category")} <span className="text-red-500">*</span>
+            Kategori <span className="text-red-500">*</span>
           </label>
           <select
             id="category_id"
@@ -194,7 +219,7 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
 
         <div className="flex flex-col gap-1">
           <label htmlFor="condition" className="text-sm font-medium text-gray-700">
-            {t("condition")} <span className="text-red-500">*</span>
+            Kondisi <span className="text-red-500">*</span>
           </label>
           <select
             id="condition"
@@ -205,7 +230,7 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
             <option value="">Pilih kondisi</option>
             {conditions.map((c) => (
               <option key={c} value={c}>
-                {t(`conditions.${c}`)}
+                {conditionLabels[c]}
               </option>
             ))}
           </select>
@@ -269,10 +294,9 @@ export function CreateAuctionForm({ categories, locale }: CreateAuctionFormProps
         </div>
       </div>
 
-      {/* Images */}
       <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-gray-700">
-          {t("images")} (maks. {MAX_IMAGES})
+          Foto Kartu (maks. {MAX_IMAGES})
         </label>
         <input
           ref={fileInputRef}

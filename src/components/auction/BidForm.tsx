@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { formatIDR } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import { Gavel, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface BidFormProps {
@@ -22,23 +22,55 @@ export function BidForm({
   currentPrice,
   minIncrement,
   buyNowPrice,
-  auctionEnded,
+  auctionEnded: initialEnded,
   isLoggedIn,
   isSeller,
 }: BidFormProps) {
-  const t = useTranslations("auction");
-  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [bidAmount, setBidAmount] = useState(currentPrice + minIncrement);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [auctionEnded, setAuctionEnded] = useState(initialEnded);
+
+  useEffect(() => {
+    setBidAmount(currentPrice + minIncrement);
+    setMessage(null);
+  }, [currentPrice, minIncrement]);
+
+  useEffect(() => {
+    if (auctionEnded) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`auction-status-${auctionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "auctions",
+          filter: `id=eq.${auctionId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { status: string };
+          if (updated.status !== "active") {
+            setAuctionEnded(true);
+            router.refresh();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [auctionId, auctionEnded, router]);
 
   const minBid = currentPrice + minIncrement;
 
   async function handleBid(e: React.FormEvent) {
     e.preventDefault();
     if (!isLoggedIn) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
 
@@ -53,9 +85,9 @@ export function BidForm({
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? t("bidError") });
+        setMessage({ type: "error", text: data.error ?? "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini." });
       } else {
-        setMessage({ type: "success", text: t("bidSuccess") });
+        setMessage({ type: "success", text: "Bid berhasil dipasang!" });
         router.refresh();
       }
     });
@@ -63,7 +95,7 @@ export function BidForm({
 
   async function handleBuyNow() {
     if (!isLoggedIn) {
-      router.push(`/${locale}/login`);
+      router.push("/login");
       return;
     }
     if (!buyNowPrice) return;
@@ -77,8 +109,9 @@ export function BidForm({
 
       const data = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? t("bidError") });
+        setMessage({ type: "error", text: data.error ?? "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini." });
       } else {
+        setAuctionEnded(true);
         setMessage({ type: "success", text: "Selamat! Anda berhasil membeli kartu ini." });
         router.refresh();
       }
@@ -88,7 +121,7 @@ export function BidForm({
   if (auctionEnded) {
     return (
       <div className="rounded-xl bg-gray-100 p-4 text-center text-gray-600 font-medium">
-        {t("auctionEnded")}
+        Lelang Telah Berakhir
       </div>
     );
   }
@@ -122,25 +155,20 @@ export function BidForm({
 
       <form onSubmit={handleBid} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
-            {t("bidAmount")}
-          </label>
+          <label className="text-sm font-medium text-gray-700">Jumlah Bid</label>
           <p className="text-xs text-gray-500">
             Minimum: {formatIDR(minBid)}
           </p>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={bidAmount}
-              onChange={(e) => setBidAmount(Number(e.target.value))}
-              min={minBid}
-              step={minIncrement}
-              required
-              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={t("bidPlaceholder")}
-            />
-          </div>
-          {/* Quick increment buttons */}
+          <input
+            type="number"
+            value={bidAmount}
+            onChange={(e) => setBidAmount(Number(e.target.value))}
+            min={minBid}
+            step={minIncrement}
+            required
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Masukkan jumlah bid"
+          />
           <div className="flex gap-1.5 flex-wrap">
             {[1, 2, 5, 10].map((mult) => (
               <button
@@ -163,7 +191,7 @@ export function BidForm({
           disabled={bidAmount < minBid}
         >
           <Gavel className="h-4 w-4" />
-          {t("placeBid")} — {formatIDR(bidAmount)}
+          Pasang Bid — {formatIDR(bidAmount)}
         </Button>
       </form>
 
@@ -176,7 +204,7 @@ export function BidForm({
           loading={isPending}
         >
           <Zap className="h-4 w-4" />
-          {t("buyNow")} — {formatIDR(buyNowPrice)}
+          Beli Langsung — {formatIDR(buyNowPrice)}
         </Button>
       )}
     </div>

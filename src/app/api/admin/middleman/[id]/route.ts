@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   _req: NextRequest,
@@ -26,7 +26,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: target, error: fetchError } = await supabase
+  const adminClient = await createAdminClient();
+
+  const { data: target, error: fetchError } = await adminClient
     .from("profiles")
     .select("is_middleman")
     .eq("id", id)
@@ -36,7 +38,7 @@ export async function PATCH(
     return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
   }
 
-  const { error } = await supabase
+  const { error } = await adminClient
     .from("profiles")
     .update({ is_middleman: !target.is_middleman })
     .eq("id", id);

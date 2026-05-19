@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   req: NextRequest,
@@ -34,7 +34,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Status tidak valid" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  const adminClient = await createAdminClient();
+
+  const { error } = await adminClient
     .from("reports")
     .update({
       status,
@@ -49,14 +51,14 @@ export async function PATCH(
 
   // When approved: increment buyer warning count, set timeout after 3 warnings
   if (status === "approved") {
-    const { data: report } = await supabase
+    const { data: report } = await adminClient
       .from("reports")
       .select("reported_user_id")
       .eq("id", id)
       .single();
 
     if (report?.reported_user_id) {
-      const { data: target } = await supabase
+      const { data: target } = await adminClient
         .from("profiles")
         .select("buyer_warning_count")
         .eq("id", report.reported_user_id)
@@ -73,7 +75,7 @@ export async function PATCH(
         update.buyer_timeout_until = until.toISOString();
       }
 
-      await supabase
+      await adminClient
         .from("profiles")
         .update(update)
         .eq("id", report.reported_user_id);

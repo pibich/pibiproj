@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +23,15 @@ const REASONS = [
   "other",
 ] as const;
 
+const REASON_LABELS: Record<string, string> = {
+  bid_run: "Bid Run (kabur setelah menang bid)",
+  seller_close_no_reason: "Penjual tutup lelang tanpa alasan",
+  fraud: "Penipuan",
+  scam: "Scam",
+  no_payment: "Tidak membayar",
+  other: "Lainnya",
+};
+
 export function ReportUserModal({
   open,
   onClose,
@@ -31,8 +39,6 @@ export function ReportUserModal({
   reportedUsername,
   auctionId,
 }: ReportUserModalProps) {
-  const t = useTranslations("report");
-  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [reason, setReason] = useState<string>("");
@@ -77,11 +83,13 @@ export function ReportUserModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={t("title")}>
+    <Modal open={open} onClose={handleClose} title="Laporkan Pengguna">
       {success ? (
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <CheckCircle2 className="h-12 w-12 text-green-500" />
-          <p className="font-medium text-gray-900">{t("success")}</p>
+          <p className="font-medium text-gray-900">
+            Laporan berhasil dikirim. Tim kami akan meninjau laporan Anda.
+          </p>
           <Button onClick={handleClose} variant="outline">
             Tutup
           </Button>
@@ -89,7 +97,7 @@ export function ReportUserModal({
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <p className="text-sm text-gray-600">
-            {t("subtitle")}:{" "}
+            Laporkan pelanggaran yang dilakukan oleh pengguna ini:{" "}
             <span className="font-semibold">@{reportedUsername}</span>
           </p>
 
@@ -102,7 +110,7 @@ export function ReportUserModal({
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">
-              {t("reason")} <span className="text-red-500">*</span>
+              Alasan Laporan <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-col gap-1.5">
               {REASONS.map((r) => (
@@ -116,7 +124,7 @@ export function ReportUserModal({
                     className="accent-blue-600"
                   />
                   <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                    {t(`reasons.${r}`)}
+                    {REASON_LABELS[r]}
                   </span>
                 </label>
               ))}
@@ -125,13 +133,13 @@ export function ReportUserModal({
 
           <div className="flex flex-col gap-1">
             <label htmlFor="description" className="text-sm font-medium text-gray-700">
-              {t("description")}
+              Keterangan Tambahan
             </label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t("descriptionPlaceholder")}
+              placeholder="Jelaskan kejadian yang dialami secara detail..."
               rows={3}
               className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
@@ -147,7 +155,7 @@ export function ReportUserModal({
               loading={isPending}
               disabled={!reason}
             >
-              {t("submit")}
+              Kirim Laporan
             </Button>
           </div>
         </form>

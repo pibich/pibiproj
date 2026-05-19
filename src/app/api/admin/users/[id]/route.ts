@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   req: NextRequest,
@@ -27,6 +27,7 @@ export async function PATCH(
   }
 
   const body = await req.json() as { action: "toggle_role" | "reset_timeout" };
+  const adminClient = await createAdminClient();
 
   if (body.action === "toggle_role") {
     if (id === user.id) {
@@ -36,7 +37,7 @@ export async function PATCH(
       );
     }
 
-    const { data: target, error: fetchError } = await supabase
+    const { data: target, error: fetchError } = await adminClient
       .from("profiles")
       .select("role")
       .eq("id", id)
@@ -47,7 +48,7 @@ export async function PATCH(
     }
 
     const newRole = target.role === "admin" ? "user" : "admin";
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("profiles")
       .update({ role: newRole })
       .eq("id", id);
@@ -60,7 +61,7 @@ export async function PATCH(
   }
 
   if (body.action === "reset_timeout") {
-    const { error } = await supabase
+    const { error } = await adminClient
       .from("profiles")
       .update({ buyer_timeout_until: null })
       .eq("id", id);

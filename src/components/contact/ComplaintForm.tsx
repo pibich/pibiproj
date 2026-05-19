@@ -1,11 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
 import { MessageCircle } from "lucide-react";
 
 export function ComplaintForm({ csPhone }: { csPhone: string }) {
-  const t = useTranslations("contact");
-
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -30,7 +27,7 @@ ${message}`;
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            {t("complaintName")} *
+            Nama Anda *
           </label>
           <input
             name="name"
@@ -40,7 +37,7 @@ ${message}`;
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-gray-700">
-            {t("complaintEmail")}
+            Email Anda
           </label>
           <input
             name="email"
@@ -51,7 +48,7 @@ ${message}`;
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium text-gray-700">
-          {t("complaintMessage")} *
+          Detail Keluhan *
         </label>
         <textarea
           name="message"
@@ -65,7 +62,7 @@ ${message}`;
         className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-xl py-3 font-medium transition-colors"
       >
         <MessageCircle className="h-5 w-5" />
-        {t("complaintSend")}
+        Kirim via WhatsApp
       </button>
     </form>
   );
