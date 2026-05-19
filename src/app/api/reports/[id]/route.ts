@@ -34,7 +34,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Status tidak valid" }, { status: 400 });
   }
 
-  const adminClient = await createAdminClient();
+  const adminClient = createAdminClient();
 
   // Re-verify admin role using service role client to bypass RLS
   const { data: adminProfile } = await adminClient

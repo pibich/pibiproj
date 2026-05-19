@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/notifications";
 
 export async function POST(
@@ -7,17 +7,21 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: auctionId } = await params;
-  const supabase = await createAdminClient();
 
+  // SSR client for reading the user's session cookie
+  const authClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authClient.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: auction, error: auctionError } = await supabase
+  // Admin client (service role) for all DB writes — bypasses RLS reliably
+  const db = createAdminClient();
+
+  const { data: auction, error: auctionError } = await db
     .from("auctions")
     .select("id, seller_id, winner_id, status, transaction_confirmed, title")
     .eq("id", auctionId)
@@ -43,8 +47,7 @@ export async function POST(
     return NextResponse.json({ error: "Transaksi sudah dikonfirmasi sebelumnya" }, { status: 400 });
   }
 
-  // Mark transaction as confirmed
-  const { error: updateError } = await supabase
+  const { error: updateError } = await db
     .from("auctions")
     .update({ transaction_confirmed: true })
     .eq("id", auctionId);
@@ -54,40 +57,39 @@ export async function POST(
   }
 
   // Increment successful_sales for seller
-  const { data: sellerProfile } = await supabase
+  const { data: sellerProfile } = await db
     .from("profiles")
     .select("successful_sales")
     .eq("id", auction.seller_id)
     .single();
 
   if (sellerProfile) {
-    await supabase
+    await db
       .from("profiles")
       .update({ successful_sales: (sellerProfile.successful_sales ?? 0) + 1 })
       .eq("id", auction.seller_id);
   }
 
   // Increment successful_purchases for buyer
-  const { data: buyerProfile } = await supabase
+  const { data: buyerProfile } = await db
     .from("profiles")
     .select("successful_purchases")
     .eq("id", auction.winner_id)
     .single();
 
   if (buyerProfile) {
-    await supabase
+    await db
       .from("profiles")
       .update({ successful_purchases: (buyerProfile.successful_purchases ?? 0) + 1 })
       .eq("id", auction.winner_id);
   }
 
-  // Create notifications for both parties
-  await createNotification(supabase, {
+  await createNotification(db, {
     user_id: auction.seller_id,
     type: "transaction_confirmed",
     auction_id: auctionId,
   });
-  await createNotification(supabase, {
+  await createNotification(db, {
     user_id: auction.winner_id,
     type: "transaction_confirmed",
     auction_id: auctionId,

@@ -16,7 +16,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const adminClient = await createAdminClient();
+  const adminClient = createAdminClient();
 
   const { data: admin } = await adminClient
     .from("profiles")

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { containsProfanity } from "@/lib/profanity";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -13,12 +13,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Block users who are in an active timeout from creating auctions
+  const { data: sellerProfile } = await supabase
+    .from("profiles")
+    .select("buyer_timeout_until")
+    .eq("id", user.id)
+    .single();
+
+  if (
+    sellerProfile?.buyer_timeout_until &&
+    new Date(sellerProfile.buyer_timeout_until) > new Date()
+  ) {
+    const until = new Date(
+      sellerProfile.buyer_timeout_until,
+    ).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    return NextResponse.json(
+      { error: `Akun Anda sedang dalam masa timeout hingga ${until}.` },
+      { status: 403 },
+    );
+  }
+
   const body = await req.json();
 
   if (containsProfanity(body.title ?? "")) {
     return NextResponse.json(
       { error: "Judul lelang mengandung kata yang tidak pantas." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -26,7 +50,7 @@ export async function POST(req: NextRequest) {
   if (body.buy_now_price != null && body.buy_now_price <= body.starting_price) {
     return NextResponse.json(
       { error: "Harga Buy Now harus lebih tinggi dari harga mulai." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -38,13 +62,13 @@ export async function POST(req: NextRequest) {
     if (diffDays > 14) {
       return NextResponse.json(
         { error: "Durasi lelang maksimal 2 minggu (14 hari)." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (end <= start) {
       return NextResponse.json(
         { error: "Waktu selesai harus setelah waktu mulai." },
-        { status: 400 }
+        { status: 400 },
       );
     }
   }

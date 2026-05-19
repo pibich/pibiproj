@@ -17,7 +17,7 @@ export async function PATCH(
   }
 
   const body = await req.json() as { action: "toggle_role" | "reset_timeout" };
-  const adminClient = await createAdminClient();
+  const adminClient = createAdminClient();
 
   const { data: admin } = await adminClient
     .from("profiles")

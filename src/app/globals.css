@@ -82,6 +82,52 @@ html {
   animation: shimmer 2s infinite;
 }
 
+/* ─── Stream Chat layout overrides ─────────────────────────────────────────
+   Force Stream's wrapper divs to fill whatever container we put them in.
+   Without this, .str-chat collapses to content height and the chat frame
+   becomes unstable.
+──────────────────────────────────────────────────────────────────────────── */
+.str-chat {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+.str-chat__channel {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  max-width: none !important;
+}
+.str-chat__container {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+.str-chat__main-panel {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  max-width: none !important;
+  flex: 1 !important;
+}
+/* Channel list fills the bounded wrapper so it can scroll */
+.str-chat__channel-list,
+.str-chat__channel-list-messenger {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.str-chat__channel-list-messenger__main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Ensure action dropdowns float above adjacent panels */
+.str-chat__channel-preview-end-first-row .str-chat__channel-preview-messenger--last-message,
+.str-chat__channel-preview-action-btn + * {
+  z-index: 20;
+}
+
 /* Glass card effect */
 .glass {
   background: rgba(255, 255, 255, 0.7);

@@ -16,9 +16,13 @@ export default async function ChatPage({
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <h1 className="text-xl font-bold text-gray-900 mb-4">Pesan</h1>
-      <ChatWidget currentUser={user} targetUserId={seller} auctionId={auction} />
+    <div className="min-h-screen bg-sky-50 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto flex flex-col gap-4">
+        <h1 className="text-xl font-bold text-gray-900">Pesan</h1>
+        <div style={{ height: "min(calc(100dvh - 10rem), 680px)" }}>
+          <ChatWidget currentUser={user} targetUserId={seller} auctionId={auction} />
+        </div>
+      </div>
     </div>
   );
 }

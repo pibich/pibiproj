@@ -1,25 +1,32 @@
+import { MessageSquare, ShieldCheck, UserRound, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/Badge";
+import { createClient } from "@/lib/supabase/server";
 import { getInitials } from "@/lib/utils";
-import { ShieldCheck, MessageSquare, Users } from "lucide-react";
 import type { Profile } from "@/types/supabase";
 
 export const metadata: Metadata = { title: "Daftar Middleman" };
 
-type MiddlemanProfile = Pick<Profile, "id" | "name" | "username" | "avatar_url">;
+type MiddlemanProfile = Pick<
+  Profile,
+  "id" | "name" | "username" | "avatar_url"
+>;
 
 export default async function MiddlemanPage() {
   const supabase = await createClient();
 
-  const { data: middlemen } = await supabase
-    .from("profiles")
-    .select("id, name, username, avatar_url")
-    .eq("is_middleman", true)
-    .order("name");
+  const [{ data: middlemen }, { data: authData }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, name, username, avatar_url")
+      .eq("is_middleman", true)
+      .order("name"),
+    supabase.auth.getUser(),
+  ]);
 
   const list = (middlemen ?? []) as MiddlemanProfile[];
+  const currentUserId = authData.user?.id ?? null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -30,15 +37,18 @@ export default async function MiddlemanPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Daftar Middleman</h1>
         </div>
-        <p className="text-gray-500 text-sm ml-13">Middleman terverifikasi untuk membantu transaksi aman</p>
+        <p className="text-gray-500 text-sm ml-13">
+          Middleman terverifikasi untuk membantu transaksi aman
+        </p>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 text-sm text-blue-700 flex items-start gap-3">
         <Users className="h-4 w-4 mt-0.5 shrink-0" />
         <p>
-          Middleman adalah pengguna terverifikasi yang dapat diundang ke percakapan antara seller dan buyer
-          untuk memastikan transaksi berjalan aman. Pilih middleman dan mulai chat, lalu undang mereka
-          ke obrolan grup kamu dari halaman chat.
+          Middleman adalah pengguna terverifikasi yang dapat diundang ke
+          percakapan antara seller dan buyer untuk memastikan transaksi berjalan
+          aman. Chat dengan middleman pilihan kamu, lalu undang mereka ke grup
+          chat dari halaman pesan.
         </p>
       </div>
 
@@ -54,31 +64,59 @@ export default async function MiddlemanPage() {
               key={mm.id}
               className="bg-white rounded-2xl border border-gray-200 p-5 flex flex-col gap-4 hover:shadow-md hover:border-blue-200 transition-all"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold shrink-0">
+              {/* Avatar + name — clickable to profile */}
+              <Link
+                href={`/profile/${mm.username}`}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold shrink-0 overflow-hidden">
                   {mm.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={mm.avatar_url} alt={mm.name} className="w-12 h-12 rounded-full object-cover" />
+                    // biome-ignore lint/performance/noImgElement: external user avatar URL
+                    <img
+                      src={mm.avatar_url}
+                      alt={mm.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
                   ) : (
                     getInitials(mm.name)
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{mm.name}</p>
+                  <p className="font-semibold text-gray-900 truncate">
+                    {mm.name}
+                  </p>
                   <p className="text-sm text-gray-500">@{mm.username}</p>
                 </div>
-                <Badge variant="success" className="shrink-0 flex items-center gap-1">
+                <Badge
+                  variant="success"
+                  className="shrink-0 flex items-center gap-1"
+                >
                   <ShieldCheck className="h-3 w-3" />
                   Terverifikasi
                 </Badge>
-              </div>
-              <Link
-                href={`/chat?seller=${mm.id}`}
-                className="flex items-center justify-center gap-2 w-full py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
-              >
-                <MessageSquare className="h-4 w-4" />
-                Chat dengan {mm.name.split(" ")[0]}
               </Link>
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <Link
+                  href={`/profile/${mm.username}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <UserRound className="h-4 w-4" />
+                  Profil
+                </Link>
+
+                {/* Hide chat button for the middleman themselves */}
+                {currentUserId !== mm.id && (
+                  <Link
+                    href={`/chat?seller=${mm.id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-blue-200 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Chat
+                  </Link>
+                )}
+              </div>
             </div>
           ))}
         </div>

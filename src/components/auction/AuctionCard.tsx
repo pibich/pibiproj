@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { formatIDR, getTimeRemaining } from "@/lib/utils";
 import type { Auction, Profile, Category } from "@/types/supabase";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface AuctionCardProps {
   auction: Auction & {
@@ -30,7 +31,7 @@ const conditionColors: Record<string, "success" | "info" | "warning" | "danger" 
   light_play: "warning", heavy_play: "warning", damaged: "danger",
 };
 
-function CountdownBadge({ endTime }: { endTime: string }) {
+function CountdownBadge({ endTime, forcedEnded }: { endTime: string; forcedEnded: boolean }) {
   const [time, setTime] = useState<ReturnType<typeof getTimeRemaining> | null>(null);
 
   useEffect(() => {
@@ -41,11 +42,11 @@ function CountdownBadge({ endTime }: { endTime: string }) {
     return () => clearInterval(interval);
   }, [endTime]);
 
-  if (!time) return null;
-
-  if (time.expired) {
+  if (forcedEnded || time?.expired) {
     return <Badge variant="danger">Selesai</Badge>;
   }
+
+  if (!time) return null;
 
   const isUrgent = time.total < 3600;
 
@@ -60,6 +61,28 @@ function CountdownBadge({ endTime }: { endTime: string }) {
 }
 
 export function AuctionCard({ auction }: AuctionCardProps) {
+  const [status, setStatus] = useState<Auction["status"]>(auction.status);
+
+  // Realtime subscription: update card status when auction changes (e.g. buy now, timer close)
+  useEffect(() => {
+    if (status !== "active") return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`auction-card-${auction.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "auctions", filter: `id=eq.${auction.id}` },
+        (payload) => {
+          const updated = payload.new as { status: Auction["status"] };
+          if (updated.status !== "active") setStatus(updated.status);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [auction.id, status]);
+
+  const isActive = status === "active";
+
   return (
     <Link
       href={`/auctions/${auction.id}`}
@@ -82,19 +105,19 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-          {auction.status === "active" && auction.end_time && (
-            <CountdownBadge endTime={auction.end_time} />
+          {isActive && auction.end_time && (
+            <CountdownBadge endTime={auction.end_time} forcedEnded={false} />
           )}
-          {auction.status !== "active" && (
+          {!isActive && (
             <Badge
-              variant={auction.status === "completed" ? "success" : auction.status === "cancelled" ? "danger" : "default"}
+              variant={status === "completed" ? "success" : status === "cancelled" ? "danger" : "default"}
             >
-              {statusLabels[auction.status] ?? auction.status}
+              {statusLabels[status] ?? status}
             </Badge>
           )}
         </div>
 
-        {auction.buy_now_price && auction.status === "active" && (
+        {auction.buy_now_price && isActive && (
           <div className="absolute top-2 right-2">
             <Badge variant="info" className="shadow-sm">Buy Now</Badge>
           </div>
@@ -123,7 +146,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               {formatIDR(auction.current_price)}
             </p>
           </div>
-          {auction.buy_now_price && auction.status === "active" && (
+          {auction.buy_now_price && isActive && (
             <div className="text-right">
               <p className="text-xs text-slate-400">Buy Now</p>
               <p className="text-sm font-semibold text-emerald-600">

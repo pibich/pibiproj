@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { AuctionStatusTabs } from "@/components/auction/AuctionStatusTabs";
+import { Gavel, Clock } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 export const metadata: Metadata = { title: "Lelang" };
@@ -36,6 +37,7 @@ export default async function AuctionsPage({
 }) {
   const params = await searchParams;
   const supabase = await createClient();
+  const isEnded = params.status === "ended";
 
   const { data: rawCategories } = await supabase
     .from("categories")
@@ -55,22 +57,27 @@ export default async function AuctionsPage({
     .select(
       `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`
     )
-    .neq("status", "draft");
+    .neq("status", "draft")
+    .neq("status", "cancelled");
 
-  if (params.status === "ended") {
+  if (isEnded) {
     query = query.in("status", ["completed", "closed"]);
-  } else if (params.status) {
-    query = query.eq("status", params.status as Auction["status"]);
   } else {
     query = query.eq("status", "active");
   }
+
   if (params.category) query = query.eq("category_id", params.category);
   if (params.condition) query = query.eq("condition", params.condition as Auction["condition"]);
   if (params.q) query = query.ilike("title", `%${params.q}%`);
 
-  switch (params.sort) {
+  // Default sort: ending_soon for active, most recently ended for selesai
+  const effectiveSort = params.sort ?? (isEnded ? "recently_ended" : "ending_soon");
+  switch (effectiveSort) {
     case "ending_soon":
       query = query.order("end_time", { ascending: true });
+      break;
+    case "recently_ended":
+      query = query.order("end_time", { ascending: false });
       break;
     case "price_low":
       query = query.order("current_price", { ascending: true });
@@ -84,17 +91,30 @@ export default async function AuctionsPage({
 
   const { data: auctions } = await query.limit(48);
   const typedAuctions = (auctions ?? []) as unknown as AuctionWithRelations[];
-
   const conditions = Object.keys(conditionLabels);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Lelang</h1>
+      {/* Header + status tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Lelang</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {isEnded ? "Menampilkan lelang yang telah selesai" : "Menampilkan lelang yang sedang berlangsung"}
+          </p>
+        </div>
+        <Suspense>
+          <AuctionStatusTabs />
+        </Suspense>
+      </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Filters sidebar */}
         <aside className="w-full lg:w-56 shrink-0">
           <form className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-5">
+            {/* Preserve status param when submitting other filters */}
+            <input type="hidden" name="status" value={isEnded ? "ended" : ""} />
+
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
                 Cari
@@ -161,13 +181,24 @@ export default async function AuctionsPage({
               </label>
               <select
                 name="sort"
-                defaultValue={params.sort ?? "newest"}
+                defaultValue={effectiveSort}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="newest">Terbaru</option>
-                <option value="ending_soon">Segera Berakhir</option>
-                <option value="price_low">Harga Terendah</option>
-                <option value="price_high">Harga Tertinggi</option>
+                {isEnded ? (
+                  <>
+                    <option value="recently_ended">Terbaru Selesai</option>
+                    <option value="price_high">Harga Tertinggi</option>
+                    <option value="price_low">Harga Terendah</option>
+                    <option value="newest">Terbaru Dibuat</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="ending_soon">Segera Berakhir</option>
+                    <option value="newest">Terbaru Dibuat</option>
+                    <option value="price_low">Harga Terendah</option>
+                    <option value="price_high">Harga Tertinggi</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -182,16 +213,25 @@ export default async function AuctionsPage({
 
         {/* Grid */}
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-500">{typedAuctions.length} lelang ditemukan</p>
-            <Suspense>
-              <AuctionStatusTabs />
-            </Suspense>
-          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            {typedAuctions.length} lelang ditemukan
+          </p>
 
           {typedAuctions.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">Belum ada lelang</p>
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-200 flex flex-col items-center gap-3">
+              {isEnded ? (
+                <>
+                  <Clock className="h-10 w-10 text-gray-300" />
+                  <p className="text-gray-500 font-medium">Belum ada lelang yang selesai</p>
+                  <p className="text-sm text-gray-400">Coba ubah filter atau kembali lagi nanti</p>
+                </>
+              ) : (
+                <>
+                  <Gavel className="h-10 w-10 text-gray-300" />
+                  <p className="text-gray-500 font-medium">Belum ada lelang aktif</p>
+                  <p className="text-sm text-gray-400">Coba ubah filter atau kembali lagi nanti</p>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">

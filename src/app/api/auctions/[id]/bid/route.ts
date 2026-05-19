@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseAdmin } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/notifications";
+import type { Database } from "@/types/supabase";
+
+function getAdminClient() {
+  return createSupabaseAdmin<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: auctionId } = await params;
-  const supabase = await createClient();
 
+  // Use SSR client only to verify the user's session cookie
+  const authClient = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authClient.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -25,8 +35,10 @@ export async function POST(
     return NextResponse.json({ error: "Jumlah bid tidak valid" }, { status: 400 });
   }
 
-  // Fetch auction
-  const { data: auction, error: auctionError } = await supabase
+  // All DB operations use the admin client (service role — bypasses RLS)
+  const db = getAdminClient();
+
+  const { data: auction, error: auctionError } = await db
     .from("auctions")
     .select("*")
     .eq("id", auctionId)
@@ -45,7 +57,7 @@ export async function POST(
   }
 
   // Check buyer timeout
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from("profiles")
     .select("buyer_timeout_until")
     .eq("id", user.id)
@@ -56,72 +68,83 @@ export async function POST(
       day: "numeric", month: "long", year: "numeric",
     });
     return NextResponse.json(
-      { error: `Akun Anda sedang dalam masa timeout hingga ${until}. Tidak dapat melakukan bid saat ini.` },
+      { error: `Akun Anda sedang dalam masa timeout hingga ${until}.` },
       { status: 403 }
     );
   }
 
-  // Check end time
+  // Close auction if end_time already passed
   if (auction.end_time && new Date(auction.end_time) < new Date()) {
-    await supabase
-      .from("auctions")
-      .update({ status: "closed" })
-      .eq("id", auctionId);
-    // Notify seller and winner (idempotent via UNIQUE constraint)
-    await createNotification(supabase, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
+    await db.from("auctions").update({ status: "closed" }).eq("id", auctionId);
+    await createNotification(db, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
     if (auction.winner_id) {
-      await createNotification(supabase, { user_id: auction.winner_id, type: "auction_won", auction_id: auctionId });
+      await createNotification(db, { user_id: auction.winner_id, type: "auction_won", auction_id: auctionId });
     }
     return NextResponse.json({ error: "Lelang sudah berakhir" }, { status: 400 });
   }
+
+  // Get actual highest bid to prevent race conditions between simultaneous bids
+  const { data: highestBidRow } = await db
+    .from("bids")
+    .select("amount")
+    .eq("auction_id", auctionId)
+    .order("amount", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const actualHighestBid = Math.max(auction.current_price, highestBidRow?.amount ?? 0);
 
   if (isBuyNow) {
     if (!auction.buy_now_price) {
       return NextResponse.json({ error: "Tidak ada harga Buy Now" }, { status: 400 });
     }
 
-    // Place winning bid and close auction
-    await supabase.from("bids").update({ is_winning: false }).eq("auction_id", auctionId);
-    await supabase.from("bids").insert({
+    await db.from("bids").update({ is_winning: false }).eq("auction_id", auctionId);
+    await db.from("bids").insert({
       auction_id: auctionId,
       bidder_id: user.id,
       amount: auction.buy_now_price,
       is_winning: true,
     });
-    await supabase
+
+    const { data: closed, error: closeError } = await db
       .from("auctions")
       .update({
         current_price: auction.buy_now_price,
         status: "completed",
         winner_id: user.id,
       })
-      .eq("id", auctionId);
+      .eq("id", auctionId)
+      .select("id, status")
+      .single();
 
-    // Notify seller and buyer
-    await createNotification(supabase, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
-    await createNotification(supabase, { user_id: user.id, type: "auction_won", auction_id: auctionId });
+    if (closeError || closed?.status !== "completed") {
+      console.error("[buy-now] Failed to close auction:", closeError);
+      return NextResponse.json({ error: "Gagal menutup lelang" }, { status: 500 });
+    }
+
+    await createNotification(db, { user_id: auction.seller_id, type: "auction_ended", auction_id: auctionId });
+    await createNotification(db, { user_id: user.id, type: "auction_won", auction_id: auctionId });
 
     return NextResponse.json({ success: true });
   }
 
-  // Regular bid validation
-  const minBid = auction.current_price + auction.min_bid_increment;
+  // Regular bid: must exceed current highest by at least min_bid_increment
+  const minBid = actualHighestBid + auction.min_bid_increment;
   if (amount < minBid) {
     return NextResponse.json(
-      { error: `Bid minimum adalah ${minBid.toLocaleString("id-ID")}` },
+      { error: `Bid minimum adalah ${minBid.toLocaleString("id-ID")}. Bid harus lebih tinggi dari bid tertinggi saat ini.` },
       { status: 400 }
     );
   }
 
-  // Mark previous winning bid as non-winning
-  await supabase
+  await db
     .from("bids")
     .update({ is_winning: false })
     .eq("auction_id", auctionId)
     .eq("is_winning", true);
 
-  // Insert new bid
-  const { error: bidError } = await supabase.from("bids").insert({
+  const { error: bidError } = await db.from("bids").insert({
     auction_id: auctionId,
     bidder_id: user.id,
     amount,
@@ -132,11 +155,14 @@ export async function POST(
     return NextResponse.json({ error: "Gagal memasang bid" }, { status: 500 });
   }
 
-  // Update auction current price
-  await supabase
+  const { error: priceError } = await db
     .from("auctions")
     .update({ current_price: amount, winner_id: user.id })
     .eq("id", auctionId);
+
+  if (priceError) {
+    return NextResponse.json({ error: "Gagal memperbarui harga lelang" }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

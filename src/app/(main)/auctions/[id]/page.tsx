@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -6,6 +8,7 @@ import { getUser } from "@/lib/dal";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { BidForm } from "@/components/auction/BidForm";
 import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
+import { ImageGallery } from "@/components/auction/ImageGallery";
 import { Badge } from "@/components/ui/Badge";
 import { formatIDR, formatDate, getInitials } from "@/lib/utils";
 import {
@@ -133,34 +136,7 @@ export default async function AuctionDetailPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="aspect-[4/3] bg-gray-100 rounded-xl overflow-hidden">
-            {auction.images[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={auction.images[0]}
-                alt={auction.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Gavel className="h-16 w-16 text-gray-300" />
-              </div>
-            )}
-          </div>
-
-          {auction.images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {auction.images.map((img: string, i: number) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={i}
-                  src={img}
-                  alt={`${auction.title} ${i + 1}`}
-                  className="h-16 w-16 object-cover rounded-lg border-2 border-transparent hover:border-blue-500 cursor-pointer shrink-0"
-                />
-              ))}
-            </div>
-          )}
+          <ImageGallery images={auction.images} title={auction.title} />
 
           <div className="flex gap-2 flex-wrap">
             {auction.category && (
