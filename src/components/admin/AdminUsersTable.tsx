@@ -34,10 +34,11 @@ export function AdminUsersTable({
   adminId: string;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = users.filter(
     (u) =>
@@ -48,15 +49,20 @@ export function AdminUsersTable({
   async function handleAction(userId: string, action: "toggle_role" | "reset_timeout") {
     setLoadingId(userId);
     setLoadingAction(action);
+    setError(null);
     startTransition(async () => {
-      await fetch(`/api/admin/users/${userId}`, {
+      const res = await fetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
-      router.refresh();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Gagal memperbarui pengguna");
+      }
       setLoadingId(null);
       setLoadingAction(null);
+      router.refresh();
     });
   }
 
@@ -71,6 +77,12 @@ export function AdminUsersTable({
           className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700 mb-2">
+          {error}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -93,7 +105,7 @@ export function AdminUsersTable({
                 {filtered.map((user) => {
                   const timeoutActive = isTimeoutActive(user.buyer_timeout_until);
                   const isSelf = user.id === adminId;
-                  const isLoading = isPending && loadingId === user.id;
+                  const isLoading = loadingId === user.id;
 
                   return (
                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">

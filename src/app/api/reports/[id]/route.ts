@@ -36,6 +36,17 @@ export async function PATCH(
 
   const adminClient = await createAdminClient();
 
+  // Re-verify admin role using service role client to bypass RLS
+  const { data: adminProfile } = await adminClient
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (adminProfile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { error } = await adminClient
     .from("reports")
     .update({

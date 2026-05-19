@@ -16,7 +16,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: admin } = await supabase
+  const body = await req.json() as { action: "toggle_role" | "reset_timeout" };
+  const adminClient = await createAdminClient();
+
+  const { data: admin } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -25,9 +28,6 @@ export async function PATCH(
   if (admin?.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const body = await req.json() as { action: "toggle_role" | "reset_timeout" };
-  const adminClient = await createAdminClient();
 
   if (body.action === "toggle_role") {
     if (id === user.id) {

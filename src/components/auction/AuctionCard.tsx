@@ -94,7 +94,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           )}
         </div>
 
-        {auction.buy_now_price && (
+        {auction.buy_now_price && auction.status === "active" && (
           <div className="absolute top-2 right-2">
             <Badge variant="info" className="shadow-sm">Buy Now</Badge>
           </div>
@@ -123,7 +123,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               {formatIDR(auction.current_price)}
             </p>
           </div>
-          {auction.buy_now_price && (
+          {auction.buy_now_price && auction.status === "active" && (
             <div className="text-right">
               <p className="text-xs text-slate-400">Buy Now</p>
               <p className="text-sm font-semibold text-emerald-600">

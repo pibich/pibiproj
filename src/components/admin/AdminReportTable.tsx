@@ -35,8 +35,10 @@ export function AdminReportTable({
   adminId: string;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = filter === "all" ? reports : reports.filter((r) => r.status === filter);
 
@@ -45,12 +47,19 @@ export function AdminReportTable({
     status: "approved" | "rejected",
     reviewedBy: string
   ) {
+    setLoadingId(reportId);
+    setError(null);
     startTransition(async () => {
-      await fetch(`/api/reports/${reportId}`, {
+      const res = await fetch(`/api/reports/${reportId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, reviewed_by: reviewedBy }),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Gagal memperbarui laporan");
+      }
+      setLoadingId(null);
       router.refresh();
     });
   }
@@ -87,6 +96,12 @@ export function AdminReportTable({
           </button>
         ))}
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -150,7 +165,7 @@ export function AdminReportTable({
                     <Button
                       size="sm"
                       variant="danger"
-                      loading={isPending}
+                      loading={loadingId === report.id}
                       onClick={() => updateStatus(report.id, "approved", adminId)}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -159,7 +174,7 @@ export function AdminReportTable({
                     <Button
                       size="sm"
                       variant="outline"
-                      loading={isPending}
+                      loading={loadingId === report.id}
                       onClick={() => updateStatus(report.id, "rejected", adminId)}
                     >
                       <XCircle className="h-3.5 w-3.5" />

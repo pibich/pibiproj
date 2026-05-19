@@ -123,12 +123,12 @@ export async function loginAction(
   }
 
   revalidatePath("/", "layout");
-  redirect("/id/dashboard");
+  redirect("/dashboard");
 }
 
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/id/login");
+  redirect("/login");
 }

@@ -220,7 +220,7 @@ export default async function AuctionDetailPage({
             </div>
 
             {auction.end_time && !isEnded && (
-              <CountdownTimer endTime={auction.end_time} />
+              <CountdownTimer endTime={auction.end_time} auctionId={auction.id} />
             )}
 
             <BidForm

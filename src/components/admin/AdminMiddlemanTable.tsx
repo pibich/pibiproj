@@ -12,9 +12,10 @@ type MiddlemanRow = Pick<Profile, "id" | "name" | "username" | "avatar_url" | "i
 
 export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = users.filter(
     (u) =>
@@ -24,10 +25,15 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
 
   async function toggleMiddleman(userId: string) {
     setLoadingId(userId);
+    setError(null);
     startTransition(async () => {
-      await fetch(`/api/admin/middleman/${userId}`, { method: "PATCH" });
-      router.refresh();
+      const res = await fetch(`/api/admin/middleman/${userId}`, { method: "PATCH" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Gagal memperbarui status middleman");
+      }
       setLoadingId(null);
+      router.refresh();
     });
   }
 
@@ -43,6 +49,12 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
           className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         />
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
@@ -84,7 +96,7 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
                 <Button
                   size="sm"
                   variant={user.is_middleman ? "outline" : "primary"}
-                  loading={isPending && loadingId === user.id}
+                  loading={loadingId === user.id}
                   onClick={() => toggleMiddleman(user.id)}
                 >
                   {user.is_middleman ? (

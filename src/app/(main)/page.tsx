@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Button } from "@/components/ui/Button";
-import { Gavel, Shield, MessageCircle, TrendingUp, ArrowRight, Sparkles } from "lucide-react";
+import { FeaturesCarousel } from "@/components/home/FeaturesCarousel";
+import { Gavel, ArrowRight, Sparkles } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 export const metadata: Metadata = { title: "TCG Marketplace — Lelang Kartu TCG Terpercaya" };
@@ -28,36 +29,6 @@ async function getFeaturedAuctions() {
   return (data ?? []) as unknown as AuctionWithRelations[];
 }
 
-const features = [
-  {
-    icon: Gavel,
-    title: "Sistem Lelang Real-Time",
-    desc: "Bid langsung dan pantau harga secara real-time hingga lelang berakhir.",
-    color: "from-sky-400 to-blue-500",
-    bg: "bg-sky-50",
-  },
-  {
-    icon: Shield,
-    title: "Sistem Blacklist",
-    desc: "Cek daftar penjual/pembeli bermasalah sebelum bertransaksi.",
-    color: "from-emerald-400 to-teal-500",
-    bg: "bg-emerald-50",
-  },
-  {
-    icon: MessageCircle,
-    title: "Chat Langsung",
-    desc: "Komunikasi langsung dengan penjual sebelum dan sesudah lelang.",
-    color: "from-violet-400 to-purple-500",
-    bg: "bg-violet-50",
-  },
-  {
-    icon: TrendingUp,
-    title: "Komunitas TCG",
-    desc: "Platform khusus kolektor kartu Pokémon, MTG, Yugioh, dan One Piece.",
-    color: "from-amber-400 to-orange-500",
-    bg: "bg-amber-50",
-  },
-];
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -169,23 +140,7 @@ export default async function HomePage() {
             Semua yang kamu butuhkan untuk transaksi kartu TCG yang aman dan mudah
           </p>
         </div>
-        <div className="bg-white rounded-2xl border border-sky-100 shadow-sm overflow-x-auto">
-          <div className="flex min-w-max sm:min-w-0 divide-x divide-sky-100">
-            {features.map(({ icon: Icon, title, desc, color, bg }) => (
-              <div key={title} className="flex items-start gap-4 p-6 flex-1 min-w-[220px]">
-                <div className={`shrink-0 w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
-                  <div className={`w-6 h-6 bg-gradient-to-br ${color} rounded-lg flex items-center justify-center`}>
-                    <Icon className="h-3.5 w-3.5 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-slate-800 text-sm">{title}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FeaturesCarousel />
       </section>
     </div>
   );

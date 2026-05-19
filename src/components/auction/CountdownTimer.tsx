@@ -3,9 +3,29 @@
 import { useEffect, useState } from "react";
 import { getTimeRemaining } from "@/lib/utils";
 import { Clock } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-export function CountdownTimer({ endTime }: { endTime: string }) {
+export function CountdownTimer({ endTime, auctionId }: { endTime: string; auctionId?: string }) {
   const [time, setTime] = useState(getTimeRemaining(endTime));
+  const [forcedEnded, setForcedEnded] = useState(false);
+
+  // Realtime: immediately stop timer if auction status changes (e.g. buy now)
+  useEffect(() => {
+    if (!auctionId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`timer-${auctionId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "auctions", filter: `id=eq.${auctionId}` },
+        (payload) => {
+          const updated = payload.new as { status: string };
+          if (updated.status !== "active") setForcedEnded(true);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [auctionId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -14,7 +34,7 @@ export function CountdownTimer({ endTime }: { endTime: string }) {
     return () => clearInterval(interval);
   }, [endTime]);
 
-  if (time.expired) {
+  if (forcedEnded || time.expired) {
     return (
       <div className="flex items-center gap-2 text-red-600">
         <Clock className="h-5 w-5" />

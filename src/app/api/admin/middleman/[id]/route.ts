@@ -16,7 +16,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: admin } = await supabase
+  const adminClient = await createAdminClient();
+
+  const { data: admin } = await adminClient
     .from("profiles")
     .select("role")
     .eq("id", user.id)
@@ -25,8 +27,6 @@ export async function PATCH(
   if (admin?.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-
-  const adminClient = await createAdminClient();
 
   const { data: target, error: fetchError } = await adminClient
     .from("profiles")

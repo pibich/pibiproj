@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { formatIDR } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Gavel, Zap, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Gavel, Zap, AlertCircle, CheckCircle2, LogIn } from "lucide-react";
 
 interface BidFormProps {
   auctionId: string;
@@ -29,7 +30,7 @@ export function BidForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [bidAmount, setBidAmount] = useState(currentPrice + minIncrement);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error" | "login"; text: string } | null>(null);
   const [auctionEnded, setAuctionEnded] = useState(initialEnded);
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export function BidForm({
   async function handleBid(e: React.FormEvent) {
     e.preventDefault();
     if (!isLoggedIn) {
-      router.push("/login");
+      setMessage({ type: "login", text: "Silakan login terlebih dahulu untuk memasang bid." });
       return;
     }
 
@@ -95,7 +96,7 @@ export function BidForm({
 
   async function handleBuyNow() {
     if (!isLoggedIn) {
-      router.push("/login");
+      setMessage({ type: "login", text: "Silakan login terlebih dahulu untuk menggunakan fitur Beli Langsung." });
       return;
     }
     if (!buyNowPrice) return;
@@ -138,18 +139,29 @@ export function BidForm({
     <div className="flex flex-col gap-3">
       {message && (
         <div
-          className={`flex items-center gap-2 rounded-lg p-3 text-sm ${
+          className={`flex items-start gap-2 rounded-lg p-3 text-sm ${
             message.type === "success"
               ? "bg-green-50 border border-green-200 text-green-700"
+              : message.type === "login"
+              ? "bg-blue-50 border border-blue-200 text-blue-700"
               : "bg-red-50 border border-red-200 text-red-700"
           }`}
         >
           {message.type === "success" ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+          ) : message.type === "login" ? (
+            <LogIn className="h-4 w-4 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="h-4 w-4 shrink-0" />
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           )}
-          {message.text}
+          <span>
+            {message.text}{" "}
+            {message.type === "login" && (
+              <Link href="/login" className="font-semibold underline underline-offset-2">
+                Login sekarang
+              </Link>
+            )}
+          </span>
         </div>
       )}
 
