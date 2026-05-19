@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { formatIDR, formatDate } from "@/lib/utils";
+import { formatIDR } from "@/lib/utils";
 import { Gavel, Package, AlertTriangle, Plus, Trophy, Clock, CheckCircle2, ShoppingBag } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
@@ -265,6 +265,7 @@ export default async function DashboardPage({
               <AuctionCard
                 key={auction.id}
                 auction={auction}
+              />
             ))}
           </div>
         )}
