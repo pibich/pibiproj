@@ -93,7 +93,8 @@ export default async function DashboardPage({
 
   const typedBids = (myBids ?? []) as unknown as BidWithAuction[];
   const typedPendingConfirm = (pendingConfirmAuctions ?? []) as unknown as PendingConfirmAuction[];
-  const activeAuctions = (myAuctions ?? []).filter((a) => a.status === "active");
+  const typedMyAuctions = (myAuctions ?? []) as unknown as AuctionWithRelations[];
+  const activeAuctions = typedMyAuctions.filter((a) => a.status === "active");
 
   const stats = [
     { label: "Lelang Aktif", value: activeAuctions.length, icon: Gavel, color: "text-blue-600" },
@@ -250,7 +251,7 @@ export default async function DashboardPage({
           <h2 className="text-lg font-semibold text-gray-900">{t("myAuctions")}</h2>
         </div>
 
-        {(myAuctions ?? []).length === 0 ? (
+        {typedMyAuctions.length === 0 ? (
           <div className="text-center py-10 bg-white rounded-xl border border-gray-200">
             <Gavel className="h-10 w-10 text-gray-300 mx-auto mb-2" />
             <p className="text-gray-500 text-sm">{t("noAuctions")}</p>
@@ -260,11 +261,10 @@ export default async function DashboardPage({
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {(myAuctions ?? []).map((auction) => (
+            {typedMyAuctions.map((auction) => (
               <AuctionCard
                 key={auction.id}
-                auction={auction as unknown as AuctionWithRelations}
-              />
+                auction={auction}
             ))}
           </div>
         )}
