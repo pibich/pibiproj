@@ -54,7 +54,7 @@ export default async function AuctionDetailPage({
   const supabase = await createClient();
   const currentUser = await getUser();
 
-  const result = await supabase
+  const { data: auctionRaw, error: auctionError } = await (supabase
     .from("auctions")
     .select(
       `*,
@@ -64,11 +64,11 @@ export default async function AuctionDetailPage({
       bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`
     )
     .eq("id", id)
-    .single();
+    .single() as unknown as Promise<{ data: FullAuction | null; error: object | null }>);
 
-  if (result.error || !result.data) notFound();
+  if (auctionError || !auctionRaw) notFound();
 
-  const auction = result.data as unknown as FullAuction;
+  const auction = auctionRaw;
 
   // Seller success rate
   const { data: sellerStats } = await supabase
