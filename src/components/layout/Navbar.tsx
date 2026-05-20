@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { ChatIconWithBadge } from "./ChatIconWithBadge";
 import type { Profile } from "@/types/supabase";
 
 interface NavbarProps {
@@ -72,13 +73,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                   </Button>
                 </Link>
 
-                <Link
-                  href="/chat"
-                  className="p-2 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-all duration-200"
-                  aria-label="Pesan"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </Link>
+                <ChatIconWithBadge userId={user.id} />
 
                 <NotificationBell userId={user.id} />
 

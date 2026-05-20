@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import { StreamChat } from "stream-chat";
 import { createClient } from "@/lib/supabase/client";
 import { NotificationItem } from "./NotificationItem";
 import type { Notification } from "@/types/supabase";
@@ -12,23 +11,13 @@ type NotificationWithAuction = Notification & {
   auction: { id: string; title: string } | null;
 };
 
-interface StreamMessage {
-  type?: string;
-  unread_count?: number;
-  total_unread_count?: number;
-}
-
 export function NotificationBell({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationWithAuction[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [streamUnread, setStreamUnread] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const totalUnread = unreadCount + streamUnread;
-
-  // Fetch initial notifications
   useEffect(() => {
     fetch("/api/notifications")
       .then((r) => r.json())
@@ -39,7 +28,6 @@ export function NotificationBell({ userId }: { userId: string }) {
       .catch(() => {});
   }, []);
 
-  // Supabase Realtime: watch for new notifications
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -56,7 +44,7 @@ export function NotificationBell({ userId }: { userId: string }) {
           const newNotif = payload.new as NotificationWithAuction;
           setNotifications((prev) => [newNotif, ...prev]);
           setUnreadCount((c) => c + 1);
-        }
+        },
       )
       .subscribe();
 
@@ -65,56 +53,6 @@ export function NotificationBell({ userId }: { userId: string }) {
     };
   }, [userId]);
 
-  // GetStream: watch for new chat messages
-  useEffect(() => {
-    let streamClient: StreamChat | null = null;
-    let cancelled = false;
-
-    async function init() {
-      try {
-        const res = await fetch("/api/stream-token", { method: "POST" });
-        if (!res.ok || cancelled) return;
-        const { token, apiKey, userId: uid, userName, userImage } = await res.json();
-        if (cancelled) return;
-
-        streamClient = StreamChat.getInstance(apiKey);
-
-        if (streamClient.userID && streamClient.userID !== uid) {
-          await streamClient.disconnectUser().catch(() => {});
-        }
-        if (cancelled) return;
-
-        if (!streamClient.userID) {
-          await streamClient.connectUser(
-            { id: uid, name: userName, image: userImage ?? undefined },
-            token
-          );
-        }
-        if (cancelled) return;
-
-        // Set initial unread count
-        setStreamUnread((streamClient.user as { total_unread_count?: number })?.total_unread_count ?? 0);
-
-        streamClient.on("notification.message_new", (event: StreamMessage) => {
-          setStreamUnread((c) => c + (event.unread_count ?? 1));
-        });
-
-        streamClient.on("notification.mark_read", (event: StreamMessage) => {
-          setStreamUnread(event.total_unread_count ?? 0);
-        });
-      } catch {
-        // GetStream unavailable — silent fail, chat badge just won't show
-      }
-    }
-
-    init();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
-
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -128,17 +66,17 @@ export function NotificationBell({ userId }: { userId: string }) {
   async function handleOpen() {
     setOpen((prev) => !prev);
     if (!open && unreadCount > 0) {
-      // Mark Supabase notifications as read
       await fetch("/api/notifications/read-all", { method: "PATCH" });
       setUnreadCount(0);
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     }
   }
 
-  function handleChatNotificationClick() {
-    setStreamUnread(0);
+  function handleNotificationClick(auctionId: string | null | undefined) {
     setOpen(false);
-    router.push("/chat");
+    if (auctionId) {
+      router.push(`/auctions/${auctionId}`);
+    }
   }
 
   return (
@@ -149,9 +87,9 @@ export function NotificationBell({ userId }: { userId: string }) {
         aria-label="Notifikasi"
       >
         <Bell className="h-5 w-5" />
-        {totalUnread > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
-            {totalUnread > 9 ? "9+" : totalUnread}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -163,32 +101,26 @@ export function NotificationBell({ userId }: { userId: string }) {
           </div>
 
           <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
-            {streamUnread > 0 && (
-              <button
-                onClick={handleChatNotificationClick}
-                className="w-full text-left"
-              >
-                <NotificationItem
-                  type="new_message"
-                  isRead={false}
-                />
-              </button>
-            )}
-
-            {notifications.length === 0 && streamUnread === 0 && (
+            {notifications.length === 0 && (
               <p className="text-sm text-gray-400 text-center py-8">
                 Belum ada notifikasi
               </p>
             )}
 
             {notifications.map((n) => (
-              <NotificationItem
+              <button
                 key={n.id}
-                type={n.type}
-                auctionTitle={n.auction?.title}
-                createdAt={n.created_at}
-                isRead={n.is_read}
-              />
+                type="button"
+                onClick={() => handleNotificationClick(n.auction?.id)}
+                className="w-full text-left"
+              >
+                <NotificationItem
+                  type={n.type}
+                  auctionTitle={n.auction?.title}
+                  createdAt={n.created_at}
+                  isRead={n.is_read}
+                />
+              </button>
             ))}
           </div>
         </div>

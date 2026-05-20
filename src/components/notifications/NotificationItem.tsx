@@ -2,9 +2,9 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Trophy, Package, CheckCircle, MessageSquare } from "lucide-react";
+import { Trophy, Package, CheckCircle } from "lucide-react";
 
-type NotificationType = "auction_won" | "auction_ended" | "transaction_confirmed" | "new_message";
+type NotificationType = "auction_won" | "auction_ended" | "transaction_confirmed";
 
 interface NotificationItemProps {
   type: NotificationType;
@@ -17,14 +17,12 @@ const icons: Record<NotificationType, React.ElementType> = {
   auction_won: Trophy,
   auction_ended: Package,
   transaction_confirmed: CheckCircle,
-  new_message: MessageSquare,
 };
 
 const colors: Record<NotificationType, string> = {
   auction_won: "text-green-500 bg-green-50",
   auction_ended: "text-blue-500 bg-blue-50",
   transaction_confirmed: "text-emerald-500 bg-emerald-50",
-  new_message: "text-sky-500 bg-sky-50",
 };
 
 function getLabel(type: NotificationType, auctionTitle?: string | null): string {
@@ -36,8 +34,6 @@ function getLabel(type: NotificationType, auctionTitle?: string | null): string 
       return `Lelang Anda telah berakhir: ${title}`;
     case "transaction_confirmed":
       return `Transaksi terkonfirmasi: ${title}`;
-    case "new_message":
-      return "1 pesan baru";
   }
 }
 
@@ -46,7 +42,7 @@ export function NotificationItem({ type, auctionTitle, createdAt, isRead }: Noti
   const colorClass = colors[type];
 
   return (
-    <div className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${!isRead ? "bg-sky-50/40" : ""}`}>
+    <div className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!isRead ? "bg-sky-50/40" : ""}`}>
       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
         <Icon className="h-4 w-4" />
       </div>
