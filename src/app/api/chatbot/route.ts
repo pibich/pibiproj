@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createGeminiClient } from "@/lib/gemini/client";
+import { createClient } from "@/lib/supabase/server";
 
 const AUTH_LIMIT = 15;
 const GUEST_LIMIT = 5;
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       if (usage.message_count >= limit) {
         return NextResponse.json(
           { error: `Batas pesan harian tercapai (${limit} pesan/hari)` },
-          { status: 429 }
+          { status: 429 },
         );
       }
       await supabase
@@ -64,8 +64,10 @@ export async function POST(req: NextRequest) {
     if (usage) {
       if (usage.message_count >= limit) {
         return NextResponse.json(
-          { error: `Batas pesan tercapai (${limit} pesan/sesi). Daftar untuk mendapatkan lebih banyak.` },
-          { status: 429 }
+          {
+            error: `Batas pesan tercapai (${limit} pesan/sesi). Daftar untuk mendapatkan lebih banyak.`,
+          },
+          { status: 429 },
         );
       }
       await supabase
@@ -95,7 +97,7 @@ export async function POST(req: NextRequest) {
     console.error("Gemini error:", err);
     return NextResponse.json(
       { error: "Gagal menghubungi asisten. Coba lagi nanti." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

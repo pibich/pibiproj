@@ -16,7 +16,8 @@ import { getInitials } from "@/lib/utils";
 import { UserProfileModal } from "./UserProfileModal";
 
 export function CustomMessage() {
-  const { message, isMyMessage, handleReaction, handleDelete } = useMessageContext();
+  const { message, isMyMessage, handleReaction, handleDelete } =
+    useMessageContext();
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);

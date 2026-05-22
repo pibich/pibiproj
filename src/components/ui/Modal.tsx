@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
 
@@ -55,7 +55,7 @@ export function Modal({
         className={cn(
           "w-full bg-white rounded-xl shadow-xl",
           sizes[size],
-          className
+          className,
         )}
       >
         {title && (

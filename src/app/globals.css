@@ -54,18 +54,33 @@ html {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 
 .animate-fade-in-up {
@@ -77,7 +92,12 @@ html {
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -122,8 +142,22 @@ html {
   min-height: 0;
   overflow-y: auto;
 }
+/* Undo Stream's mobile-hide: Stream sets visibility:hidden + position:absolute
+   on .str-chat__channel-list at ≤767px so it can overlay it as a drawer.
+   We manage show/hide ourselves, so we need to reset all of those. */
+@media (max-width: 767px) {
+  .str-chat__channel-list {
+    visibility: visible !important;
+    position: static !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
 /* Ensure action dropdowns float above adjacent panels */
-.str-chat__channel-preview-end-first-row .str-chat__channel-preview-messenger--last-message,
+.str-chat__channel-preview-end-first-row
+.str-chat__channel-preview-messenger--last-message,
 .str-chat__channel-preview-action-btn + * {
   z-index: 20;
 }

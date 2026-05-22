@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Gavel, Shield, MessageCircle, TrendingUp } from "lucide-react";
+import { Gavel, MessageCircle, Shield, TrendingUp } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const features = [
   {
@@ -38,9 +38,13 @@ const features = [
   },
 ];
 
+const DRAG_THRESHOLD = 40;
+
 export function FeaturesCarousel() {
   const [active, setActive] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef<number | null>(null);
 
   const next = useCallback(() => {
     setActive((prev) => (prev + 1) % features.length);
@@ -56,63 +60,88 @@ export function FeaturesCarousel() {
     return () => clearInterval(id);
   }, [isPaused, next]);
 
+  function handleDragStart(x: number) {
+    dragStartX.current = x;
+    setIsDragging(true);
+    setIsPaused(true);
+  }
+
+  function handleDragEnd(x: number) {
+    if (dragStartX.current === null) return;
+    const diff = dragStartX.current - x;
+    if (Math.abs(diff) > DRAG_THRESHOLD) {
+      diff > 0 ? next() : prev();
+    }
+    dragStartX.current = null;
+    setIsDragging(false);
+    setIsPaused(false);
+  }
+
+  function handleDragCancel() {
+    dragStartX.current = null;
+    setIsDragging(false);
+    setIsPaused(false);
+  }
+
   const { icon: Icon, title, desc, color, bg, accent } = features[active];
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag-to-navigate carousel; keyboard navigation via dot buttons below
     <div
-      className="bg-white rounded-2xl border border-sky-100 shadow-sm overflow-hidden"
+      className={[
+        "bg-white rounded-2xl border border-sky-100 shadow-sm overflow-hidden select-none",
+        isDragging ? "cursor-grabbing" : "cursor-grab",
+      ].join(" ")}
       onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseLeave={() => {
+        setIsPaused(false);
+        handleDragCancel();
+      }}
+      onMouseDown={(e) => handleDragStart(e.clientX)}
+      onMouseUp={(e) => handleDragEnd(e.clientX)}
+      onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+      onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
     >
       {/* Progress bar */}
       <div className="h-1 bg-sky-50">
         <div
           className={`h-full bg-gradient-to-r ${color} transition-none`}
-          style={{ width: `${((active + 1) / features.length) * 100}%`, transition: "width 0.4s ease" }}
+          style={{
+            width: `${((active + 1) / features.length) * 100}%`,
+            transition: "width 0.4s ease",
+          }}
         />
       </div>
 
-      <div className="flex items-stretch">
-        {/* Main content */}
-        <div className="flex-1 p-6 sm:p-8 flex items-center gap-6">
-          <div className={`shrink-0 w-14 h-14 ${bg} rounded-2xl flex items-center justify-center`}>
-            <div className={`w-8 h-8 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center`}>
-              <Icon className="h-4 w-4 text-white" />
-            </div>
-          </div>
-          <div className="min-w-0">
-            <h3 className={`font-bold text-slate-800 text-base mb-1 ${accent}`}>{title}</h3>
-            <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
+      <div className="p-6 sm:p-8 flex items-center gap-6">
+        <div
+          className={`shrink-0 w-14 h-14 ${bg} rounded-2xl flex items-center justify-center`}
+        >
+          <div
+            className={`w-8 h-8 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center`}
+          >
+            <Icon className="h-4 w-4 text-white" />
           </div>
         </div>
-
-        {/* Navigation */}
-        <div className="shrink-0 flex flex-col items-center justify-center gap-2 pr-4">
-          <button
-            onClick={prev}
-            className="w-8 h-8 rounded-full bg-sky-50 hover:bg-sky-100 flex items-center justify-center transition-colors"
-            aria-label="Sebelumnya"
-          >
-            <ChevronLeft className="h-4 w-4 text-sky-600" />
-          </button>
-          <button
-            onClick={next}
-            className="w-8 h-8 rounded-full bg-sky-50 hover:bg-sky-100 flex items-center justify-center transition-colors"
-            aria-label="Selanjutnya"
-          >
-            <ChevronRight className="h-4 w-4 text-sky-600" />
-          </button>
+        <div className="min-w-0">
+          <h3 className={`font-bold text-slate-800 text-base mb-1 ${accent}`}>
+            {title}
+          </h3>
+          <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
         </div>
       </div>
 
       {/* Dots */}
       <div className="flex justify-center gap-1.5 pb-4">
-        {features.map((_, i) => (
+        {features.map((feat, i) => (
           <button
-            key={i}
+            key={feat.title}
+            type="button"
             onClick={() => setActive(i)}
             className={`rounded-full transition-all duration-300 ${
-              i === active ? "w-5 h-2 bg-sky-500" : "w-2 h-2 bg-sky-200 hover:bg-sky-300"
+              i === active
+                ? "w-5 h-2 bg-sky-500"
+                : "w-2 h-2 bg-sky-200 hover:bg-sky-300"
             }`}
             aria-label={`Slide ${i + 1}`}
           />

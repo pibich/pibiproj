@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/utils";
-import { CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 
 export type ReportRow = {
   id: string;
@@ -14,7 +14,12 @@ export type ReportRow = {
   status: "pending" | "reviewed" | "approved" | "rejected";
   created_at: string;
   reporter: { id: string; username: string; name: string } | null;
-  reported: { id: string; username: string; name: string; buyer_warning_count: number } | null;
+  reported: {
+    id: string;
+    username: string;
+    name: string;
+    buyer_warning_count: number;
+  } | null;
   auction: { id: string; title: string } | null;
 };
 
@@ -36,16 +41,19 @@ export function AdminReportTable({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [filter, setFilter] = useState<
+    "all" | "pending" | "approved" | "rejected"
+  >("pending");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const filtered = filter === "all" ? reports : reports.filter((r) => r.status === filter);
+  const filtered =
+    filter === "all" ? reports : reports.filter((r) => r.status === filter);
 
   async function updateStatus(
     reportId: string,
     status: "approved" | "rejected",
-    reviewedBy: string
+    reviewedBy: string,
   ) {
     setLoadingId(reportId);
     setError(null);
@@ -66,10 +74,14 @@ export function AdminReportTable({
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="warning">Menunggu</Badge>;
-      case "approved": return <Badge variant="danger">Disetujui</Badge>;
-      case "rejected": return <Badge variant="default">Ditolak</Badge>;
-      default: return <Badge>{status}</Badge>;
+      case "pending":
+        return <Badge variant="warning">Menunggu</Badge>;
+      case "approved":
+        return <Badge variant="danger">Disetujui</Badge>;
+      case "rejected":
+        return <Badge variant="default">Ditolak</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
   };
 
@@ -87,7 +99,13 @@ export function AdminReportTable({
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {f === "all" ? "Semua" : f === "pending" ? "Menunggu" : f === "approved" ? "Disetujui" : "Ditolak"}
+            {f === "all"
+              ? "Semua"
+              : f === "pending"
+                ? "Menunggu"
+                : f === "approved"
+                  ? "Disetujui"
+                  : "Ditolak"}
             {f === "pending" && (
               <span className="ml-1.5 bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">
                 {reports.filter((r) => r.status === "pending").length}
@@ -118,20 +136,30 @@ export function AdminReportTable({
                 <div className="flex flex-col gap-2 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     {statusBadge(report.status)}
-                    <Badge variant="outline">{reasonLabels[report.reason] ?? report.reason}</Badge>
-                    <span className="text-xs text-gray-400">{formatDate(report.created_at)}</span>
+                    <Badge variant="outline">
+                      {reasonLabels[report.reason] ?? report.reason}
+                    </Badge>
+                    <span className="text-xs text-gray-400">
+                      {formatDate(report.created_at)}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Pelapor</p>
+                      <p className="text-xs font-medium text-gray-500 mb-0.5">
+                        Pelapor
+                      </p>
                       <p className="font-medium text-gray-900">
                         {report.reporter?.name ?? "Unknown"}
                       </p>
-                      <p className="text-gray-500">@{report.reporter?.username}</p>
+                      <p className="text-gray-500">
+                        @{report.reporter?.username}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Dilaporkan</p>
+                      <p className="text-xs font-medium text-gray-500 mb-0.5">
+                        Dilaporkan
+                      </p>
                       <div className="flex items-center gap-1.5">
                         <p className="font-medium text-gray-900">
                           {report.reported?.name ?? "Unknown"}
@@ -143,7 +171,9 @@ export function AdminReportTable({
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-500">@{report.reported?.username}</p>
+                      <p className="text-gray-500">
+                        @{report.reported?.username}
+                      </p>
                     </div>
                   </div>
 
@@ -166,7 +196,9 @@ export function AdminReportTable({
                       size="sm"
                       variant="danger"
                       loading={loadingId === report.id}
-                      onClick={() => updateStatus(report.id, "approved", adminId)}
+                      onClick={() =>
+                        updateStatus(report.id, "approved", adminId)
+                      }
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       Setujui
@@ -175,7 +207,9 @@ export function AdminReportTable({
                       size="sm"
                       variant="outline"
                       loading={loadingId === report.id}
-                      onClick={() => updateStatus(report.id, "rejected", adminId)}
+                      onClick={() =>
+                        updateStatus(report.id, "rejected", adminId)
+                      }
                     >
                       <XCircle className="h-3.5 w-3.5" />
                       Tolak

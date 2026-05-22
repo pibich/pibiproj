@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
-import { getUser } from "@/lib/dal";
-import { AddManualBlacklistForm } from "@/components/blacklist/AddManualBlacklistForm";
 import { AdminBlacklistTable } from "@/components/admin/AdminBlacklistTable";
+import { AddManualBlacklistForm } from "@/components/blacklist/AddManualBlacklistForm";
+import { getUser } from "@/lib/dal";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Admin - Blacklist" };
 

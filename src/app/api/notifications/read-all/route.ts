@@ -19,7 +19,10 @@ export async function PATCH() {
     .eq("is_read", false);
 
   if (error) {
-    return NextResponse.json({ error: "Gagal menandai notifikasi" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal menandai notifikasi" },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ success: true });

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/Modal";
-import { Button } from "@/components/ui/Button";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 
 interface ReportUserModalProps {
   open: boolean;
@@ -114,7 +114,10 @@ export function ReportUserModal({
             </label>
             <div className="flex flex-col gap-1.5">
               {REASONS.map((r) => (
-                <label key={r} className="flex items-center gap-2 cursor-pointer group">
+                <label
+                  key={r}
+                  className="flex items-center gap-2 cursor-pointer group"
+                >
                   <input
                     type="radio"
                     name="reason"
@@ -132,7 +135,10 @@ export function ReportUserModal({
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="description" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="description"
+              className="text-sm font-medium text-gray-700"
+            >
               Keterangan Tambahan
             </label>
             <textarea

@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 
-type NotificationType = "auction_won" | "auction_ended" | "transaction_confirmed";
+type NotificationType =
+  | "auction_won"
+  | "auction_ended"
+  | "transaction_confirmed";
 
 export async function createNotification(
   supabase: SupabaseClient<Database>,
@@ -9,7 +12,7 @@ export async function createNotification(
     user_id: string;
     type: NotificationType;
     auction_id?: string;
-  }
+  },
 ): Promise<void> {
   await supabase.from("notifications").insert({
     user_id: payload.user_id,

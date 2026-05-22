@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/supabase";
 
-type NotificationWithAuction = Database["public"]["Tables"]["notifications"]["Row"] & {
-  auction: { id: string; title: string } | null;
-};
+type NotificationWithAuction =
+  Database["public"]["Tables"]["notifications"]["Row"] & {
+    auction: { id: string; title: string } | null;
+  };
 
 export async function GET() {
   const supabase = await createClient();
@@ -25,7 +26,10 @@ export async function GET() {
     .limit(20);
 
   if (error) {
-    return NextResponse.json({ error: "Gagal memuat notifikasi" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal memuat notifikasi" },
+      { status: 500 },
+    );
   }
 
   const notifList = (notifications as NotificationWithAuction[] | null) ?? [];

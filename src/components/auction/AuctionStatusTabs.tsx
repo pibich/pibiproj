@@ -1,7 +1,7 @@
 "use client";
 
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Gavel, Clock } from "lucide-react";
+import { Clock, Gavel } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function AuctionStatusTabs() {
   const searchParams = useSearchParams();
@@ -27,9 +27,7 @@ export function AuctionStatusTabs() {
       <button
         onClick={() => setStatus("active")}
         className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-colors ${
-          !isEnded
-            ? "bg-blue-600 text-white"
-            : "text-gray-500 hover:bg-gray-50"
+          !isEnded ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"
         }`}
       >
         <Gavel className="h-4 w-4" />
@@ -39,9 +37,7 @@ export function AuctionStatusTabs() {
       <button
         onClick={() => setStatus("ended")}
         className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-colors ${
-          isEnded
-            ? "bg-slate-700 text-white"
-            : "text-gray-500 hover:bg-gray-50"
+          isEnded ? "bg-slate-700 text-white" : "text-gray-500 hover:bg-gray-50"
         }`}
       >
         <Clock className="h-4 w-4" />

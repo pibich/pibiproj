@@ -23,6 +23,7 @@ interface AuctionFiltersProps {
   initialQ?: string;
   isEnded?: boolean;
   effectiveSort: string;
+  onApply?: () => void;
 }
 
 export function AuctionFilters({
@@ -32,6 +33,7 @@ export function AuctionFilters({
   initialQ = "",
   isEnded = false,
   effectiveSort,
+  onApply,
 }: AuctionFiltersProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -41,10 +43,23 @@ export function AuctionFilters({
   const [sort, setSort] = useState(effectiveSort);
   const [q, setQ] = useState(initialQ);
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }));
-  const conditionOptions = Object.entries(conditionLabels).map(([k, v]) => ({ value: k, label: v }));
+  const categoryOptions = categories.map((c) => ({
+    value: c.id,
+    label: c.name,
+  }));
+  const conditionOptions = Object.entries(conditionLabels).map(([k, v]) => ({
+    value: k,
+    label: v,
+  }));
 
-  function applyFilters(overrides?: Partial<{ category: string; condition: string; sort: string; q: string }>) {
+  function applyFilters(
+    overrides?: Partial<{
+      category: string;
+      condition: string;
+      sort: string;
+      q: string;
+    }>,
+  ) {
     const params = new URLSearchParams();
     const final = { category, condition, sort, q, ...overrides };
     if (isEnded) params.set("status", "ended");
@@ -52,7 +67,10 @@ export function AuctionFilters({
     if (final.category) params.set("category", final.category);
     if (final.condition) params.set("condition", final.condition);
     if (final.sort) params.set("sort", final.sort);
-    startTransition(() => router.push(`/auctions?${params.toString()}`));
+    startTransition(() => {
+      router.push(`/auctions?${params.toString()}`);
+      onApply?.();
+    });
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -61,12 +79,19 @@ export function AuctionFilters({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-5">
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-5"
+    >
       <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+        <label
+          htmlFor="filter-q"
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block"
+        >
           Cari
         </label>
         <input
+          id="filter-q"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Nama kartu..."
@@ -75,10 +100,14 @@ export function AuctionFilters({
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+        <label
+          htmlFor="filter-category"
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block"
+        >
           Kategori
         </label>
         <Combobox
+          id="filter-category"
           options={categoryOptions}
           value={category}
           onChange={(v) => setCategory(v)}
@@ -88,10 +117,14 @@ export function AuctionFilters({
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+        <label
+          htmlFor="filter-condition"
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block"
+        >
           Kondisi
         </label>
         <Combobox
+          id="filter-condition"
           options={conditionOptions}
           value={condition}
           onChange={(v) => setCondition(v)}
@@ -101,10 +134,14 @@ export function AuctionFilters({
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
+        <label
+          htmlFor="filter-sort"
+          className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block"
+        >
           Urutkan
         </label>
         <select
+          id="filter-sort"
           value={sort}
           onChange={(e) => setSort(e.target.value)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

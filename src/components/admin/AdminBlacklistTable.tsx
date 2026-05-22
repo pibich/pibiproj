@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
 import { Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import type { BlacklistEntry } from "@/components/blacklist/BlacklistTable";
+import { Button } from "@/components/ui/Button";
 
-export function AdminBlacklistTable({ entries }: { entries: BlacklistEntry[] }) {
+export function AdminBlacklistTable({
+  entries,
+}: {
+  entries: BlacklistEntry[];
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -33,20 +37,36 @@ export function AdminBlacklistTable({ entries }: { entries: BlacklistEntry[] }) 
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Nama</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Username</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">No. Telepon</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Alasan</th>
-            <th className="text-left px-4 py-3 font-medium text-gray-600">Tanggal</th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              Nama
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              Username
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              Email
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              No. Telepon
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              Alasan
+            </th>
+            <th className="text-left px-4 py-3 font-medium text-gray-600">
+              Tanggal
+            </th>
             <th className="px-4 py-3" />
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
           {entries.map((entry) => (
             <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3 font-medium text-gray-900">{entry.name ?? "-"}</td>
-              <td className="px-4 py-3 text-gray-600">{entry.username ? `@${entry.username}` : "-"}</td>
+              <td className="px-4 py-3 font-medium text-gray-900">
+                {entry.name ?? "-"}
+              </td>
+              <td className="px-4 py-3 text-gray-600">
+                {entry.username ? `@${entry.username}` : "-"}
+              </td>
               <td className="px-4 py-3 text-gray-600">{entry.email ?? "-"}</td>
               <td className="px-4 py-3 text-gray-600">{entry.phone ?? "-"}</td>
               <td className="px-4 py-3 text-gray-600">{entry.reason ?? "-"}</td>

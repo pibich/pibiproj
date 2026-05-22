@@ -2,9 +2,12 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { Trophy, Package, CheckCircle } from "lucide-react";
+import { CheckCircle, Package, Trophy } from "lucide-react";
 
-type NotificationType = "auction_won" | "auction_ended" | "transaction_confirmed";
+type NotificationType =
+  | "auction_won"
+  | "auction_ended"
+  | "transaction_confirmed";
 
 interface NotificationItemProps {
   type: NotificationType;
@@ -25,7 +28,10 @@ const colors: Record<NotificationType, string> = {
   transaction_confirmed: "text-emerald-500 bg-emerald-50",
 };
 
-function getLabel(type: NotificationType, auctionTitle?: string | null): string {
+function getLabel(
+  type: NotificationType,
+  auctionTitle?: string | null,
+): string {
   const title = auctionTitle ? `"${auctionTitle}"` : "lelang";
   switch (type) {
     case "auction_won":
@@ -37,22 +43,36 @@ function getLabel(type: NotificationType, auctionTitle?: string | null): string 
   }
 }
 
-export function NotificationItem({ type, auctionTitle, createdAt, isRead }: NotificationItemProps) {
+export function NotificationItem({
+  type,
+  auctionTitle,
+  createdAt,
+  isRead,
+}: NotificationItemProps) {
   const Icon = icons[type];
   const colorClass = colors[type];
 
   return (
-    <div className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!isRead ? "bg-sky-50/40" : ""}`}>
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}>
+    <div
+      className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!isRead ? "bg-sky-50/40" : ""}`}
+    >
+      <div
+        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}
+      >
         <Icon className="h-4 w-4" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm leading-snug ${!isRead ? "font-medium text-gray-900" : "text-gray-700"}`}>
+        <p
+          className={`text-sm leading-snug ${!isRead ? "font-medium text-gray-900" : "text-gray-700"}`}
+        >
           {getLabel(type, auctionTitle)}
         </p>
         {createdAt && (
           <p className="text-xs text-gray-400 mt-0.5">
-            {formatDistanceToNow(new Date(createdAt), { addSuffix: true, locale: idLocale })}
+            {formatDistanceToNow(new Date(createdAt), {
+              addSuffix: true,
+              locale: idLocale,
+            })}
           </p>
         )}
       </div>

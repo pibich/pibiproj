@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { getStreamServerClient } from "@/lib/stream/client";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST() {
   const supabase = await createClient();
@@ -25,14 +25,17 @@ export async function POST() {
 
   const streamClient = getStreamServerClient();
 
-  // Upsert user in GetStream — sync buyer_warning_count for custom message badge
-  await streamClient.upsertUser({
-    id: profile.id,
-    name: profile.name,
-    username: profile.username,
-    image: profile.avatar_url ?? undefined,
-    buyer_warning_count: profile.buyer_warning_count,
-  });
+  // Sync profile to Stream — fire-and-forget so a slow/timeout response from
+  // Stream's API doesn't block token generation (createToken is local JWT signing)
+  streamClient
+    .upsertUser({
+      id: profile.id,
+      name: profile.name,
+      username: profile.username,
+      image: profile.avatar_url ?? undefined,
+      buyer_warning_count: profile.buyer_warning_count,
+    })
+    .catch(console.error);
 
   const token = streamClient.createToken(profile.id);
 

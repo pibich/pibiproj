@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { StreamChat } from "stream-chat";
 
 export function useChatUnread(userId: string) {
@@ -23,7 +23,13 @@ export function useChatUnread(userId: string) {
       try {
         const res = await fetch("/api/stream-token", { method: "POST" });
         if (!res.ok || cancelled) return;
-        const { token, apiKey, userId: uid, userName, userImage } = await res.json();
+        const {
+          token,
+          apiKey,
+          userId: uid,
+          userName,
+          userImage,
+        } = await res.json();
         if (cancelled) return;
 
         const client = StreamChat.getInstance(apiKey);
@@ -42,7 +48,8 @@ export function useChatUnread(userId: string) {
         if (cancelled) return;
 
         const totalUnread =
-          (client.user as { total_unread_count?: number })?.total_unread_count ?? 0;
+          (client.user as { total_unread_count?: number })
+            ?.total_unread_count ?? 0;
         if (totalUnread > 0 && pathnameRef.current !== "/chat") {
           setHasUnread(true);
         }

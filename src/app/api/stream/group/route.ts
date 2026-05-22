@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { getStreamServerClient } from "@/lib/stream/client";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { channelId, memberIds, name } = (await req.json()) as {
     channelId: string;
@@ -17,7 +18,10 @@ export async function POST(req: NextRequest) {
   };
 
   if (!channelId || !Array.isArray(memberIds) || memberIds.length < 2) {
-    return NextResponse.json({ error: "Parameter tidak valid" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Parameter tidak valid" },
+      { status: 400 },
+    );
   }
 
   // Ensure the requesting user is in the member list

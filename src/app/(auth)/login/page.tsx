@@ -17,7 +17,9 @@ export default function LoginPage() {
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Masuk ke Akun</h1>
-          <p className="text-sm text-slate-500">Selamat datang kembali di TCG Marketplace</p>
+          <p className="text-sm text-slate-500">
+            Selamat datang kembali di TCG Marketplace
+          </p>
         </div>
         <LoginForm />
       </div>

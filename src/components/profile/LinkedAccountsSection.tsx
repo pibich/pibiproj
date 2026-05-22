@@ -1,7 +1,7 @@
 "use client";
 
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 interface LinkedAccountsSectionProps {
@@ -10,14 +10,18 @@ interface LinkedAccountsSectionProps {
   oauthError?: string;
 }
 
-export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedSuccess, oauthError }: LinkedAccountsSectionProps) {
+export function LinkedAccountsSection({
+  hasFacebook: initialHasFacebook,
+  linkedSuccess,
+  oauthError,
+}: LinkedAccountsSectionProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
     oauthError
       ? oauthError.includes("email")
         ? "Facebook tidak memberikan akses email. Aktifkan 'Allow users without an email' di Supabase → Authentication → Providers → Facebook, lalu coba lagi."
         : `Gagal menghubungkan: ${oauthError}`
-      : null
+      : null,
   );
   const [hasFacebook, setHasFacebook] = useState(initialHasFacebook);
 
@@ -44,7 +48,7 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
           setHasFacebook(true);
         } else if (linkError.message.toLowerCase().includes("manual linking")) {
           setError(
-            "Fitur linking belum diaktifkan. Aktifkan 'Allow manual linking' di Supabase Dashboard → Authentication → Settings."
+            "Fitur linking belum diaktifkan. Aktifkan 'Allow manual linking' di Supabase Dashboard → Authentication → Settings.",
           );
         } else if (
           linkError.message.toLowerCase().includes("provider") ||
@@ -52,7 +56,7 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
           linkError.message.toLowerCase().includes("not supported")
         ) {
           setError(
-            "Provider Facebook belum diaktifkan. Pastikan konfigurasi Supabase sudah dilengkapi."
+            "Provider Facebook belum diaktifkan. Pastikan konfigurasi Supabase sudah dilengkapi.",
           );
         } else {
           setError(`Gagal menghubungkan: ${linkError.message}`);
@@ -60,7 +64,7 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
       }
     } catch (err) {
       setError(
-        `Terjadi kesalahan: ${err instanceof Error ? err.message : "Coba lagi."}`
+        `Terjadi kesalahan: ${err instanceof Error ? err.message : "Coba lagi."}`,
       );
     } finally {
       setLoading(false);
@@ -70,7 +74,9 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">Akun Terhubung</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          Akun Terhubung
+        </h2>
         <p className="text-sm text-gray-500 mt-0.5">
           Hubungkan akun media sosial untuk verifikasi tambahan
         </p>
@@ -98,7 +104,12 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
         <div className="flex items-center gap-3">
           {/* Facebook logo */}
           <div className="w-9 h-9 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" fill="white" className="w-5 h-5" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              fill="white"
+              className="w-5 h-5"
+              aria-hidden="true"
+            >
               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
             </svg>
           </div>
@@ -129,8 +140,8 @@ export function LinkedAccountsSection({ hasFacebook: initialHasFacebook, linkedS
       </div>
 
       <p className="text-xs text-gray-400">
-        Menghubungkan akun Facebook digunakan sebagai verifikasi identitas tambahan. Kami tidak
-        memposting apapun ke akun Facebook kamu.
+        Menghubungkan akun Facebook digunakan sebagai verifikasi identitas
+        tambahan. Kami tidak memposting apapun ke akun Facebook kamu.
       </p>
     </div>
   );

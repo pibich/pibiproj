@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import Link from "next/link";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -18,25 +18,37 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
-              TCG Marketplace adalah platform lelang kartu TCG terpercaya di Indonesia.
+              TCG Marketplace adalah platform lelang kartu TCG terpercaya di
+              Indonesia.
             </p>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">Tautan</h3>
+            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">
+              Tautan
+            </h3>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
-                <Link href="/auctions" className="hover:text-sky-300 transition-colors">
+                <Link
+                  href="/auctions"
+                  className="hover:text-sky-300 transition-colors"
+                >
                   Lelang
                 </Link>
               </li>
               <li>
-                <Link href="/middleman" className="hover:text-sky-300 transition-colors">
+                <Link
+                  href="/middleman"
+                  className="hover:text-sky-300 transition-colors"
+                >
                   Middleman
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-sky-300 transition-colors">
+                <Link
+                  href="/contact"
+                  className="hover:text-sky-300 transition-colors"
+                >
                   Hubungi Kami
                 </Link>
               </li>
@@ -44,7 +56,9 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">Kontak</h3>
+            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">
+              Kontak
+            </h3>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
                 <a

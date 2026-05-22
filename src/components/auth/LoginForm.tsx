@@ -1,16 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
-import Link from "next/link";
-import { loginAction, type ActionState } from "@/app/actions/auth";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { useActionState } from "react";
+import { type ActionState, loginAction } from "@/app/actions/auth";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 const initialState: ActionState = {};
 
 export function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [state, formAction, isPending] = useActionState(
+    loginAction,
+    initialState,
+  );
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
@@ -48,7 +51,10 @@ export function LoginForm() {
 
       <p className="text-center text-sm text-gray-600">
         Belum punya akun?{" "}
-        <Link href="/register" className="font-medium text-blue-600 hover:underline">
+        <Link
+          href="/register"
+          className="font-medium text-blue-600 hover:underline"
+        >
           Daftar Sekarang
         </Link>
       </p>

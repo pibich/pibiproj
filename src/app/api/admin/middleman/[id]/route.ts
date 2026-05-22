@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const supabase = await createClient();
@@ -35,7 +35,10 @@ export async function PATCH(
     .single();
 
   if (fetchError || !target) {
-    return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+    return NextResponse.json(
+      { error: "User tidak ditemukan" },
+      { status: 404 },
+    );
   }
 
   const { error } = await adminClient
@@ -47,5 +50,8 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, is_middleman: !target.is_middleman });
+  return NextResponse.json({
+    success: true,
+    is_middleman: !target.is_middleman,
+  });
 }

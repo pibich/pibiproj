@@ -1,26 +1,35 @@
 "use client";
 
-import { useActionState } from "react";
-import Link from "next/link";
-import { registerAction, type ActionState } from "@/app/actions/auth";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { useActionState } from "react";
+import { type ActionState, registerAction } from "@/app/actions/auth";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 const initialState: ActionState = {};
 
 export function RegisterForm() {
-  const [state, formAction, isPending] = useActionState(registerAction, initialState);
+  const [state, formAction, isPending] = useActionState(
+    registerAction,
+    initialState,
+  );
 
   if (state.success) {
     return (
       <div className="flex flex-col items-center gap-4 text-center py-4">
         <CheckCircle2 className="h-12 w-12 text-green-500" />
-        <h3 className="text-lg font-semibold text-gray-900">Verifikasi Email</h3>
+        <h3 className="text-lg font-semibold text-gray-900">
+          Verifikasi Email
+        </h3>
         <p className="text-sm text-gray-600 max-w-sm">
-          Kami telah mengirimkan link verifikasi ke email Anda. Silakan cek inbox atau folder spam.
+          Kami telah mengirimkan link verifikasi ke email Anda. Silakan cek
+          inbox atau folder spam.
         </p>
-        <Link href="/login" className="text-sm text-blue-600 hover:underline font-medium">
+        <Link
+          href="/login"
+          className="text-sm text-blue-600 hover:underline font-medium"
+        >
           Sudah punya akun? Masuk
         </Link>
       </div>
@@ -37,7 +46,8 @@ export function RegisterForm() {
       )}
 
       <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-        Username, email, dan nomor telepon tidak dapat diubah setelah pendaftaran.
+        Username, email, dan nomor telepon tidak dapat diubah setelah
+        pendaftaran.
       </p>
 
       <Input
@@ -105,7 +115,10 @@ export function RegisterForm() {
 
       <p className="text-center text-sm text-gray-600">
         Sudah punya akun?{" "}
-        <Link href="/login" className="font-medium text-blue-600 hover:underline">
+        <Link
+          href="/login"
+          className="font-medium text-blue-600 hover:underline"
+        >
           Masuk
         </Link>
       </p>

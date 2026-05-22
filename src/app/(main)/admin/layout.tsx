@@ -1,7 +1,7 @@
+import { FileWarning, ShieldCheck, UserCog, Users } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/dal";
-import Link from "next/link";
-import { ShieldCheck, FileWarning, Users, UserCog } from "lucide-react";
 
 export default async function AdminLayout({
   children,

@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Search, ShieldCheck, ShieldOff } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
-import { ShieldCheck, ShieldOff, Search } from "lucide-react";
 import type { Profile } from "@/types/supabase";
 
-type MiddlemanRow = Pick<Profile, "id" | "name" | "username" | "avatar_url" | "is_middleman">;
+type MiddlemanRow = Pick<
+  Profile,
+  "id" | "name" | "username" | "avatar_url" | "is_middleman"
+>;
 
 export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
   const router = useRouter();
@@ -20,14 +23,16 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.username.toLowerCase().includes(search.toLowerCase())
+      u.username.toLowerCase().includes(search.toLowerCase()),
   );
 
   async function toggleMiddleman(userId: string) {
     setLoadingId(userId);
     setError(null);
     startTransition(async () => {
-      const res = await fetch(`/api/admin/middleman/${userId}`, { method: "PATCH" });
+      const res = await fetch(`/api/admin/middleman/${userId}`, {
+        method: "PATCH",
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(data.error ?? "Gagal memperbarui status middleman");
@@ -81,14 +86,19 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user.name}
+                  </p>
                   <p className="text-xs text-gray-500">@{user.username}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 {user.is_middleman && (
-                  <Badge variant="success" className="flex items-center gap-1 text-xs">
+                  <Badge
+                    variant="success"
+                    className="flex items-center gap-1 text-xs"
+                  >
                     <ShieldCheck className="h-3 w-3" />
                     Middleman
                   </Badge>

@@ -32,10 +32,10 @@ import {
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import type { Profile } from "@/types/supabase";
-import { CreateGroupModal } from "./CreateGroupModal";
 import { CustomChannelHeader } from "./CustomChannelHeader";
 import { CustomChannelPreview } from "./CustomChannelPreview";
 import { CustomMessage } from "./CustomMessage";
+import { NewMessageModal } from "./NewMessageModal";
 import { UserProfileModal } from "./UserProfileModal";
 
 interface ChatWidgetProps {
@@ -335,10 +335,11 @@ function ChannelListLayout({
   userId: string;
   initialTargetUserId?: string;
 }) {
-  const { client, channel: activeChannel, setActiveChannel } = useChatContext();
-  const [createGroupOpen, setCreateGroupOpen] = useState(false);
-  // Local state for mobile panel switching — decoupled from Stream's activeChannel
-  // so that going back doesn't blank out the channel list
+  const { client, setActiveChannel } = useChatContext();
+  const [activeChannel, setLocalActiveChannel] = useState<StreamChannel | null>(
+    null,
+  );
+  const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
   const channelInitialized = useRef(false);
 
@@ -354,27 +355,24 @@ function ChannelListLayout({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ channelId, memberIds: members }),
     })
-      .then(() =>
-        client.queryChannels(
-          {
-            id: { $eq: channelId },
-            type: "messaging",
-            members: { $in: [userId] },
-          },
-          {},
-          { watch: true, state: true },
-        ),
-      )
-      .then((channels) => {
-        if (channels.length > 0) {
-          setActiveChannel?.(channels[0]);
-          setMobileShowChat(true);
-        }
+      .then((res) => {
+        if (!res.ok) throw new Error(`stream/group failed: ${res.status}`);
+        // Use channel().watch() instead of queryChannels — avoids the membership
+        // propagation delay that can cause queryChannels to return 0 results
+        // immediately after addMembers() completes on the server.
+        const ch = client.channel("messaging", channelId);
+        return ch.watch().then(() => ch);
+      })
+      .then((ch) => {
+        setLocalActiveChannel(ch);
+        setActiveChannel?.(ch);
+        setMobileShowChat(true);
       })
       .catch(console.error);
   }, [initialTargetUserId, client, userId, setActiveChannel]);
 
-  function handleSelectChannel() {
+  function handleSelectChannel(channel: StreamChannel) {
+    setLocalActiveChannel(channel);
     setMobileShowChat(true);
   }
 
@@ -389,7 +387,7 @@ function ChannelListLayout({
       {/* ── Left panel: conversation list ───────────────────────────────── */}
       <div
         className={[
-          "flex flex-col h-full border-r border-gray-100 bg-white shrink-0 relative z-10",
+          "flex-col h-full border-r border-gray-100 bg-white shrink-0 relative z-10",
           "w-full sm:w-72",
           // Mobile: hide list when viewing a chat; desktop: always show
           mobileShowChat ? "hidden sm:flex" : "flex",
@@ -401,11 +399,11 @@ function ChannelListLayout({
           </span>
           <button
             type="button"
-            onClick={() => setCreateGroupOpen(true)}
+            onClick={() => setNewMessageOpen(true)}
             className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg px-2 py-1 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
-            Buat Grup
+            Buat Pesan
           </button>
         </div>
 
@@ -413,13 +411,19 @@ function ChannelListLayout({
           <ChannelList
             filters={{ members: { $in: [userId] } }}
             sort={{ last_message_at: -1 }}
+            EmptyStateIndicator={() => (
+              <div className="flex flex-col items-center justify-center gap-2 py-12 text-gray-400">
+                <MessageSquare className="h-8 w-8 opacity-30" />
+                <p className="text-sm">Belum ada percakapan</p>
+              </div>
+            )}
             renderChannels={(channels) => (
               <div>
                 {(channels as StreamChannel[]).map((ch) => (
                   <CustomChannelPreview
                     key={ch.id}
                     channel={ch}
-                    onSelect={handleSelectChannel}
+                    onSelect={() => handleSelectChannel(ch)}
                     onHide={handleBack}
                   />
                 ))}
@@ -433,13 +437,13 @@ function ChannelListLayout({
       {/* ── Right panel: active channel ──────────────────────────────────── */}
       <div
         className={[
-          "flex-1 min-w-0 flex flex-col",
+          "flex-1 min-w-0 flex-col",
           // Mobile: show chat panel only when mobileShowChat; desktop: show when activeChannel
           mobileShowChat ? "flex" : "hidden sm:flex",
         ].join(" ")}
       >
         {activeChannel ? (
-          <Channel>
+          <Channel channel={activeChannel}>
             <ComponentProvider value={chatComponents}>
               <Window>
                 <div className="sm:hidden shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-white">
@@ -467,17 +471,27 @@ function ChannelListLayout({
         )}
       </div>
 
-      <CreateGroupModal
-        open={createGroupOpen}
-        onClose={() => setCreateGroupOpen(false)}
+      <NewMessageModal
+        open={newMessageOpen}
+        onClose={() => setNewMessageOpen(false)}
         currentUserId={userId}
+        onCreated={(ch) => {
+          setLocalActiveChannel(ch);
+          setActiveChannel?.(ch);
+          setNewMessageOpen(false);
+          setMobileShowChat(true);
+        }}
       />
     </div>
   );
 }
 
 // ─── Main widget ─────────────────────────────────────────────────────────────
-export function ChatWidget({ currentUser, targetUserId, className }: ChatWidgetProps) {
+export function ChatWidget({
+  currentUser,
+  targetUserId,
+  className,
+}: ChatWidgetProps) {
   const [client, setClient] = useState<StreamChat | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -547,7 +561,9 @@ export function ChatWidget({ currentUser, targetUserId, className }: ChatWidgetP
   }
 
   return (
-    <div className={`h-full flex flex-col bg-white ${className ?? "rounded-xl border border-gray-200"}`}>
+    <div
+      className={`h-full flex flex-col bg-white ${className ?? "rounded-xl border border-gray-200"}`}
+    >
       <div className="flex-1 min-h-0 flex flex-col rounded-xl">
         <Chat client={client} theme="str-chat__theme-light">
           <ChannelListLayout

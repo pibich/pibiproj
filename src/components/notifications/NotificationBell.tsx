@@ -1,19 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { NotificationItem } from "./NotificationItem";
 import type { Notification } from "@/types/supabase";
+import { NotificationItem } from "./NotificationItem";
 
 type NotificationWithAuction = Notification & {
   auction: { id: string; title: string } | null;
 };
 
-export function NotificationBell({ userId }: { userId: string }) {
+export function NotificationBell({
+  userId,
+  channelId = "bell",
+}: {
+  userId: string;
+  channelId?: string;
+}) {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationWithAuction[]>([]);
+  const [notifications, setNotifications] = useState<NotificationWithAuction[]>(
+    [],
+  );
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -31,7 +39,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("notifications-bell")
+      .channel(`notifications-bell-${channelId}-${userId}`)
       .on(
         "postgres_changes",
         {
@@ -51,11 +59,14 @@ export function NotificationBell({ userId }: { userId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [userId, channelId]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -82,6 +93,7 @@ export function NotificationBell({ userId }: { userId: string }) {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         onClick={handleOpen}
         className="relative p-2 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-all duration-200"
         aria-label="Notifikasi"

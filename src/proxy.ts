@@ -23,13 +23,13 @@ export async function proxy(request: NextRequest) {
           },
           setAll() {},
         },
-      }
+      },
     );
     return supabase.auth.getUser();
   })();
 
   const isProtected = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 

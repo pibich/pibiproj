@@ -1,27 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import {
-  Menu,
-  X,
-  Gavel,
-  MessageSquare,
-  Users,
-  LayoutDashboard,
-  LogOut,
-  User,
   ChevronDown,
-  ShieldCheck,
+  Gavel,
+  LogOut,
+  Menu,
+  MessageSquare,
   Plus,
-  Sparkles,
   Settings,
+  ShieldCheck,
+  Sparkles,
+  User,
+  Users,
+  X,
 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { ChatIconWithBadge } from "./ChatIconWithBadge";
 import type { Profile } from "@/types/supabase";
+import { ChatIconWithBadge } from "./ChatIconWithBadge";
 
 interface NavbarProps {
   user: Profile | null;
@@ -68,7 +67,10 @@ export function Navbar({ user, onLogout }: NavbarProps) {
             {user ? (
               <>
                 <Link href="/auctions/create">
-                  <Button size="sm" className="hidden sm:flex shadow-sm shadow-sky-200">
+                  <Button
+                    size="sm"
+                    className="hidden sm:flex shadow-sm shadow-sky-200"
+                  >
                     <Plus className="h-4 w-4" />
                     Buat Lelang
                   </Button>
@@ -76,16 +78,17 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
                 <ChatIconWithBadge userId={user.id} />
 
-                <NotificationBell userId={user.id} />
+                <NotificationBell userId={user.id} channelId="desktop" />
 
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-sky-50 transition-all duration-200"
                   >
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 text-xs font-semibold ring-2 ring-sky-200">
                       {user.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
+                        // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
                         <img
                           src={user.avatar_url}
                           alt={user.name}
@@ -98,11 +101,15 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                     <span className="text-sm font-medium text-slate-700 hidden sm:block max-w-[100px] truncate">
                       {user.name}
                     </span>
-                    <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
 
                   {userMenuOpen && (
                     <>
+                      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop click-to-close overlay */}
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: Escape handled globally; backdrop is mouse-only dismiss */}
                       <div
                         className="fixed inset-0 z-10"
                         onClick={() => setUserMenuOpen(false)}
@@ -116,14 +123,6 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                             @{user.username}
                           </p>
                         </div>
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
-                        >
-                          <LayoutDashboard className="h-4 w-4" />
-                          Dashboard
-                        </Link>
                         <Link
                           href={`/profile/${user.username}`}
                           onClick={() => setUserMenuOpen(false)}
@@ -152,6 +151,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                         )}
                         <div className="border-t border-sky-50 mt-1 pt-1">
                           <button
+                            type="button"
                             onClick={() => {
                               setUserMenuOpen(false);
                               onLogout();
@@ -181,6 +181,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
             )}
 
             <button
+              type="button"
               className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-sky-50 hover:text-sky-600 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
@@ -199,14 +200,6 @@ export function Navbar({ user, onLogout }: NavbarProps) {
         <div className="md:hidden border-t border-sky-100 bg-white/90 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
           {user ? (
             <>
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </Link>
               <Link
                 href="/auctions/create"
                 onClick={() => setMobileOpen(false)}

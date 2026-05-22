@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/Input";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
   const router = useRouter();
@@ -17,7 +17,9 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
     reason: "",
   });
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -39,8 +41,12 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Tambah Blacklist Manual</h2>
-          <p className="text-sm text-gray-500">Tambahkan pengguna ke blacklist secara manual</p>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Tambah Blacklist Manual
+          </h2>
+          <p className="text-sm text-gray-500">
+            Tambahkan pengguna ke blacklist secara manual
+          </p>
         </div>
         <Button size="sm" onClick={() => setOpen((v) => !v)}>
           {open ? "Batal" : "+ Tambah"}
@@ -48,7 +54,10 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
       </div>
 
       {open && (
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        >
           <Input
             label="Nama"
             id="name"
@@ -83,7 +92,10 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
             placeholder="08xxxxxxxxxx"
           />
           <div className="sm:col-span-2 flex flex-col gap-1">
-            <label htmlFor="reason" className="text-sm font-medium text-slate-700">
+            <label
+              htmlFor="reason"
+              className="text-sm font-medium text-slate-700"
+            >
               Alasan
             </label>
             <textarea

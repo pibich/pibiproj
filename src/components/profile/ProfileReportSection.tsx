@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Flag } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { useEffect, useState } from "react";
 import { ReportUserModal } from "@/components/report/ReportUserModal";
+import { Button } from "@/components/ui/Button";
 
 interface ProfileReportSectionProps {
   reportedUserId: string;

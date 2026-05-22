@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
 
 const registerSchema = z
   .object({
@@ -16,7 +16,10 @@ const registerSchema = z
     email: z.string().email("Format email tidak valid"),
     phone: z
       .string()
-      .regex(/^08[0-9]{8,11}$/, "Nomor telepon tidak valid (contoh: 08123456789)"),
+      .regex(
+        /^08[0-9]{8,11}$/,
+        "Nomor telepon tidak valid (contoh: 08123456789)",
+      ),
     password: z.string().min(8, "Password minimal 8 karakter"),
     confirmPassword: z.string(),
   })
@@ -38,7 +41,7 @@ export type ActionState = {
 
 export async function registerAction(
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   const raw = {
     name: formData.get("name") as string,
@@ -101,7 +104,7 @@ export async function registerAction(
 
 export async function loginAction(
   _prevState: ActionState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ActionState> {
   const raw = {
     email: formData.get("email") as string,

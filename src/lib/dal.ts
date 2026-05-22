@@ -1,6 +1,6 @@
 import { cache } from "react";
-import { createClient } from "./supabase/server";
 import type { Profile } from "@/types/supabase";
+import { createClient } from "./supabase/server";
 
 export const getUser = cache(async (): Promise<Profile | null> => {
   const supabase = await createClient();
@@ -34,4 +34,3 @@ export const requireAdmin = cache(async (): Promise<Profile> => {
   }
   return profile;
 });
-

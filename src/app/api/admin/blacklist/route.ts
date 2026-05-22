@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 async function requireAdmin() {
@@ -6,7 +6,8 @@ async function requireAdmin() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase, user: null, error: "Unauthorized", status: 401 };
+  if (!user)
+    return { supabase, user: null, error: "Unauthorized", status: 401 };
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -14,7 +15,8 @@ async function requireAdmin() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") return { supabase, user, error: "Forbidden", status: 403 };
+  if (profile?.role !== "admin")
+    return { supabase, user, error: "Forbidden", status: 403 };
 
   return { supabase, user, error: null, status: 200 };
 }
@@ -28,7 +30,8 @@ export async function GET() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
+  if (dbError)
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
 
   return NextResponse.json({ entries: data ?? [] });
 }
@@ -50,7 +53,8 @@ export async function POST(req: NextRequest) {
     type: "manual",
   });
 
-  if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
+  if (dbError)
+    return NextResponse.json({ error: dbError.message }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

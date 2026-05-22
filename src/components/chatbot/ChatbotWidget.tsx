@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
+import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface Message {
+  id: string;
   role: "user" | "model";
   text: string;
+}
+
+function mkMsg(role: Message["role"], text: string): Message {
+  return { id: crypto.randomUUID(), role, text };
 }
 
 const SESSION_KEY = "tcg_chatbot_session";
@@ -65,13 +70,16 @@ export function ChatbotWidget() {
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      setMessages([{
-        role: "model",
-        text: "Halo! Saya asisten TCG Marketplace. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
-      }]);
+      setMessages([
+        mkMsg(
+          "model",
+          "Halo! Saya asisten TCG Marketplace. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
+        ),
+      ]);
     }
   }, [open, messages.length]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: messages/loading are intentional change triggers, not closure references
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -83,7 +91,7 @@ export function ChatbotWidget() {
     setInput("");
     setLimitError(null);
 
-    const newMessages: Message[] = [...messages, { role: "user", text: userMessage }];
+    const newMessages: Message[] = [...messages, mkMsg("user", userMessage)];
     setMessages(newMessages);
     setLoading(true);
 
@@ -113,12 +121,12 @@ export function ChatbotWidget() {
       if (!res.ok || !data.reply) {
         setMessages((prev) => [
           ...prev,
-          { role: "model", text: "Maaf, terjadi kesalahan. Coba lagi nanti." },
+          mkMsg("model", "Maaf, terjadi kesalahan. Coba lagi nanti."),
         ]);
         return;
       }
 
-      setMessages((prev) => [...prev, { role: "model", text: data.reply }]);
+      setMessages((prev) => [...prev, mkMsg("model", data.reply)]);
     } finally {
       setLoading(false);
     }
@@ -127,10 +135,11 @@ export function ChatbotWidget() {
   return (
     <>
       {showIntro && !open && (
-        <div className="fixed bottom-24 right-6 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden animate-fade-in-up">
+        <div className="hidden md:block fixed bottom-24 right-6 z-50 w-72 bg-white rounded-2xl shadow-2xl border border-blue-100 overflow-hidden animate-fade-in-up">
           <div className="h-1.5 bg-gradient-to-r from-sky-400 to-blue-600" />
           <div className="relative p-4">
             <button
+              type="button"
               onClick={markIntroSeen}
               className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Tutup"
@@ -143,7 +152,9 @@ export function ChatbotWidget() {
                 <Bot className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-gray-900">Butuh Bantuan?</p>
+                <p className="font-semibold text-sm text-gray-900">
+                  Butuh Bantuan?
+                </p>
                 <p className="text-xs text-gray-500">Asisten TCG Marketplace</p>
               </div>
             </div>
@@ -153,8 +164,8 @@ export function ChatbotWidget() {
             </p>
 
             <ul className="text-xs text-gray-500 mb-4 space-y-1.5">
-              {INTRO_FEATURES.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2">
+              {INTRO_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
                   {feature}
                 </li>
@@ -162,6 +173,7 @@ export function ChatbotWidget() {
             </ul>
 
             <button
+              type="button"
               onClick={handleStartChat}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
             >
@@ -173,8 +185,9 @@ export function ChatbotWidget() {
       )}
 
       <button
+        type="button"
         onClick={handleToggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105"
+        className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg items-center justify-center transition-all hover:scale-105"
         aria-label="Bantuan"
       >
         {!introSeen && !open && (
@@ -183,11 +196,15 @@ export function ChatbotWidget() {
             <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500" />
           </span>
         )}
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {open ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <MessageCircle className="h-6 w-6" />
+        )}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[32rem]">
+        <div className="hidden md:flex fixed bottom-24 right-6 z-50 w-80 sm:w-96 flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[32rem]">
           <div className="flex items-center gap-3 px-4 py-3 bg-blue-600 text-white shrink-0">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
               <Bot className="h-4 w-4" />
@@ -199,14 +216,14 @@ export function ChatbotWidget() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-            {messages.map((msg, i) => (
+            {messages.map((msg) => (
               <div
-                key={i}
+                key={msg.id}
                 className={cn(
                   "max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed",
                   msg.role === "user"
                     ? "self-end bg-blue-600 text-white rounded-br-sm"
-                    : "self-start bg-gray-100 text-gray-800 rounded-bl-sm"
+                    : "self-start bg-gray-100 text-gray-800 rounded-bl-sm",
                 )}
               >
                 {msg.text}
@@ -248,6 +265,7 @@ export function ChatbotWidget() {
               className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
             />
             <button
+              type="button"
               onClick={sendMessage}
               disabled={loading || !input.trim() || !!limitError}
               className="w-9 h-9 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-lg flex items-center justify-center transition-colors shrink-0"

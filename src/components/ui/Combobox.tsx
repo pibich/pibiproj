@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface ComboboxOption {
@@ -45,7 +45,10 @@ export function Combobox({
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
         setQuery("");
       }
@@ -77,7 +80,9 @@ export function Combobox({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      {name && <input type="hidden" name={name} value={value} required={required} />}
+      {name && (
+        <input type="hidden" name={name} value={value} required={required} />
+      )}
 
       <button
         type="button"
@@ -86,10 +91,12 @@ export function Combobox({
         className={cn(
           "w-full flex items-center justify-between gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-left transition-colors",
           "focus:outline-none focus:ring-2 focus:ring-blue-500",
-          open && "ring-2 ring-blue-500 border-transparent"
+          open && "ring-2 ring-blue-500 border-transparent",
         )}
       >
-        <span className={cn("truncate", !value && !allLabel && "text-gray-400")}>
+        <span
+          className={cn("truncate", !value && !allLabel && "text-gray-400")}
+        >
           {value ? selectedLabel : (allLabel ?? placeholder)}
         </span>
         <div className="flex items-center gap-1 shrink-0">
@@ -97,14 +104,27 @@ export function Combobox({
             <span
               role="button"
               tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); onChange(""); }}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onChange(""); } }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.stopPropagation();
+                  onChange("");
+                }
+              }}
               className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600"
             >
               <X className="h-3 w-3" />
             </span>
           )}
-          <ChevronDown className={cn("h-4 w-4 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-gray-400 transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
         </div>
       </button>
 
@@ -128,7 +148,7 @@ export function Combobox({
                 onClick={() => handleSelect("")}
                 className={cn(
                   "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-sky-50 transition-colors text-left",
-                  !value && "text-blue-600 font-medium"
+                  !value && "text-blue-600 font-medium",
                 )}
               >
                 {allLabel}
@@ -136,7 +156,9 @@ export function Combobox({
               </button>
             )}
             {filtered.length === 0 ? (
-              <p className="px-3 py-4 text-sm text-gray-400 text-center">Tidak ditemukan</p>
+              <p className="px-3 py-4 text-sm text-gray-400 text-center">
+                Tidak ditemukan
+              </p>
             ) : (
               filtered.map((opt) => (
                 <button
@@ -145,11 +167,13 @@ export function Combobox({
                   onClick={() => handleSelect(opt.value)}
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-sky-50 transition-colors text-left",
-                    value === opt.value && "text-blue-600 font-medium"
+                    value === opt.value && "text-blue-600 font-medium",
                   )}
                 >
                   <span className="truncate">{opt.label}</span>
-                  {value === opt.value && <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
+                  {value === opt.value && (
+                    <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                  )}
                 </button>
               ))
             )}

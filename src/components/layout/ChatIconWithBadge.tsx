@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { MessageSquare } from "lucide-react";
+import Link from "next/link";
 import { useChatUnread } from "@/hooks/useChatUnread";
 
 export function ChatIconWithBadge({ userId }: { userId: string }) {

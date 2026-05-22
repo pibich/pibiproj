@@ -1,29 +1,37 @@
 export const dynamic = "force-dynamic";
 
+import { createClient as createAdminClient } from "@supabase/supabase-js";
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  ChevronLeft,
+  Eye,
+  Flag,
+  Gavel,
+  Info,
+  MessageSquare,
+  TrendingUp,
+} from "lucide-react";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { getUser } from "@/lib/dal";
-import { CountdownTimer } from "@/components/auction/CountdownTimer";
+import { notFound } from "next/navigation";
 import { BidForm } from "@/components/auction/BidForm";
 import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
+import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { ImageGallery } from "@/components/auction/ImageGallery";
 import { Badge } from "@/components/ui/Badge";
-import { formatIDR, formatDate, getInitials } from "@/lib/utils";
-import {
-  Gavel,
-  Eye,
-  MessageSquare,
-  Flag,
-  Calendar,
-  ChevronLeft,
-  AlertTriangle,
-  TrendingUp,
-  Info,
-  CheckCircle2,
-} from "lucide-react";
-import type { Auction, Category, Profile, Bid } from "@/types/supabase";
+import { getUser } from "@/lib/dal";
+import { createNotification } from "@/lib/notifications";
+import { createClient } from "@/lib/supabase/server";
+import { formatDate, formatIDR, getInitials } from "@/lib/utils";
+import type {
+  Auction,
+  Bid,
+  Category,
+  Database,
+  Profile,
+} from "@/types/supabase";
 
 const conditionLabels: Record<string, string> = {
   mint: "Mint",
@@ -35,13 +43,13 @@ const conditionLabels: Record<string, string> = {
   damaged: "Damaged",
 };
 
-const statusLabels: Record<string, string> = {
-  draft: "Draft",
-  active: "Aktif",
-  closed: "Selesai",
-  completed: "Terkonfirmasi",
-  cancelled: "Dibatalkan",
-};
+function getStatusLabel(status: string, winnerId: string | null): string {
+  if (status === "closed") return winnerId ? "Selesai" : "Gagal";
+  if (status === "completed") return "Terkonfirmasi";
+  if (status === "cancelled") return "Dibatalkan";
+  if (status === "active") return "Aktif";
+  return status;
+}
 
 type BidWithBidder = Bid & {
   bidder: Pick<Profile, "username" | "name" | "buyer_warning_count"> | null;
@@ -60,7 +68,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data } = await supabase.from("auctions").select("title").eq("id", id).single();
+  const { data } = await supabase
+    .from("auctions")
+    .select("title")
+    .eq("id", id)
+    .single();
   return { title: (data as { title: string } | null)?.title ?? "Lelang" };
 }
 
@@ -80,14 +92,43 @@ export default async function AuctionDetailPage({
       seller:profiles!seller_id(id, username, name, avatar_url),
       winner:profiles!winner_id(id, username, name),
       category:categories(name, slug),
-      bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`
+      bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`,
     )
     .eq("id", id)
-    .single() as unknown as Promise<{ data: FullAuction | null; error: object | null }>);
+    .single() as unknown as Promise<{
+    data: FullAuction | null;
+    error: object | null;
+  }>);
 
   if (auctionError || !auctionRaw) notFound();
 
-  const auction = auctionRaw;
+  let auction = auctionRaw;
+
+  // Lazy close: if auction is still "active" but end_time has passed, close it now
+  if (
+    auction.status === "active" &&
+    auction.end_time &&
+    new Date(auction.end_time) < new Date()
+  ) {
+    const adminDb = createAdminClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+    await adminDb.from("auctions").update({ status: "closed" }).eq("id", id);
+    await createNotification(adminDb, {
+      user_id: auction.seller.id,
+      type: "auction_ended",
+      auction_id: id,
+    });
+    if (auction.winner_id) {
+      await createNotification(adminDb, {
+        user_id: auction.winner_id,
+        type: "auction_won",
+        auction_id: id,
+      });
+    }
+    auction = { ...auction, status: "closed" } as typeof auction;
+  }
 
   const { data: sellerStats } = await supabase
     .from("auctions")
@@ -96,7 +137,8 @@ export default async function AuctionDetailPage({
     .neq("status", "cancelled");
 
   const totalSellerAuctions = sellerStats?.length ?? 0;
-  const completedSellerAuctions = sellerStats?.filter((a) => a.status === "completed").length ?? 0;
+  const completedSellerAuctions =
+    sellerStats?.filter((a) => a.status === "completed").length ?? 0;
   const sellerSuccessRate =
     totalSellerAuctions > 0
       ? Math.round((completedSellerAuctions / totalSellerAuctions) * 100)
@@ -115,18 +157,29 @@ export default async function AuctionDetailPage({
   const isSeller = currentUser?.id === auction.seller.id;
 
   const sortedBids = [...auction.bids].sort(
-    (a, b) => Number(b.amount) - Number(a.amount)
+    (a, b) => Number(b.amount) - Number(a.amount),
   );
 
-  const conditionColors: Record<string, "success" | "info" | "warning" | "danger" | "default"> = {
-    mint: "success", near_mint: "success", excellent: "info", good: "info",
-    light_play: "warning", heavy_play: "warning", damaged: "danger",
+  const conditionColors: Record<
+    string,
+    "success" | "info" | "warning" | "danger" | "default"
+  > = {
+    mint: "success",
+    near_mint: "success",
+    excellent: "info",
+    good: "info",
+    light_play: "warning",
+    heavy_play: "warning",
+    damaged: "danger",
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
-        <Link href="/auctions" className="hover:text-gray-700 flex items-center gap-1">
+        <Link
+          href="/auctions"
+          className="hover:text-gray-700 flex items-center gap-1"
+        >
           <ChevronLeft className="h-4 w-4" />
           Lelang
         </Link>
@@ -147,17 +200,23 @@ export default async function AuctionDetailPage({
             </Badge>
             <Badge
               variant={
-                auction.status === "active" ? "success"
-                : auction.status === "completed" ? "info"
-                : "default"
+                auction.status === "active"
+                  ? "success"
+                  : auction.status === "completed"
+                    ? "info"
+                    : auction.status === "closed" && !auction.winner_id
+                      ? "danger"
+                      : "default"
               }
             >
-              {statusLabels[auction.status] ?? auction.status}
+              {getStatusLabel(auction.status, auction.winner_id)}
             </Badge>
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">{auction.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">
+              {auction.title}
+            </h1>
             {auction.description && (
               <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
                 {auction.description}
@@ -196,7 +255,10 @@ export default async function AuctionDetailPage({
             </div>
 
             {auction.end_time && !isEnded && (
-              <CountdownTimer endTime={auction.end_time} auctionId={auction.id} />
+              <CountdownTimer
+                endTime={auction.end_time}
+                auctionId={auction.id}
+              />
             )}
 
             <BidForm
@@ -249,15 +311,23 @@ export default async function AuctionDetailPage({
                 )}
               </div>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">{auction.seller.name}</p>
-                <p className="text-xs text-gray-500">@{auction.seller.username}</p>
+                <p className="font-semibold text-gray-900 text-sm">
+                  {auction.seller.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  @{auction.seller.username}
+                </p>
               </div>
             </Link>
             <div className="mt-3 pt-3 border-t border-gray-100">
               {sellerSuccessRate !== null ? (
                 <div className="flex items-center gap-1.5 text-xs">
-                  <TrendingUp className={`h-3.5 w-3.5 ${sellerSuccessRate >= 60 ? "text-green-500" : "text-yellow-500"}`} />
-                  <span className={`font-medium ${sellerSuccessRate >= 60 ? "text-green-700" : "text-yellow-700"}`}>
+                  <TrendingUp
+                    className={`h-3.5 w-3.5 ${sellerSuccessRate >= 60 ? "text-green-500" : "text-yellow-500"}`}
+                  />
+                  <span
+                    className={`font-medium ${sellerSuccessRate >= 60 ? "text-green-700" : "text-yellow-700"}`}
+                  >
                     {sellerSuccessRate}% keberhasilan
                   </span>
                   <span className="text-gray-400">
@@ -282,7 +352,10 @@ export default async function AuctionDetailPage({
                 </p>
                 {auction.winner && (
                   <p className="text-sm text-gray-600">
-                    Pemenang: <span className="font-semibold">@{auction.winner.username}</span>
+                    Pemenang:{" "}
+                    <span className="font-semibold">
+                      @{auction.winner.username}
+                    </span>
                   </p>
                 )}
                 {auction.transaction_confirmed ? (
@@ -304,7 +377,8 @@ export default async function AuctionDetailPage({
             auction.winner_id === currentUser?.id && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-2 text-emerald-700 text-sm font-medium">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
-                Transaksi telah dikonfirmasi oleh penjual. Rating Anda telah diperbarui!
+                Transaksi telah dikonfirmasi oleh penjual. Rating Anda telah
+                diperbarui!
               </div>
             )}
 
@@ -313,7 +387,9 @@ export default async function AuctionDetailPage({
               Riwayat Bid
             </p>
             {sortedBids.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-3">Belum ada bid</p>
+              <p className="text-sm text-gray-400 text-center py-3">
+                Belum ada bid
+              </p>
             ) : (
               <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
                 {sortedBids.map((bid, i) => (
@@ -334,7 +410,9 @@ export default async function AuctionDetailPage({
                           className="flex items-center gap-0.5 text-orange-500"
                         >
                           <AlertTriangle className="h-3 w-3" />
-                          <span className="text-xs">{bid.bidder?.buyer_warning_count}</span>
+                          <span className="text-xs">
+                            {bid.bidder?.buyer_warning_count}
+                          </span>
                         </span>
                       )}
                     </div>

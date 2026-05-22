@@ -17,7 +17,9 @@ export default function RegisterPage() {
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Buat Akun Baru</h1>
-          <p className="text-sm text-slate-500">Bergabung dengan komunitas TCG Marketplace</p>
+          <p className="text-sm text-slate-500">
+            Bergabung dengan komunitas TCG Marketplace
+          </p>
         </div>
         <RegisterForm />
       </div>

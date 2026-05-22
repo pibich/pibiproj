@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const supabase = await createClient();
@@ -76,7 +76,10 @@ export async function PATCH(
         .single();
 
       const newCount = (target?.buyer_warning_count ?? 0) + 1;
-      const update: { buyer_warning_count: number; buyer_timeout_until?: string } = {
+      const update: {
+        buyer_warning_count: number;
+        buyer_timeout_until?: string;
+      } = {
         buyer_warning_count: newCount,
       };
 

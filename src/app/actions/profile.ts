@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/dal";
+import { createClient } from "@/lib/supabase/server";
 
-export async function updateAvatarAction(avatarUrl: string): Promise<{ error?: string }> {
+export async function updateAvatarAction(
+  avatarUrl: string,
+): Promise<{ error?: string }> {
   try {
     const user = await requireUser();
     const supabase = await createClient();

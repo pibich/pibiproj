@@ -1,13 +1,15 @@
+import { ArrowRight, Gavel, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { AuctionCard } from "@/components/auction/AuctionCard";
-import { Button } from "@/components/ui/Button";
 import { FeaturesCarousel } from "@/components/home/FeaturesCarousel";
-import { Gavel, ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { createClient } from "@/lib/supabase/server";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
-export const metadata: Metadata = { title: "TCG Marketplace — Lelang Kartu TCG Terpercaya" };
+export const metadata: Metadata = {
+  title: "TCG Marketplace — Lelang Kartu TCG Terpercaya",
+};
 
 type AuctionWithRelations = Auction & {
   seller: Pick<Profile, "username" | "name">;
@@ -20,7 +22,7 @@ async function getFeaturedAuctions() {
   const { data } = await supabase
     .from("auctions")
     .select(
-      `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`
+      `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`,
     )
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -28,7 +30,6 @@ async function getFeaturedAuctions() {
 
   return (data ?? []) as unknown as AuctionWithRelations[];
 }
-
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -40,9 +41,9 @@ export default async function HomePage() {
     .not("slug", "eq", "lainnya");
 
   return (
-    <div className="flex flex-col gap-16 pb-16">
+    <div className="flex flex-col gap-10 sm:gap-16 pb-16">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 text-white py-24 px-4">
+      <section className="relative overflow-hidden bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-500 text-white py-12 sm:py-24 px-4">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-sky-300/20 rounded-full blur-3xl" />
@@ -54,12 +55,12 @@ export default async function HomePage() {
             <Sparkles className="h-3.5 w-3.5 text-sky-200" />
             Platform TCG #1 di Indonesia
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold mb-4 sm:mb-5 leading-tight tracking-tight">
             Lelang Kartu TCG Terpercaya
           </h1>
           <p className="text-lg text-sky-100 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Platform lelang kartu TCG terpercaya. Temukan kartu langka, bid secara real-time,
-            dan bertransaksi dengan aman.
+            Platform lelang kartu TCG terpercaya. Temukan kartu langka, bid
+            secara real-time, dan bertransaksi dengan aman.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/auctions">
@@ -83,7 +84,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 flex-wrap">
+          <div className="mt-8 sm:mt-12 flex items-center justify-center gap-6 sm:gap-8 flex-wrap">
             {[
               { value: "100%", label: "Terpercaya" },
               { value: "Real-Time", label: "Sistem Bid" },
@@ -103,7 +104,9 @@ export default async function HomePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-slate-800">Lelang Aktif</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Lelang yang sedang berjalan sekarang</p>
+            <p className="text-sm text-slate-500 mt-0.5">
+              Lelang yang sedang berjalan sekarang
+            </p>
           </div>
           <Link href="/auctions">
             <Button variant="outline" size="sm">
@@ -135,9 +138,12 @@ export default async function HomePage() {
       {/* Features */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Mengapa TCG Marketplace?</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">
+            Mengapa TCG Marketplace?
+          </h2>
           <p className="text-slate-500 text-sm max-w-md mx-auto">
-            Semua yang kamu butuhkan untuk transaksi kartu TCG yang aman dan mudah
+            Semua yang kamu butuhkan untuk transaksi kartu TCG yang aman dan
+            mudah
           </p>
         </div>
         <FeaturesCarousel />

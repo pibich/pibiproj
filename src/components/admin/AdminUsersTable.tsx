@@ -1,16 +1,29 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import {
+  AlertTriangle,
+  Clock,
+  Search,
+  ShieldCheck,
+  ShieldOff,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
-import { ShieldCheck, ShieldOff, AlertTriangle, Clock, Search } from "lucide-react";
 import type { Profile } from "@/types/supabase";
 
 type UserRow = Pick<
   Profile,
-  "id" | "name" | "username" | "avatar_url" | "role" | "buyer_warning_count" | "buyer_timeout_until" | "is_middleman"
+  | "id"
+  | "name"
+  | "username"
+  | "avatar_url"
+  | "role"
+  | "buyer_warning_count"
+  | "buyer_timeout_until"
+  | "is_middleman"
 >;
 
 function isTimeoutActive(until: string | null): boolean {
@@ -43,10 +56,13 @@ export function AdminUsersTable({
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.username.toLowerCase().includes(search.toLowerCase())
+      u.username.toLowerCase().includes(search.toLowerCase()),
   );
 
-  async function handleAction(userId: string, action: "toggle_role" | "reset_timeout") {
+  async function handleAction(
+    userId: string,
+    action: "toggle_role" | "reset_timeout",
+  ) {
     setLoadingId(userId);
     setLoadingAction(action);
     setError(null);
@@ -94,21 +110,36 @@ export function AdminUsersTable({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Pengguna</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Peringatan</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Timeout</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Aksi</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    Pengguna
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    Role
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    Peringatan
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    Timeout
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">
+                    Aksi
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((user) => {
-                  const timeoutActive = isTimeoutActive(user.buyer_timeout_until);
+                  const timeoutActive = isTimeoutActive(
+                    user.buyer_timeout_until,
+                  );
                   const isSelf = user.id === adminId;
                   const isLoading = loadingId === user.id;
 
                   return (
-                    <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={user.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold shrink-0">
@@ -124,8 +155,12 @@ export function AdminUsersTable({
                             )}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900 leading-tight">{user.name}</p>
-                            <p className="text-xs text-gray-500">@{user.username}</p>
+                            <p className="font-medium text-gray-900 leading-tight">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              @{user.username}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -133,18 +168,27 @@ export function AdminUsersTable({
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           {user.role === "admin" ? (
-                            <Badge variant="default" className="flex items-center gap-1 text-xs">
+                            <Badge
+                              variant="default"
+                              className="flex items-center gap-1 text-xs"
+                            >
                               <ShieldCheck className="h-3 w-3" />
                               Admin
                             </Badge>
                           ) : (
-                            <Badge variant="default" className="text-xs">User</Badge>
+                            <Badge variant="default" className="text-xs">
+                              User
+                            </Badge>
                           )}
                           {user.is_middleman && (
-                            <Badge variant="success" className="text-xs">Middleman</Badge>
+                            <Badge variant="success" className="text-xs">
+                              Middleman
+                            </Badge>
                           )}
                           {isSelf && (
-                            <span className="text-xs text-gray-400">(Anda)</span>
+                            <span className="text-xs text-gray-400">
+                              (Anda)
+                            </span>
                           )}
                         </div>
                       </td>
@@ -153,7 +197,9 @@ export function AdminUsersTable({
                         {user.buyer_warning_count > 0 ? (
                           <div className="flex items-center gap-1 text-orange-600">
                             <AlertTriangle className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">{user.buyer_warning_count}x</span>
+                            <span className="text-xs font-medium">
+                              {user.buyer_warning_count}x
+                            </span>
                           </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -179,8 +225,12 @@ export function AdminUsersTable({
                             <Button
                               size="sm"
                               variant="outline"
-                              loading={isLoading && loadingAction === "reset_timeout"}
-                              onClick={() => handleAction(user.id, "reset_timeout")}
+                              loading={
+                                isLoading && loadingAction === "reset_timeout"
+                              }
+                              onClick={() =>
+                                handleAction(user.id, "reset_timeout")
+                              }
                               className="text-xs"
                             >
                               Reset Timeout
@@ -188,11 +238,19 @@ export function AdminUsersTable({
                           )}
                           <Button
                             size="sm"
-                            variant={user.role === "admin" ? "outline" : "primary"}
-                            loading={isLoading && loadingAction === "toggle_role"}
+                            variant={
+                              user.role === "admin" ? "outline" : "primary"
+                            }
+                            loading={
+                              isLoading && loadingAction === "toggle_role"
+                            }
                             disabled={isSelf}
                             onClick={() => handleAction(user.id, "toggle_role")}
-                            title={isSelf ? "Tidak bisa mengubah role akun sendiri" : undefined}
+                            title={
+                              isSelf
+                                ? "Tidak bisa mengubah role akun sendiri"
+                                : undefined
+                            }
                             className="text-xs"
                           >
                             {user.role === "admin" ? (

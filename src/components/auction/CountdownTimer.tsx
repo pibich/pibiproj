@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getTimeRemaining } from "@/lib/utils";
 import { Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getTimeRemaining } from "@/lib/utils";
 
-export function CountdownTimer({ endTime, auctionId }: { endTime: string; auctionId?: string }) {
+export function CountdownTimer({
+  endTime,
+  auctionId,
+}: {
+  endTime: string;
+  auctionId?: string;
+}) {
   const [time, setTime] = useState(getTimeRemaining(endTime));
   const [forcedEnded, setForcedEnded] = useState(false);
 
@@ -17,14 +23,21 @@ export function CountdownTimer({ endTime, auctionId }: { endTime: string; auctio
       .channel(`timer-${auctionId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "auctions", filter: `id=eq.${auctionId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "auctions",
+          filter: `id=eq.${auctionId}`,
+        },
         (payload) => {
           const updated = payload.new as { status: string };
           if (updated.status !== "active") setForcedEnded(true);
-        }
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [auctionId]);
 
   useEffect(() => {
@@ -46,7 +59,9 @@ export function CountdownTimer({ endTime, auctionId }: { endTime: string; auctio
   const isUrgent = time.total < 3600;
 
   return (
-    <div className={`flex flex-col gap-1 ${isUrgent ? "text-red-600" : "text-gray-900"}`}>
+    <div
+      className={`flex flex-col gap-1 ${isUrgent ? "text-red-600" : "text-gray-900"}`}
+    >
       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
         <Clock className="h-4 w-4" />
         Sisa Waktu

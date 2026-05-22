@@ -1,5 +1,5 @@
-import { cn } from "@/lib/utils";
 import type { InputHTMLAttributes } from "react";
+import { cn } from "@/lib/utils";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,7 +7,14 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   hint?: string;
 }
 
-export function Input({ label, error, hint, className, id, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  hint,
+  className,
+  id,
+  ...props
+}: InputProps) {
   return (
     <div className="flex flex-col gap-1">
       {label && (
@@ -25,7 +32,7 @@ export function Input({ label, error, hint, className, id, ...props }: InputProp
           error
             ? "border-red-300 bg-red-50"
             : "border-sky-200 bg-white hover:border-sky-300 shadow-sm",
-          className
+          className,
         )}
         {...props}
       />

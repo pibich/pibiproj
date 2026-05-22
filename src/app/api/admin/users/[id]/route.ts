@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const supabase = await createClient();
@@ -16,7 +16,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json() as { action: "toggle_role" | "reset_timeout" };
+  const body = (await req.json()) as {
+    action: "toggle_role" | "reset_timeout";
+  };
   const adminClient = createAdminClient();
 
   const { data: admin } = await adminClient
@@ -33,7 +35,7 @@ export async function PATCH(
     if (id === user.id) {
       return NextResponse.json(
         { error: "Tidak bisa mengubah role akun sendiri" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +46,10 @@ export async function PATCH(
       .single();
 
     if (fetchError || !target) {
-      return NextResponse.json({ error: "User tidak ditemukan" }, { status: 404 });
+      return NextResponse.json(
+        { error: "User tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     const newRole = target.role === "admin" ? "user" : "admin";

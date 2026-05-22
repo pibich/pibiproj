@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { AlertCircle, CheckCircle2, Gavel, LogIn, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
-import { formatIDR } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
-import { Gavel, Zap, AlertCircle, CheckCircle2, LogIn } from "lucide-react";
+import { formatIDR } from "@/lib/utils";
 
 interface BidFormProps {
   auctionId: string;
@@ -30,7 +30,10 @@ export function BidForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [bidAmount, setBidAmount] = useState(currentPrice + minIncrement);
-  const [message, setMessage] = useState<{ type: "success" | "error" | "login"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error" | "login";
+    text: string;
+  } | null>(null);
   const [auctionEnded, setAuctionEnded] = useState(initialEnded);
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export function BidForm({
             setAuctionEnded(true);
             router.refresh();
           }
-        }
+        },
       )
       .subscribe();
 
@@ -71,7 +74,10 @@ export function BidForm({
   async function handleBid(e: React.FormEvent) {
     e.preventDefault();
     if (!isLoggedIn) {
-      setMessage({ type: "login", text: "Silakan login terlebih dahulu untuk memasang bid." });
+      setMessage({
+        type: "login",
+        text: "Silakan login terlebih dahulu untuk memasang bid.",
+      });
       return;
     }
 
@@ -86,7 +92,12 @@ export function BidForm({
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini." });
+        setMessage({
+          type: "error",
+          text:
+            data.error ??
+            "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini.",
+        });
       } else {
         setMessage({ type: "success", text: "Bid berhasil dipasang!" });
         router.refresh();
@@ -96,7 +107,10 @@ export function BidForm({
 
   async function handleBuyNow() {
     if (!isLoggedIn) {
-      setMessage({ type: "login", text: "Silakan login terlebih dahulu untuk menggunakan fitur Beli Langsung." });
+      setMessage({
+        type: "login",
+        text: "Silakan login terlebih dahulu untuk menggunakan fitur Beli Langsung.",
+      });
       return;
     }
     if (!buyNowPrice) return;
@@ -110,10 +124,18 @@ export function BidForm({
 
       const data = await res.json();
       if (!res.ok) {
-        setMessage({ type: "error", text: data.error ?? "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini." });
+        setMessage({
+          type: "error",
+          text:
+            data.error ??
+            "Bid gagal. Pastikan jumlah bid lebih tinggi dari harga saat ini.",
+        });
       } else {
         setAuctionEnded(true);
-        setMessage({ type: "success", text: "Selamat! Anda berhasil membeli kartu ini." });
+        setMessage({
+          type: "success",
+          text: "Selamat! Anda berhasil membeli kartu ini.",
+        });
         router.refresh();
       }
     });
@@ -143,8 +165,8 @@ export function BidForm({
             message.type === "success"
               ? "bg-green-50 border border-green-200 text-green-700"
               : message.type === "login"
-              ? "bg-blue-50 border border-blue-200 text-blue-700"
-              : "bg-red-50 border border-red-200 text-red-700"
+                ? "bg-blue-50 border border-blue-200 text-blue-700"
+                : "bg-red-50 border border-red-200 text-red-700"
           }`}
         >
           {message.type === "success" ? (
@@ -157,7 +179,10 @@ export function BidForm({
           <span>
             {message.text}{" "}
             {message.type === "login" && (
-              <Link href="/login" className="font-semibold underline underline-offset-2">
+              <Link
+                href="/login"
+                className="font-semibold underline underline-offset-2"
+              >
                 Login sekarang
               </Link>
             )}
@@ -167,10 +192,10 @@ export function BidForm({
 
       <form onSubmit={handleBid} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Jumlah Bid</label>
-          <p className="text-xs text-gray-500">
-            Minimum: {formatIDR(minBid)}
-          </p>
+          <label className="text-sm font-medium text-gray-700">
+            Jumlah Bid
+          </label>
+          <p className="text-xs text-gray-500">Minimum: {formatIDR(minBid)}</p>
           <input
             type="number"
             value={bidAmount}

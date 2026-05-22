@@ -1,7 +1,7 @@
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
+import { differenceInSeconds, format, formatDistanceToNow } from "date-fns";
+import { enUS, id as idLocale } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
-import { format, formatDistanceToNow, differenceInSeconds } from "date-fns";
-import { id as idLocale, enUS } from "date-fns/locale";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,7 +19,7 @@ export function formatIDR(amount: number): string {
 export function formatDate(
   date: string | Date,
   locale: string = "id",
-  fmt: string = "dd MMM yyyy"
+  fmt: string = "dd MMM yyyy",
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return format(d, fmt, { locale: locale === "id" ? idLocale : enUS });
@@ -27,7 +27,7 @@ export function formatDate(
 
 export function formatRelativeTime(
   date: string | Date,
-  locale: string = "id"
+  locale: string = "id",
 ): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return formatDistanceToNow(d, {
@@ -48,7 +48,14 @@ export function getTimeRemaining(endTime: string | Date): {
   const total = differenceInSeconds(end, new Date());
 
   if (total <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0, expired: true };
+    return {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      total: 0,
+      expired: true,
+    };
   }
 
   const days = Math.floor(total / 86400);

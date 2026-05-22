@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
-import { Gavel } from "lucide-react";
+import { ChevronLeft, ChevronRight, Gavel, X, ZoomIn } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface ImageGalleryProps {
   images: string[];
@@ -34,7 +33,9 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
 
   useEffect(() => {
     document.body.style.overflow = lightboxOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [lightboxOpen]);
 
   if (images.length === 0) {
@@ -115,7 +116,10 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
           {images.length > 1 && (
             <button
               className="absolute left-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-10"
-              onClick={(e) => { e.stopPropagation(); prev(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                prev();
+              }}
             >
               <ChevronLeft className="h-7 w-7" />
             </button>
@@ -138,7 +142,10 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
           {images.length > 1 && (
             <button
               className="absolute right-4 text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-colors z-10"
-              onClick={(e) => { e.stopPropagation(); next(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                next();
+              }}
             >
               <ChevronRight className="h-7 w-7" />
             </button>
@@ -153,7 +160,10 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
                   key={i}
                   src={img}
                   alt={`${title} ${i + 1}`}
-                  onClick={(e) => { e.stopPropagation(); setActiveIndex(i); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveIndex(i);
+                  }}
                   className={`h-12 w-12 object-cover rounded-md shrink-0 cursor-pointer border-2 transition-all ${
                     i === activeIndex
                       ? "border-white opacity-100"

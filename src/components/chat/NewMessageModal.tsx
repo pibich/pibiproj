@@ -1,7 +1,16 @@
 "use client";
 
-import { Check, Loader2, Search, ShieldCheck, Users, X } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MessageSquare,
+  Search,
+  ShieldCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { Channel as StreamChannel } from "stream-chat";
 import { useChatContext } from "stream-chat-react";
 import { getInitials } from "@/lib/utils";
 
@@ -13,28 +22,47 @@ type UserResult = {
   is_middleman: boolean;
 };
 
-interface CreateGroupModalProps {
+interface NewMessageModalProps {
   open: boolean;
   onClose: () => void;
   currentUserId: string;
+  onCreated: (channel: StreamChannel) => void;
 }
 
-export function CreateGroupModal({
+// Deterministic channel ID for two-person DMs (same pair always → same channel)
+function buildDmChannelId(a: string, b: string): string {
+  return [a, b]
+    .map((id) => id.replace(/-/g, ""))
+    .sort()
+    .join("")
+    .slice(0, 64);
+}
+
+// Unique ID for group chats
+function generateGroupId(): string {
+  return `grp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+export function NewMessageModal({
   open,
   onClose,
   currentUserId,
-}: CreateGroupModalProps) {
-  const { client, setActiveChannel } = useChatContext();
+  onCreated,
+}: NewMessageModalProps) {
+  const { client } = useChatContext();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserResult[]>([]);
   const [selected, setSelected] = useState<UserResult[]>([]);
   const [groupName, setGroupName] = useState("");
   const [searching, setSearching] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reset state when modal closes
+  const isGroup = selected.length >= 2;
+  const canCreate = selected.length >= 1;
+
+  // Reset when closed
   useEffect(() => {
     if (!open) {
       setQuery("");
@@ -45,7 +73,7 @@ export function CreateGroupModal({
     }
   }, [open]);
 
-  // Debounced user search
+  // Debounced search
   useEffect(() => {
     if (!open) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -82,24 +110,25 @@ export function CreateGroupModal({
   }
 
   async function handleCreate() {
-    if (selected.length === 0) {
-      setError("Pilih setidaknya satu anggota");
-      return;
-    }
-    setLoading(true);
+    if (!canCreate) return;
+    setCreating(true);
     setError(null);
     try {
+      let channelId: string;
+      let name: string | undefined;
       const memberIds = [currentUserId, ...selected.map((u) => u.id)];
-      // Unique per creation: timestamp (base36) + random suffix, never collides
-      const uniquePart =
-        Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      const channelId = `grp_${uniquePart}`;
-      const name =
-        groupName.trim() ||
-        selected.map((u) => u.name.split(" ")[0]).join(", ");
 
-      // Create the channel server-side first — client-side GetOrCreate is blocked
-      // by Stream's permission policy for the 'user' role.
+      if (!isGroup) {
+        // Direct message — deterministic ID so the same pair always reuses the channel
+        channelId = buildDmChannelId(currentUserId, selected[0].id);
+      } else {
+        // Group — unique ID + auto name
+        channelId = generateGroupId();
+        name =
+          groupName.trim() ||
+          selected.map((u) => u.name.split(" ")[0]).join(", ");
+      }
+
       const res = await fetch("/api/stream/group", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -107,52 +136,50 @@ export function CreateGroupModal({
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Gagal membuat grup");
+        throw new Error(data.error ?? "Gagal membuat percakapan");
       }
 
-      // Use queryChannels instead of channel.watch() — queryChannels uses a
-      // different API endpoint (/channels POST) that is permitted for 'user'
-      // role, while GetOrCreateChannel (/channels/{type}/{id} POST) is not.
-      const channels = await client.queryChannels(
-        {
-          id: { $eq: channelId },
-          type: "messaging",
-          members: { $in: [currentUserId] },
-        },
-        {},
-        { watch: true, state: true },
-      );
-      if (channels.length > 0) {
-        setActiveChannel?.(channels[0]);
-      }
-      onClose();
+      // Use channel().watch() — direct reference by ID avoids membership
+      // propagation delay that queryChannels can hit immediately after addMembers
+      const ch = client.channel("messaging", channelId);
+      await ch.watch();
+      onCreated(ch);
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : "Gagal membuat grup. Coba lagi.",
+        e instanceof Error ? e.message : "Gagal membuat percakapan. Coba lagi.",
       );
       console.error(e);
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   }
 
   if (!open) return null;
 
+  const buttonLabel = isGroup
+    ? `Buat Grup${selected.length > 0 ? ` (${selected.length + 1} anggota)` : ""}`
+    : selected.length === 1
+      ? `Mulai Chat dengan ${selected[0].name.split(" ")[0]}`
+      : "Pilih pengguna";
+
+  const ButtonIcon = isGroup ? Users : MessageSquare;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Tutup"
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-      />
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click-to-close; Escape handled globally */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismiss */}
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
-            <h2 className="font-semibold text-gray-900">Buat Grup Chat</h2>
+            <h2 className="font-semibold text-gray-900">
+              {isGroup ? "Buat Grup Chat" : "Pesan Baru"}
+            </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Undang pengguna ke dalam satu grup
+              {isGroup
+                ? "Tambah lebih banyak pengguna untuk membuat grup"
+                : "Pilih seseorang untuk memulai percakapan"}
             </p>
           </div>
           <button
@@ -164,19 +191,21 @@ export function CreateGroupModal({
           </button>
         </div>
 
-        {/* Group name */}
-        <div className="px-5 pt-4 pb-2">
-          <input
-            type="text"
-            placeholder="Nama grup (opsional)"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        {/* Group name — only visible when 2+ selected */}
+        {isGroup && (
+          <div className="px-5 pt-4 pb-2">
+            <input
+              type="text"
+              placeholder="Nama grup (opsional, auto-dibuat jika kosong)"
+              value={groupName}
+              onChange={(e) => setGroupName(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
 
         {/* Search input */}
-        <div className="px-5 pb-3">
+        <div className="px-5 pt-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
             <input
@@ -209,7 +238,7 @@ export function CreateGroupModal({
           </div>
         )}
 
-        {/* Results list */}
+        {/* Results */}
         <div className="flex-1 overflow-y-auto min-h-[6rem] max-h-60 p-3">
           {searching && (
             <div className="flex items-center justify-center py-8 text-gray-400">
@@ -279,17 +308,15 @@ export function CreateGroupModal({
           <button
             type="button"
             onClick={handleCreate}
-            disabled={loading || selected.length === 0}
+            disabled={creating || !canCreate}
             className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {creating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Users className="h-4 w-4" />
+              <ButtonIcon className="h-4 w-4" />
             )}
-            {loading
-              ? "Membuat..."
-              : `Buat Grup${selected.length > 0 ? ` (${selected.length + 1} anggota)` : ""}`}
+            {creating ? "Memproses..." : buttonLabel}
           </button>
         </div>
       </div>
