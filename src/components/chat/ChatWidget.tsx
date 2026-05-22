@@ -42,6 +42,7 @@ interface ChatWidgetProps {
   currentUser: Pick<Profile, "id" | "name" | "username" | "avatar_url">;
   targetUserId?: string;
   auctionId?: string;
+  className?: string;
 }
 
 function buildChannelId(ids: string[]): string {
@@ -336,6 +337,9 @@ function ChannelListLayout({
 }) {
   const { client, channel: activeChannel, setActiveChannel } = useChatContext();
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  // Local state for mobile panel switching — decoupled from Stream's activeChannel
+  // so that going back doesn't blank out the channel list
+  const [mobileShowChat, setMobileShowChat] = useState(false);
   const channelInitialized = useRef(false);
 
   useEffect(() => {
@@ -362,10 +366,23 @@ function ChannelListLayout({
         ),
       )
       .then((channels) => {
-        if (channels.length > 0) setActiveChannel?.(channels[0]);
+        if (channels.length > 0) {
+          setActiveChannel?.(channels[0]);
+          setMobileShowChat(true);
+        }
       })
       .catch(console.error);
   }, [initialTargetUserId, client, userId, setActiveChannel]);
+
+  function handleSelectChannel() {
+    setMobileShowChat(true);
+  }
+
+  function handleBack() {
+    // Only update mobile nav state — keep activeChannel loaded so ChannelList
+    // stays populated and doesn't flash blank on return
+    setMobileShowChat(false);
+  }
 
   return (
     <div className="flex h-full">
@@ -374,7 +391,8 @@ function ChannelListLayout({
         className={[
           "flex flex-col h-full border-r border-gray-100 bg-white shrink-0 relative z-10",
           "w-full sm:w-72",
-          activeChannel ? "hidden sm:flex" : "flex",
+          // Mobile: hide list when viewing a chat; desktop: always show
+          mobileShowChat ? "hidden sm:flex" : "flex",
         ].join(" ")}
       >
         <div className="shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-gray-100">
@@ -391,14 +409,19 @@ function ChannelListLayout({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <ChannelList
             filters={{ members: { $in: [userId] } }}
             sort={{ last_message_at: -1 }}
             renderChannels={(channels) => (
               <div>
                 {(channels as StreamChannel[]).map((ch) => (
-                  <CustomChannelPreview key={ch.id} channel={ch} />
+                  <CustomChannelPreview
+                    key={ch.id}
+                    channel={ch}
+                    onSelect={handleSelectChannel}
+                    onHide={handleBack}
+                  />
                 ))}
               </div>
             )}
@@ -411,7 +434,8 @@ function ChannelListLayout({
       <div
         className={[
           "flex-1 min-w-0 flex flex-col",
-          activeChannel ? "flex" : "hidden sm:flex",
+          // Mobile: show chat panel only when mobileShowChat; desktop: show when activeChannel
+          mobileShowChat ? "flex" : "hidden sm:flex",
         ].join(" ")}
       >
         {activeChannel ? (
@@ -421,7 +445,7 @@ function ChannelListLayout({
                 <div className="sm:hidden shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gray-100 bg-white">
                   <button
                     type="button"
-                    onClick={() => setActiveChannel?.(undefined)}
+                    onClick={handleBack}
                     className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700"
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -453,7 +477,7 @@ function ChannelListLayout({
 }
 
 // ─── Main widget ─────────────────────────────────────────────────────────────
-export function ChatWidget({ currentUser, targetUserId }: ChatWidgetProps) {
+export function ChatWidget({ currentUser, targetUserId, className }: ChatWidgetProps) {
   const [client, setClient] = useState<StreamChat | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -523,7 +547,7 @@ export function ChatWidget({ currentUser, targetUserId }: ChatWidgetProps) {
   }
 
   return (
-    <div className="h-full flex flex-col rounded-xl border border-gray-200 bg-white">
+    <div className={`h-full flex flex-col bg-white ${className ?? "rounded-xl border border-gray-200"}`}>
       <div className="flex-1 min-h-0 flex flex-col rounded-xl">
         <Chat client={client} theme="str-chat__theme-light">
           <ChannelListLayout

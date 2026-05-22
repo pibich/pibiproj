@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
   Attachment,
@@ -16,9 +16,10 @@ import { getInitials } from "@/lib/utils";
 import { UserProfileModal } from "./UserProfileModal";
 
 export function CustomMessage() {
-  const { message, isMyMessage, handleReaction } = useMessageContext();
+  const { message, isMyMessage, handleReaction, handleDelete } = useMessageContext();
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
 
   const isOwn = isMyMessage();
@@ -108,6 +109,30 @@ export function CustomMessage() {
             </div>
           )}
 
+          {/* Inline delete confirmation */}
+          {confirmDelete && (
+            <div className="flex items-center gap-2 text-xs mt-0.5">
+              <span className="text-gray-500">Hapus pesan ini?</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  setConfirmDelete(false);
+                  await handleDelete();
+                }}
+                className="text-red-500 font-medium hover:text-red-700 transition-colors"
+              >
+                Hapus
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          )}
+
           {/* Reactions bubble */}
           {hasReactions && <MessageReactions />}
 
@@ -126,33 +151,57 @@ export function CustomMessage() {
           </div>
         </div>
 
-        {/* Emoji reaction trigger — visible on hover */}
+        {/* Action buttons — visible on hover */}
         {!isDeleted && (
-          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity self-center">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowReactionPicker((v) => !v);
-              }}
-              className="p-1.5 rounded-full text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors text-sm leading-none"
-            >
-              😊
-            </button>
-            {showReactionPicker && (
-              <div
-                className={[
-                  "absolute bottom-8 z-50",
-                  isOwn ? "right-0" : "left-0",
-                ].join(" ")}
+          <div
+            className={[
+              "flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity self-center",
+              isOwn ? "flex-row-reverse" : "flex-row",
+            ].join(" ")}
+          >
+            {/* Emoji reaction trigger */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReactionPicker((v) => !v);
+                }}
+                className="p-1.5 rounded-full text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition-colors text-sm leading-none"
               >
-                <ReactionSelector
-                  handleReaction={async (type, e) => {
-                    await handleReaction(type, e);
-                    setShowReactionPicker(false);
-                  }}
-                />
-              </div>
+                😊
+              </button>
+              {showReactionPicker && (
+                <div
+                  className={[
+                    "absolute bottom-8 z-50",
+                    isOwn ? "right-0" : "left-0",
+                  ].join(" ")}
+                >
+                  <ReactionSelector
+                    handleReaction={async (type, e) => {
+                      await handleReaction(type, e);
+                      setShowReactionPicker(false);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Delete button — own messages only */}
+            {isOwn && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmDelete((v) => !v);
+                  setShowReactionPicker(false);
+                }}
+                className="p-1.5 rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                title="Hapus pesan"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             )}
           </div>
         )}

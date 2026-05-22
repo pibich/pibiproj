@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { AuctionStatusTabs } from "@/components/auction/AuctionStatusTabs";
+import { AuctionFilters } from "@/components/auction/AuctionFilters";
 import { Gavel, Clock } from "lucide-react";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
@@ -14,15 +15,6 @@ type AuctionWithRelations = Auction & {
   _count: { bids: number };
 };
 
-const conditionLabels: Record<string, string> = {
-  mint: "Mint",
-  near_mint: "Near Mint",
-  excellent: "Excellent",
-  good: "Good",
-  light_play: "Light Play",
-  heavy_play: "Heavy Play",
-  damaged: "Damaged",
-};
 
 export default async function AuctionsPage({
   searchParams,
@@ -91,7 +83,6 @@ export default async function AuctionsPage({
 
   const { data: auctions } = await query.limit(48);
   const typedAuctions = (auctions ?? []) as unknown as AuctionWithRelations[];
-  const conditions = Object.keys(conditionLabels);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -111,104 +102,14 @@ export default async function AuctionsPage({
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Filters sidebar */}
         <aside className="w-full lg:w-56 shrink-0">
-          <form className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-5">
-            {/* Preserve status param when submitting other filters */}
-            <input type="hidden" name="status" value={isEnded ? "ended" : ""} />
-
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                Cari
-              </label>
-              <input
-                name="q"
-                defaultValue={params.q}
-                placeholder="Nama kartu..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                Kategori
-              </label>
-              <div className="flex flex-col gap-1">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="radio"
-                    name="category"
-                    value=""
-                    defaultChecked={!params.category}
-                    className="accent-blue-600"
-                  />
-                  Semua
-                </label>
-                {categories.map((cat) => (
-                  <label key={cat.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input
-                      type="radio"
-                      name="category"
-                      value={cat.id}
-                      defaultChecked={params.category === cat.id}
-                      className="accent-blue-600"
-                    />
-                    {cat.name}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                Kondisi
-              </label>
-              <select
-                name="condition"
-                defaultValue={params.condition ?? ""}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Semua</option>
-                {conditions.map((c) => (
-                  <option key={c} value={c}>
-                    {conditionLabels[c]}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
-                Urutkan
-              </label>
-              <select
-                name="sort"
-                defaultValue={effectiveSort}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {isEnded ? (
-                  <>
-                    <option value="recently_ended">Terbaru Selesai</option>
-                    <option value="price_high">Harga Tertinggi</option>
-                    <option value="price_low">Harga Terendah</option>
-                    <option value="newest">Terbaru Dibuat</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="ending_soon">Segera Berakhir</option>
-                    <option value="newest">Terbaru Dibuat</option>
-                    <option value="price_low">Harga Terendah</option>
-                    <option value="price_high">Harga Tertinggi</option>
-                  </>
-                )}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              Terapkan Filter
-            </button>
-          </form>
+          <AuctionFilters
+            categories={categories}
+            initialCategory={params.category ?? ""}
+            initialCondition={params.condition ?? ""}
+            initialQ={params.q ?? ""}
+            isEnded={isEnded}
+            effectiveSort={effectiveSort}
+          />
         </aside>
 
         {/* Grid */}

@@ -1,6 +1,7 @@
 import { getUser } from "@/lib/dal";
 import { NavbarWrapper } from "@/components/layout/NavbarWrapper";
 import { Footer } from "@/components/layout/Footer";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 
 export default async function MainLayout({
@@ -13,8 +14,11 @@ export default async function MainLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <NavbarWrapper user={user} />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-14 md:pb-0">{children}</main>
       <Footer />
+      {user && (
+        <MobileNav userId={user.id} username={user.username} />
+      )}
       <ChatbotWidget />
     </div>
   );

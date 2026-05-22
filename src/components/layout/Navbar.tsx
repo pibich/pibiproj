@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Plus,
   Sparkles,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getInitials } from "@/lib/utils";
@@ -131,6 +132,14 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                           <User className="h-4 w-4" />
                           Profil
                         </Link>
+                        <Link
+                          href="/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Pengaturan
+                        </Link>
                         {user.role === "admin" && (
                           <Link
                             href="/admin"
@@ -188,26 +197,45 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
       {mobileOpen && (
         <div className="md:hidden border-t border-sky-100 bg-white/90 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
-          {navLinks.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          ))}
-          {user && (
-            <Link
-              href="/auctions/create"
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-sky-600 hover:bg-sky-50 font-semibold transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Buat Lelang
-            </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+              <Link
+                href="/auctions/create"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-sky-600 hover:bg-sky-50 font-semibold transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Buat Lelang
+              </Link>
+              <Link
+                href="/settings"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
+              >
+                <Settings className="h-4 w-4" />
+                Pengaturan
+              </Link>
+            </>
+          ) : (
+            navLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))
           )}
         </div>
       )}
