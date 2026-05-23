@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,12 @@ export const metadata: Metadata = {
     "Platform lelang kartu TCG (Pokemon, MTG, Yu-Gi-Oh!, One Piece) terpercaya di Indonesia.",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -32,7 +38,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-full flex flex-col bg-sky-50 antialiased">
+      <body className="h-full flex flex-col bg-sky-50 antialiased">
         {children}
       </body>
     </html>

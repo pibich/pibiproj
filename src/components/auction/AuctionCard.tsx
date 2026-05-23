@@ -4,6 +4,7 @@ import { Clock, Eye, Gavel } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { getCategoryIcon } from "@/lib/categories";
 import { createClient } from "@/lib/supabase/client";
 import { formatIDR, getTimeRemaining } from "@/lib/utils";
 import type { Auction, Category, Profile } from "@/types/supabase";
@@ -206,7 +207,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
           {auction.category && (
             <span className="text-xs text-sky-500 font-medium">
-              {auction.category.name}
+              {getCategoryIcon(auction.category.name)} {auction.category.name}
             </span>
           )}
           <span className="text-sky-200">·</span>
@@ -222,22 +223,22 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           {auction.title}
         </h3>
 
-        {/* Prices — stacked layout when Buy Now is present to avoid cramping on mobile */}
+        {/* Prices */}
         {auction.buy_now_price && isActive ? (
-          <div className="flex items-end justify-between gap-1 mb-0">
+          <div className="grid grid-cols-2 gap-2 mb-0">
             <div className="min-w-0">
               <p className="text-[10px] text-slate-400 leading-tight">
                 Harga Saat Ini
               </p>
-              <p className="text-sm font-bold text-sky-600 truncate leading-tight">
+              <p className="text-xs font-bold text-sky-600 truncate leading-tight">
                 {formatIDR(auction.current_price)}
               </p>
             </div>
-            <div className="text-right shrink-0">
+            <div className="text-right min-w-0">
               <p className="text-[10px] text-slate-400 leading-tight">
                 Buy Now
               </p>
-              <p className="text-xs font-semibold text-emerald-600 leading-tight">
+              <p className="text-xs font-semibold text-emerald-600 truncate leading-tight">
                 {formatIDR(auction.buy_now_price)}
               </p>
             </div>

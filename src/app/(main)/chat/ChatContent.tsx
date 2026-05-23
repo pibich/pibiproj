@@ -49,7 +49,7 @@ export function ChatContent({
   if (isMobile) {
     return (
       <div
-        className="overflow-hidden"
+        className="overflow-hidden py-2"
         style={{ height: "calc(100dvh - 6.5rem)" }}
       >
         <ChatWidget

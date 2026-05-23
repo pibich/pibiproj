@@ -24,12 +24,12 @@ export function MobileNav({ userId, username }: MobileNavProps) {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-white/90 backdrop-blur-md border-t border-sky-100 shadow-[0_-1px_12px_rgba(14,165,233,0.08)]">
-      <div className="flex items-center justify-around px-2 h-14">
+      <div className="flex items-center justify-evenly h-14">
         {/* Beranda */}
         <Link
           href="/"
           className={cn(
-            "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0",
+            "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             isActive("/")
               ? "text-sky-600"
               : "text-slate-400 hover:text-sky-500",
@@ -44,7 +44,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
             key={href}
             href={href}
             className={cn(
-              "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0",
+              "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
               isActive(href)
                 ? "text-sky-600"
                 : "text-slate-400 hover:text-sky-500",
@@ -61,7 +61,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
         <Link
           href="/auctions/create"
           className={cn(
-            "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0",
+            "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             isActive("/auctions/create")
               ? "text-sky-600"
               : "text-slate-400 hover:text-sky-500",
@@ -75,7 +75,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
         <Link
           href="/chat"
           className={cn(
-            "relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0",
+            "relative flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             isOnChatPage ? "text-sky-600" : "text-slate-400 hover:text-sky-500",
           )}
         >
@@ -92,7 +92,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
         <Link
           href={`/profile/${username}`}
           className={cn(
-            "flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0",
+            "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             pathname.startsWith("/profile")
               ? "text-sky-600"
               : "text-slate-400 hover:text-sky-500",

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Combobox } from "@/components/ui/Combobox";
+import { getCategoryIcon } from "@/lib/categories";
 import type { Category } from "@/types/supabase";
 
 const conditionLabels: Record<string, string> = {
@@ -45,7 +46,7 @@ export function AuctionFilters({
 
   const categoryOptions = categories.map((c) => ({
     value: c.id,
-    label: c.name,
+    label: `${getCategoryIcon(c.name)} ${c.name}`,
   }));
   const conditionOptions = Object.entries(conditionLabels).map(([k, v]) => ({
     value: k,

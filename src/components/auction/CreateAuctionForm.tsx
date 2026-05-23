@@ -7,6 +7,7 @@ import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/Input";
+import { getCategoryIcon } from "@/lib/categories";
 import { containsProfanity } from "@/lib/profanity";
 import { createClient } from "@/lib/supabase/client";
 import type { Category } from "@/types/supabase";
@@ -137,15 +138,25 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
       return;
     }
 
-    const startTime = data.get("start_time") as string;
-    const endTime = data.get("end_time") as string;
+    if (images.length === 0) {
+      setError("Minimal 1 foto kartu wajib diunggah.");
+      return;
+    }
+
+    const startDateStr = data.get("start_date") as string;
+    const startTimeVal = data.get("start_time_val") as string;
+    const endDateStr = data.get("end_date") as string;
+    const endTimeVal = data.get("end_time_val") as string;
     const startingPrice = Number(data.get("starting_price"));
     const buyNowPrice = data.get("buy_now_price")
       ? Number(data.get("buy_now_price"))
       : null;
 
-    const startTimeISO = startTime ? new Date(startTime).toISOString() : null;
-    const endTimeISO = new Date(endTime).toISOString();
+    const startTimeISO =
+      startDateStr && startTimeVal
+        ? new Date(`${startDateStr}T${startTimeVal}`).toISOString()
+        : null;
+    const endTimeISO = new Date(`${endDateStr}T${endTimeVal}`).toISOString();
 
     const effectiveStart = startTimeISO ? new Date(startTimeISO) : new Date();
     const endDate = new Date(endTimeISO);
@@ -242,7 +253,8 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
             htmlFor="photo-upload"
             className="text-sm font-medium text-gray-700"
           >
-            Foto Kartu (maks. {MAX_IMAGES})
+            Foto Kartu (maks. {MAX_IMAGES}){" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             id="photo-upload"
@@ -312,7 +324,7 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
               name="category_id"
               options={categories.map((cat) => ({
                 value: cat.id,
-                label: cat.name,
+                label: `${getCategoryIcon(cat.name)} ${cat.name}`,
               }))}
               value={categoryId}
               onChange={setCategoryId}
@@ -374,35 +386,58 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="start_time"
-              className="text-sm font-medium text-gray-700"
-            >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">
               Waktu Mulai (opsional)
             </label>
-            <input
-              id="start_time"
-              name="start_time"
-              type="datetime-local"
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-gray-400">Tanggal</span>
+                <input
+                  id="start_date"
+                  name="start_date"
+                  type="date"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-gray-400">Jam</span>
+                <input
+                  id="start_time_val"
+                  name="start_time_val"
+                  type="time"
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="end_time"
-              className="text-sm font-medium text-gray-700"
-            >
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">
               Waktu Selesai <span className="text-red-500">*</span>
             </label>
-            <input
-              id="end_time"
-              name="end_time"
-              type="datetime-local"
-              required
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-gray-400">Tanggal</span>
+                <input
+                  id="end_date"
+                  name="end_date"
+                  type="date"
+                  required
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-gray-400">Jam</span>
+                <input
+                  id="end_time_val"
+                  name="end_time_val"
+                  type="time"
+                  required
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ export default async function MainLayout({
         <NavbarWrapper user={user} />
       </div>
       {user && <MobileHeader userId={user.id} />}
-      <main className="flex-1 pb-14 md:pb-0">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <div className="hidden md:block">
         <Footer />
       </div>
