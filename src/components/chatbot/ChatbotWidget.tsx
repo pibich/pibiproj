@@ -95,10 +95,11 @@ export function ChatbotWidget() {
     setMessages(newMessages);
     setLoading(true);
 
-    const history = newMessages.slice(0, -1).map((m) => ({
-      role: m.role,
-      parts: [{ text: m.text }],
-    }));
+    const allPrev = newMessages.slice(0, -1);
+    const firstUserIdx = allPrev.findIndex((m) => m.role === "user");
+    const history = (firstUserIdx >= 0 ? allPrev.slice(firstUserIdx) : []).map(
+      (m) => ({ role: m.role, parts: [{ text: m.text }] }),
+    );
 
     try {
       const res = await fetch("/api/chatbot", {

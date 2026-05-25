@@ -1,4 +1,3 @@
-import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 import { Footer } from "@/components/layout/Footer";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
@@ -23,7 +22,6 @@ export default async function MainLayout({
         <Footer />
       </div>
       {user && <MobileNav userId={user.id} username={user.username} />}
-      <ChatbotWidget />
     </div>
   );
 }

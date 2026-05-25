@@ -1,21 +1,70 @@
 "use client";
 
-import { Users } from "lucide-react";
-import { useState } from "react";
+import { ClipboardList, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useChannelStateContext, useChatContext } from "stream-chat-react";
 import { getInitials } from "@/lib/utils";
+import { MiddlemanGuideModal } from "./MiddlemanGuideModal";
+import { MiddlemanSchemaModal } from "./MiddlemanSchemaModal";
 import { UserProfileModal } from "./UserProfileModal";
+
+function guideKey(channelId: string) {
+  return `mm_guide_${channelId}`;
+}
 
 export function CustomChannelHeader() {
   const { channel } = useChannelStateContext();
   const { client } = useChatContext();
   const currentUserId = client.userID;
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [hasMiddleman, setHasMiddleman] = useState(false);
+  const [guideSeen, setGuideSeen] = useState(true);
+
+  async function handleSendSchema(text: string) {
+    await channel.sendMessage({ text });
+  }
+
+  function handleGuideClose() {
+    if (channel.id) localStorage.setItem(guideKey(channel.id), "1");
+    setGuideSeen(true);
+    setGuideOpen(false);
+  }
 
   const members = Object.values(channel.state.members);
   const memberCount =
     (channel.data?.member_count as number | undefined) ?? members.length;
   const isGroup = memberCount > 2;
+
+  useEffect(() => {
+    if (!isGroup) {
+      setHasMiddleman(false);
+      return;
+    }
+    const memberIds = new Set(
+      Object.values(channel.state.members)
+        .map((m) => m.user?.id)
+        .filter(Boolean),
+    );
+    fetch("/api/middlemen")
+      .then((r) => r.json())
+      .then((data) => {
+        const found = (data.middlemen ?? []).some((mm: { id: string }) =>
+          memberIds.has(mm.id),
+        );
+        setHasMiddleman(found);
+      })
+      .catch(() => setHasMiddleman(false));
+  }, [channel.id, isGroup, memberCount]);
+
+  // Auto-open guide on first visit to this group with a middleman
+  useEffect(() => {
+    if (!isGroup || !hasMiddleman || !channel.id) return;
+    const seen = !!localStorage.getItem(guideKey(channel.id));
+    setGuideSeen(seen);
+    if (!seen) setGuideOpen(true);
+  }, [channel.id, isGroup, hasMiddleman]);
 
   let title: string;
 
@@ -86,6 +135,25 @@ export function CustomChannelHeader() {
             </div>
           )}
         </div>
+
+        {/* Form Middleman button — grup dengan middleman only */}
+        {isGroup && hasMiddleman && (
+          <button
+            type="button"
+            onClick={() => setSchemaOpen(true)}
+            className="relative shrink-0 flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg px-2.5 py-1.5 transition-colors"
+            title="Form Middleman"
+          >
+            {!guideSeen && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
+              </span>
+            )}
+            <ClipboardList className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">Form Middleman</span>
+          </button>
+        )}
       </div>
 
       {profileUserId && (
@@ -94,6 +162,15 @@ export function CustomChannelHeader() {
           onClose={() => setProfileUserId(null)}
         />
       )}
+
+      <MiddlemanSchemaModal
+        open={schemaOpen}
+        onClose={() => setSchemaOpen(false)}
+        onSend={handleSendSchema}
+        onOpenGuide={() => setGuideOpen(true)}
+      />
+
+      <MiddlemanGuideModal open={guideOpen} onClose={handleGuideClose} />
     </>
   );
 }

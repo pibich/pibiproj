@@ -85,12 +85,24 @@ export async function POST(req: NextRequest) {
 
   try {
     const model = createGeminiClient();
-    const chat = model.startChat({
-      history: history ?? [],
-    });
+
+    // Gemini requires history to start with 'user' and alternate user/model
+    const rawHistory = history ?? [];
+    const firstUserIdx = rawHistory.findIndex((h) => h.role === "user");
+    const safeHistory =
+      firstUserIdx >= 0 ? rawHistory.slice(firstUserIdx) : [];
+
+    const chat = model.startChat({ history: safeHistory });
 
     const result = await chat.sendMessage(message);
     const text = result.response.text();
+
+    if (!text) {
+      return NextResponse.json(
+        { error: "Asisten tidak memberikan respons. Coba lagi." },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ reply: text });
   } catch (err) {
