@@ -95,7 +95,13 @@ export async function POST(
 
   // Close auction if end_time already passed
   if (auction.end_time && new Date(auction.end_time) < new Date()) {
-    await db.from("auctions").update({ status: "closed" }).eq("id", auctionId);
+    const deadline = auction.winner_id
+      ? new Date(Date.now() + 16 * 60 * 60 * 1000).toISOString()
+      : null;
+    await db
+      .from("auctions")
+      .update({ status: "closed", confirmation_deadline: deadline })
+      .eq("id", auctionId);
     await createNotification(db, {
       user_id: auction.seller_id,
       type: "auction_ended",
@@ -147,12 +153,14 @@ export async function POST(
       is_winning: true,
     });
 
+    const buyNowDeadline = new Date(Date.now() + 16 * 60 * 60 * 1000).toISOString();
     const { data: closed, error: closeError } = await db
       .from("auctions")
       .update({
         current_price: auction.buy_now_price,
         status: "completed",
         winner_id: user.id,
+        confirmation_deadline: buyNowDeadline,
       })
       .eq("id", auctionId)
       .select("id, status")

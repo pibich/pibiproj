@@ -4,7 +4,12 @@ import type { Database } from "@/types/supabase";
 type NotificationType =
   | "auction_won"
   | "auction_ended"
-  | "transaction_confirmed";
+  | "transaction_confirmed"
+  | "awaiting_shipment"
+  | "shipping_proof_submitted"
+  | "delivery_confirmed"
+  | "funds_released"
+  | "confirmation_expired";
 
 export async function createNotification(
   supabase: SupabaseClient<Database>,

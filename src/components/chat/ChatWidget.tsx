@@ -350,6 +350,17 @@ function ChannelListLayout({
     const members = [userId, initialTargetUserId];
     const channelId = buildChannelId(members);
 
+    const watchWithRetry = (ch: ReturnType<typeof client.channel>, attempt = 0): Promise<typeof ch> =>
+      ch.watch().then(() => ch).catch((err) => {
+        if (attempt >= 2) throw err;
+        return new Promise<typeof ch>((resolve, reject) =>
+          setTimeout(
+            () => watchWithRetry(ch, attempt + 1).then(resolve).catch(reject),
+            1000 * (attempt + 1),
+          ),
+        );
+      });
+
     fetch("/api/stream/group", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -361,7 +372,7 @@ function ChannelListLayout({
         // propagation delay that can cause queryChannels to return 0 results
         // immediately after addMembers() completes on the server.
         const ch = client.channel("messaging", channelId);
-        return ch.watch().then(() => ch);
+        return watchWithRetry(ch);
       })
       .then((ch) => {
         setLocalActiveChannel(ch);
@@ -486,6 +497,49 @@ function ChannelListLayout({
   );
 }
 
+// Module-level promise to serialise concurrent connectUser calls.
+// React StrictMode double-invokes effects; without this guard the second
+// invocation races the first on the shared StreamChat singleton.
+let _connectPromise: Promise<StreamChat> | null = null;
+
+async function getOrConnectClient(
+  apiKey: string,
+  userId: string,
+  userName: string,
+  userImage: string | undefined,
+  token: string,
+): Promise<StreamChat> {
+  // If a connection is already in flight, reuse it.
+  if (_connectPromise) return _connectPromise;
+
+  const chatClient = StreamChat.getInstance(apiKey);
+
+  // Already set up as the same user — check if the WS is still healthy.
+  if (chatClient.userID === userId) {
+    const ws = (chatClient as unknown as { wsConnection?: { isHealthy?: boolean } }).wsConnection;
+    // If the connection is explicitly unhealthy (dropped), disconnect and re-auth below.
+    if (ws && ws.isHealthy === false) {
+      await chatClient.disconnectUser().catch(() => {});
+    } else {
+      return chatClient;
+    }
+  }
+
+  // Different user was connected — disconnect first.
+  if (chatClient.userID) {
+    await chatClient.disconnectUser().catch(() => {});
+  }
+
+  _connectPromise = chatClient
+    .connectUser({ id: userId, name: userName, image: userImage }, token)
+    .then(() => chatClient)
+    .finally(() => {
+      _connectPromise = null;
+    });
+
+  return _connectPromise;
+}
+
 // ─── Main widget ─────────────────────────────────────────────────────────────
 export function ChatWidget({
   currentUser,
@@ -508,19 +562,13 @@ export function ChatWidget({
         const { token, apiKey, userId, userName, userImage } = await res.json();
         if (cancelled) return;
 
-        const chatClient = StreamChat.getInstance(apiKey);
-
-        if (chatClient.userID && chatClient.userID !== userId) {
-          await chatClient.disconnectUser().catch(() => {});
-        }
-        if (cancelled) return;
-
-        if (!chatClient.userID) {
-          await chatClient.connectUser(
-            { id: userId, name: userName, image: userImage ?? undefined },
-            token,
-          );
-        }
+        const chatClient = await getOrConnectClient(
+          apiKey,
+          userId,
+          userName,
+          userImage ?? undefined,
+          token,
+        );
         if (cancelled) return;
 
         setClient(chatClient);

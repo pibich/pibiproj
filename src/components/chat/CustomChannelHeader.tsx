@@ -8,10 +8,6 @@ import { MiddlemanGuideModal } from "./MiddlemanGuideModal";
 import { MiddlemanSchemaModal } from "./MiddlemanSchemaModal";
 import { UserProfileModal } from "./UserProfileModal";
 
-function guideKey(channelId: string) {
-  return `mm_guide_${channelId}`;
-}
-
 export function CustomChannelHeader() {
   const { channel } = useChannelStateContext();
   const { client } = useChatContext();
@@ -20,16 +16,10 @@ export function CustomChannelHeader() {
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [hasMiddleman, setHasMiddleman] = useState(false);
-  const [guideSeen, setGuideSeen] = useState(true);
+  const [middlemanMemberId, setMiddlemanMemberId] = useState<string | undefined>(undefined);
 
   async function handleSendSchema(text: string) {
     await channel.sendMessage({ text });
-  }
-
-  function handleGuideClose() {
-    if (channel.id) localStorage.setItem(guideKey(channel.id), "1");
-    setGuideSeen(true);
-    setGuideOpen(false);
   }
 
   const members = Object.values(channel.state.members);
@@ -38,10 +28,6 @@ export function CustomChannelHeader() {
   const isGroup = memberCount > 2;
 
   useEffect(() => {
-    if (!isGroup) {
-      setHasMiddleman(false);
-      return;
-    }
     const memberIds = new Set(
       Object.values(channel.state.members)
         .map((m) => m.user?.id)
@@ -50,21 +36,14 @@ export function CustomChannelHeader() {
     fetch("/api/middlemen")
       .then((r) => r.json())
       .then((data) => {
-        const found = (data.middlemen ?? []).some((mm: { id: string }) =>
-          memberIds.has(mm.id),
-        );
-        setHasMiddleman(found);
+        const mmList: { id: string }[] = data.middlemen ?? [];
+        const found = mmList.find((mm) => memberIds.has(mm.id));
+        setHasMiddleman(!!found);
+        setMiddlemanMemberId(found?.id);
       })
-      .catch(() => setHasMiddleman(false));
-  }, [channel.id, isGroup, memberCount]);
+      .catch(() => { setHasMiddleman(false); setMiddlemanMemberId(undefined); });
+  }, [channel.id, memberCount]);
 
-  // Auto-open guide on first visit to this group with a middleman
-  useEffect(() => {
-    if (!isGroup || !hasMiddleman || !channel.id) return;
-    const seen = !!localStorage.getItem(guideKey(channel.id));
-    setGuideSeen(seen);
-    if (!seen) setGuideOpen(true);
-  }, [channel.id, isGroup, hasMiddleman]);
 
   let title: string;
 
@@ -136,20 +115,14 @@ export function CustomChannelHeader() {
           )}
         </div>
 
-        {/* Form Middleman button — grup dengan middleman only */}
-        {isGroup && hasMiddleman && (
+        {/* Form Middleman button — grup atau DM yang mengandung middleman */}
+        {hasMiddleman && (
           <button
             type="button"
             onClick={() => setSchemaOpen(true)}
             className="relative shrink-0 flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg px-2.5 py-1.5 transition-colors"
             title="Form Middleman"
           >
-            {!guideSeen && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500" />
-              </span>
-            )}
             <ClipboardList className="h-3.5 w-3.5 shrink-0" />
             <span className="hidden sm:inline">Form Middleman</span>
           </button>
@@ -168,9 +141,12 @@ export function CustomChannelHeader() {
         onClose={() => setSchemaOpen(false)}
         onSend={handleSendSchema}
         onOpenGuide={() => setGuideOpen(true)}
+        currentUserId={currentUserId ?? undefined}
+        middlemanId={middlemanMemberId}
+        channelId={channel.id ?? undefined}
       />
 
-      <MiddlemanGuideModal open={guideOpen} onClose={handleGuideClose} />
+      <MiddlemanGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
     </>
   );
 }

@@ -15,6 +15,7 @@ import {
 import { getInitials } from "@/lib/utils";
 import { UserProfileModal } from "./UserProfileModal";
 
+
 export function CustomMessage() {
   const { message, isMyMessage, handleReaction, handleDelete } =
     useMessageContext();
@@ -28,6 +29,7 @@ export function CustomMessage() {
   const warningCount =
     (message.user as { buyer_warning_count?: number } | undefined)
       ?.buyer_warning_count ?? 0;
+
   const hasAttachments = (message.attachments?.length ?? 0) > 0;
   const hasText = !!message.text?.trim();
   const hasReactions =

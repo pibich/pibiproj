@@ -6,6 +6,7 @@ import {
   Calendar,
   CheckCircle2,
   ChevronLeft,
+  Clock,
   Eye,
   Flag,
   Gavel,
@@ -17,10 +18,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BidForm } from "@/components/auction/BidForm";
-import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { ImageGallery } from "@/components/auction/ImageGallery";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
 import { getUser } from "@/lib/dal";
 import { createNotification } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
@@ -128,6 +129,23 @@ export default async function AuctionDetailPage({
       });
     }
     auction = { ...auction, status: "closed" } as typeof auction;
+  }
+
+  // Fallback: jika confirmation_deadline belum diset tapi lelang sudah tutup dengan winner,
+  // hitung dari end_time atau updated_at + 16 jam
+  if (
+    !auction.confirmation_deadline &&
+    auction.winner_id &&
+    !auction.transaction_confirmed &&
+    (auction.status === "closed" || auction.status === "completed")
+  ) {
+    const base = auction.end_time ?? auction.updated_at;
+    auction = {
+      ...auction,
+      confirmation_deadline: new Date(
+        new Date(base).getTime() + 16 * 60 * 60 * 1000,
+      ).toISOString(),
+    } as typeof auction;
   }
 
   const { data: sellerStats } = await supabase
@@ -345,42 +363,76 @@ export default async function AuctionDetailPage({
 
           {isSeller &&
             (auction.status === "completed" || auction.status === "closed") &&
-            auction.winner_id && (
+            auction.winner_id &&
+            auction.winner && (
               <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Konfirmasi Transaksi
+                  Pemenang
                 </p>
-                {auction.winner && (
-                  <p className="text-sm text-gray-600">
-                    Pemenang:{" "}
-                    <span className="font-semibold">
+                <Link
+                  href={`/profile/${auction.winner.username}`}
+                  className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm shrink-0">
+                    {getInitials(auction.winner.name)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {auction.winner.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
                       @{auction.winner.username}
-                    </span>
-                  </p>
-                )}
+                    </p>
+                  </div>
+                </Link>
                 {auction.transaction_confirmed ? (
                   <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    Transaksi telah dikonfirmasi
+                    Transaksi Selesai
                   </div>
                 ) : (
-                  <ConfirmTransactionButton
-                    auctionId={auction.id}
-                    winnerUsername={auction.winner?.username ?? "pembeli"}
-                  />
+                  <>
+                    <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 rounded-lg px-3 py-2">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      Menunggu Transaksi — gunakan chat dan hubungi middleman
+                    </div>
+                    {auction.confirmation_deadline && (
+                      <ConfirmationCountdown
+                        deadline={auction.confirmation_deadline}
+                        label="Batas buyer konfirmasi"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             )}
 
-          {!isSeller &&
-            auction.transaction_confirmed &&
-            auction.winner_id === currentUser?.id && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-2 text-emerald-700 text-sm font-medium">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                Transaksi telah dikonfirmasi oleh penjual. Rating Anda telah
-                diperbarui!
-              </div>
-            )}
+          {!isSeller && auction.winner_id === currentUser?.id && (
+            <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Status Transaksi
+              </p>
+              {auction.transaction_confirmed ? (
+                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  Transaksi selesai. Pembelian sukses!
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-blue-600 text-sm bg-blue-50 rounded-lg px-3 py-2">
+                    <Info className="h-4 w-4 shrink-0" />
+                    Anda memenangkan lelang ini. Segera hubungi seller untuk memulai transaksi.
+                  </div>
+                  {auction.confirmation_deadline && (
+                    <ConfirmationCountdown
+                      deadline={auction.confirmation_deadline}
+                      label="Batas konfirmasi ke seller"
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">

@@ -103,6 +103,7 @@ export type Database = {
           winner_id: string | null;
           view_count: number;
           transaction_confirmed: boolean;
+          confirmation_deadline: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -131,6 +132,7 @@ export type Database = {
           winner_id?: string | null;
           view_count?: number;
           transaction_confirmed?: boolean;
+          confirmation_deadline?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -155,6 +157,7 @@ export type Database = {
           winner_id?: string | null;
           view_count?: number;
           transaction_confirmed?: boolean;
+          confirmation_deadline?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -265,7 +268,15 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          type: "auction_won" | "auction_ended" | "transaction_confirmed";
+          type:
+            | "auction_won"
+            | "auction_ended"
+            | "transaction_confirmed"
+            | "awaiting_shipment"
+            | "shipping_proof_submitted"
+            | "delivery_confirmed"
+            | "funds_released"
+            | "confirmation_expired";
           auction_id: string | null;
           is_read: boolean;
           created_at: string;
@@ -273,13 +284,105 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          type: "auction_won" | "auction_ended" | "transaction_confirmed";
+          type:
+            | "auction_won"
+            | "auction_ended"
+            | "transaction_confirmed"
+            | "awaiting_shipment"
+            | "shipping_proof_submitted"
+            | "delivery_confirmed"
+            | "funds_released"
+            | "confirmation_expired";
           auction_id?: string | null;
           is_read?: boolean;
           created_at?: string;
         };
         Update: {
           is_read?: boolean;
+        };
+        Relationships: [];
+      };
+      transactions: {
+        Row: {
+          id: string;
+          auction_id: string;
+          seller_id: string;
+          buyer_id: string;
+          middleman_id: string | null;
+          amount: number;
+          tax_bearer: "Buyer" | "Seller" | "Buyer & Seller";
+          status:
+            | "awaiting_payment"
+            | "awaiting_shipment"
+            | "shipped"
+            | "delivery_confirmed"
+            | "completed"
+            | "cancelled";
+          shipping_photo_url: string | null;
+          shipping_tracking_number: string | null;
+          shipping_notes: string | null;
+          shipping_submitted_at: string | null;
+          receipt_photo_url: string | null;
+          receipt_notes: string | null;
+          receipt_submitted_at: string | null;
+          stream_channel_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auction_id: string;
+          seller_id: string;
+          buyer_id: string;
+          middleman_id?: string | null;
+          amount: number;
+          tax_bearer?: "Buyer" | "Seller" | "Buyer & Seller";
+          status?: "awaiting_payment" | "awaiting_shipment" | "shipped" | "delivery_confirmed" | "completed" | "cancelled";
+          shipping_photo_url?: string | null;
+          shipping_tracking_number?: string | null;
+          shipping_notes?: string | null;
+          shipping_submitted_at?: string | null;
+          receipt_photo_url?: string | null;
+          receipt_notes?: string | null;
+          receipt_submitted_at?: string | null;
+          stream_channel_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          middleman_id?: string | null;
+          status?: "awaiting_payment" | "awaiting_shipment" | "shipped" | "delivery_confirmed" | "completed" | "cancelled";
+          shipping_photo_url?: string | null;
+          shipping_tracking_number?: string | null;
+          shipping_notes?: string | null;
+          shipping_submitted_at?: string | null;
+          receipt_photo_url?: string | null;
+          receipt_notes?: string | null;
+          receipt_submitted_at?: string | null;
+          stream_channel_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      buyer_warnings: {
+        Row: {
+          id: string;
+          user_id: string;
+          auction_id: string | null;
+          note: string | null;
+          auto_generated: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          auction_id?: string | null;
+          note?: string | null;
+          auto_generated?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          note?: string | null;
         };
         Relationships: [];
       };
@@ -329,3 +432,6 @@ export type Bid = Database["public"]["Tables"]["bids"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];
 export type WatchlistItem = Database["public"]["Tables"]["watchlist"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type BuyerWarning = Database["public"]["Tables"]["buyer_warnings"]["Row"];
+export type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
+export type TransactionStatus = Transaction["status"];

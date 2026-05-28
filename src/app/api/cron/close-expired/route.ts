@@ -29,8 +29,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ closed: 0 });
   }
 
+  const confirmationDeadline = new Date(
+    Date.now() + 16 * 60 * 60 * 1000,
+  ).toISOString();
+
   const ids = expiredAuctions.map((a) => a.id);
-  await db.from("auctions").update({ status: "closed" }).in("id", ids);
+  // Auctions with a winner get a 16-hour confirmation deadline
+  const withWinner = expiredAuctions.filter((a) => a.winner_id).map((a) => a.id);
+  const withoutWinner = expiredAuctions.filter((a) => !a.winner_id).map((a) => a.id);
+
+  if (withWinner.length) {
+    await db
+      .from("auctions")
+      .update({ status: "closed", confirmation_deadline: confirmationDeadline })
+      .in("id", withWinner);
+  }
+  if (withoutWinner.length) {
+    await db.from("auctions").update({ status: "closed" }).in("id", withoutWinner);
+  }
 
   for (const auction of expiredAuctions) {
     await createNotification(db, {

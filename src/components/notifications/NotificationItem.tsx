@@ -2,12 +2,17 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { CheckCircle, Package, Trophy } from "lucide-react";
+import { AlertTriangle, Banknote, CheckCircle, Package, Truck, Trophy } from "lucide-react";
 
 type NotificationType =
   | "auction_won"
   | "auction_ended"
-  | "transaction_confirmed";
+  | "transaction_confirmed"
+  | "awaiting_shipment"
+  | "shipping_proof_submitted"
+  | "delivery_confirmed"
+  | "funds_released"
+  | "confirmation_expired";
 
 interface NotificationItemProps {
   type: NotificationType;
@@ -20,12 +25,22 @@ const icons: Record<NotificationType, React.ElementType> = {
   auction_won: Trophy,
   auction_ended: Package,
   transaction_confirmed: CheckCircle,
+  awaiting_shipment: Truck,
+  shipping_proof_submitted: Package,
+  delivery_confirmed: CheckCircle,
+  funds_released: Banknote,
+  confirmation_expired: AlertTriangle,
 };
 
 const colors: Record<NotificationType, string> = {
   auction_won: "text-green-500 bg-green-50",
   auction_ended: "text-blue-500 bg-blue-50",
   transaction_confirmed: "text-emerald-500 bg-emerald-50",
+  awaiting_shipment: "text-orange-500 bg-orange-50",
+  shipping_proof_submitted: "text-blue-500 bg-blue-50",
+  delivery_confirmed: "text-emerald-500 bg-emerald-50",
+  funds_released: "text-purple-500 bg-purple-50",
+  confirmation_expired: "text-red-500 bg-red-50",
 };
 
 function getLabel(
@@ -40,6 +55,16 @@ function getLabel(
       return `Lelang Anda telah berakhir: ${title}`;
     case "transaction_confirmed":
       return `Transaksi terkonfirmasi: ${title}`;
+    case "awaiting_shipment":
+      return `Pembayaran dikonfirmasi — silakan kirim paket: ${title}`;
+    case "shipping_proof_submitted":
+      return `Seller upload bukti pengiriman: ${title}`;
+    case "delivery_confirmed":
+      return `Buyer konfirmasi penerimaan paket: ${title}`;
+    case "funds_released":
+      return `Dana telah dilepaskan untuk: ${title}`;
+    case "confirmation_expired":
+      return `Peringatan: batas waktu konfirmasi ${title} telah habis`;
   }
 }
 
