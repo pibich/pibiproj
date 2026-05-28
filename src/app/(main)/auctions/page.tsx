@@ -86,8 +86,7 @@ export default async function AuctionsPage({
     .select(
       `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`,
     )
-    .neq("status", "draft")
-    .neq("status", "cancelled");
+    .in("status", ["active", "closed", "completed"]);
 
   if (isEnded) {
     query = query.in("status", ["completed", "closed"]);

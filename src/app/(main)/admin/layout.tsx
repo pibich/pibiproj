@@ -1,7 +1,8 @@
-import { FileWarning, ShieldCheck, UserCog, Users } from "lucide-react";
+import { FileWarning, Gavel, ShieldCheck, UserCog, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/dal";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({
   children,
@@ -14,6 +15,12 @@ export default async function AdminLayout({
     redirect("/");
   }
 
+  const db = createAdminClient();
+  const { count: pendingAuctions } = await db
+    .from("auctions")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending_review");
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -23,13 +30,25 @@ export default async function AdminLayout({
         <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit flex-wrap">
         <Link
           href="/admin"
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
         >
           <FileWarning className="h-4 w-4" />
           Laporan
+        </Link>
+        <Link
+          href="/admin/auctions"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+        >
+          <Gavel className="h-4 w-4" />
+          Lelang
+          {pendingAuctions != null && pendingAuctions > 0 && (
+            <span className="ml-0.5 rounded-full bg-red-500 text-white text-xs px-1.5 py-0.5 leading-none">
+              {pendingAuctions}
+            </span>
+          )}
         </Link>
         <Link
           href="/admin/middleman"

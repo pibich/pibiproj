@@ -24,7 +24,12 @@ export async function updateSession(
     },
   );
 
-  await supabase.auth.getUser();
+  const { error } = await supabase.auth.getUser();
+
+  // Stale/invalid refresh token — clear it so the browser stops retrying
+  if (error?.code === "refresh_token_not_found") {
+    await supabase.auth.signOut();
+  }
 
   return response;
 }

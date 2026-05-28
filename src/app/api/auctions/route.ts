@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
       buy_now_price: body.buy_now_price ?? null,
       min_bid_increment: body.min_bid_increment ?? 1000,
       images: body.images ?? [],
-      status: body.status ?? "draft",
+      status: "pending_review",
       start_time: body.start_time ?? null,
       end_time: body.end_time,
     })

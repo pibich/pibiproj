@@ -45,6 +45,8 @@ const conditionLabels: Record<string, string> = {
 };
 
 function getStatusLabel(status: string, winnerId: string | null): string {
+  if (status === "pending_review") return "Menunggu Persetujuan";
+  if (status === "rejected") return "Ditolak";
   if (status === "closed") return winnerId ? "Selesai" : "Gagal";
   if (status === "completed") return "Terkonfirmasi";
   if (status === "cancelled") return "Dibatalkan";
@@ -222,9 +224,13 @@ export default async function AuctionDetailPage({
                   ? "success"
                   : auction.status === "completed"
                     ? "info"
-                    : auction.status === "closed" && !auction.winner_id
-                      ? "danger"
-                      : "default"
+                    : auction.status === "pending_review"
+                      ? "warning"
+                      : auction.status === "rejected"
+                        ? "danger"
+                        : auction.status === "closed" && !auction.winner_id
+                          ? "danger"
+                          : "default"
               }
             >
               {getStatusLabel(auction.status, auction.winner_id)}
@@ -235,6 +241,25 @@ export default async function AuctionDetailPage({
             <h1 className="text-2xl font-bold text-gray-900 mb-3">
               {auction.title}
             </h1>
+
+            {auction.status === "pending_review" && isSeller && (
+              <div className="flex items-center gap-2 rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800 mb-3">
+                <Clock className="h-4 w-4 shrink-0" />
+                Lelang Anda sedang menunggu persetujuan admin. Tidak akan tampil
+                ke publik sampai disetujui.
+              </div>
+            )}
+            {auction.status === "rejected" && isSeller && (
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700 mb-3">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  Lelang ditolak oleh admin
+                </p>
+                {auction.admin_note && (
+                  <p className="mt-1 ml-5">{auction.admin_note}</p>
+                )}
+              </div>
+            )}
             {auction.description && (
               <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
                 {auction.description}

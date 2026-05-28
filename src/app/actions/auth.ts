@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const registerSchema = z
   .object({
@@ -72,7 +72,7 @@ export async function registerAction(
     return { fieldErrors: { username: ["Username sudah digunakan"] } };
   }
 
-  // Check if phone already registered
+  // Check if phone already registered by a verified user
   const { data: existingPhone } = await supabase
     .from("profiles")
     .select("id")
@@ -80,11 +80,20 @@ export async function registerAction(
     .single();
 
   if (existingPhone) {
-    return { fieldErrors: { phone: ["Nomor telepon sudah terdaftar"] } };
+    // Verify the associated auth user is confirmed before blocking registration
+    const adminClient = createAdminClient();
+    const { data: authUser } = await adminClient.auth.admin.getUserById(
+      existingPhone.id,
+    );
+    if (authUser.user?.email_confirmed_at) {
+      return { fieldErrors: { phone: ["Nomor telepon sudah terdaftar"] } };
+    }
+    // Unverified ghost account — clean it up so new registration can proceed
+    await adminClient.auth.admin.deleteUser(existingPhone.id);
   }
 
   // Register user
-  const { error } = await supabase.auth.signUp({
+  const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -93,10 +102,18 @@ export async function registerAction(
   });
 
   if (error) {
-    if (error.message.includes("already registered")) {
+    if (
+      error.message.toLowerCase().includes("already registered") ||
+      error.message.toLowerCase().includes("user already registered")
+    ) {
       return { fieldErrors: { email: ["Email sudah terdaftar"] } };
     }
     return { error: error.message };
+  }
+
+  // Supabase email enumeration protection: existing email returns empty identities array
+  if (signUpData.user?.identities?.length === 0) {
+    return { fieldErrors: { email: ["Email sudah terdaftar"] } };
   }
 
   return { success: true };

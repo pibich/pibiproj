@@ -97,13 +97,21 @@ export type Database = {
           current_price: number;
           buy_now_price: number | null;
           min_bid_increment: number;
-          status: "draft" | "active" | "closed" | "completed" | "cancelled";
+          status:
+            | "draft"
+            | "pending_review"
+            | "active"
+            | "closed"
+            | "completed"
+            | "cancelled"
+            | "rejected";
           start_time: string | null;
           end_time: string | null;
           winner_id: string | null;
           view_count: number;
           transaction_confirmed: boolean;
           confirmation_deadline: string | null;
+          admin_note: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -126,13 +134,21 @@ export type Database = {
           current_price: number;
           buy_now_price?: number | null;
           min_bid_increment?: number;
-          status?: "draft" | "active" | "closed" | "completed" | "cancelled";
+          status?:
+            | "draft"
+            | "pending_review"
+            | "active"
+            | "closed"
+            | "completed"
+            | "cancelled"
+            | "rejected";
           start_time?: string | null;
           end_time?: string | null;
           winner_id?: string | null;
           view_count?: number;
           transaction_confirmed?: boolean;
           confirmation_deadline?: string | null;
+          admin_note?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -150,7 +166,14 @@ export type Database = {
           images?: string[];
           buy_now_price?: number | null;
           min_bid_increment?: number;
-          status?: "draft" | "active" | "closed" | "completed" | "cancelled";
+          status?:
+            | "draft"
+            | "pending_review"
+            | "active"
+            | "closed"
+            | "completed"
+            | "cancelled"
+            | "rejected";
           start_time?: string | null;
           end_time?: string | null;
           current_price?: number;
@@ -158,6 +181,7 @@ export type Database = {
           view_count?: number;
           transaction_confirmed?: boolean;
           confirmation_deadline?: string | null;
+          admin_note?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -276,7 +300,9 @@ export type Database = {
             | "shipping_proof_submitted"
             | "delivery_confirmed"
             | "funds_released"
-            | "confirmation_expired";
+            | "confirmation_expired"
+            | "auction_approved"
+            | "auction_rejected";
           auction_id: string | null;
           is_read: boolean;
           created_at: string;
@@ -292,7 +318,9 @@ export type Database = {
             | "shipping_proof_submitted"
             | "delivery_confirmed"
             | "funds_released"
-            | "confirmation_expired";
+            | "confirmation_expired"
+            | "auction_approved"
+            | "auction_rejected";
           auction_id?: string | null;
           is_read?: boolean;
           created_at?: string;

@@ -195,7 +195,6 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
           images,
           start_time: startTimeISO,
           end_time: endTimeISO,
-          status: "active",
         }),
       });
 
