@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuctionCard } from "@/components/auction/AuctionCard";
+import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
 import { MobileAccountMenu } from "@/components/profile/MobileAccountMenu";
 import { AuctionListCard } from "@/components/profile/AuctionListCard";
@@ -150,7 +151,6 @@ export default async function ProfilePage({
   let wonAuctionsCount = 0;
   let sellerTransactions: TransactionWithRelations[] = [];
   let buyerTransactions: TransactionWithRelations[] = [];
-  let middlemanTransactions: TransactionWithRelations[] = [];
   let wonAuctions: WonAuction[] = [];
   let buyerWarnings: BuyerWarning[] = [];
 
@@ -199,9 +199,10 @@ export default async function ProfilePage({
     buyerWarnings = (warningsRes.data ?? []) as BuyerWarning[];
 
     const allTx = (txRes.data ?? []) as unknown as TransactionWithRelations[];
+    // Transaksi sebagai middleman ditampilkan di dashboard middleman terpisah
+    // (/middleman/dashboard), bukan di profil pribadi.
     sellerTransactions = allTx.filter((t) => t.seller_id === profile.id);
     buyerTransactions = allTx.filter((t) => t.buyer_id === profile.id && t.seller_id !== profile.id);
-    middlemanTransactions = allTx.filter((t) => t.middleman_id === profile.id);
   }
 
   // Derived sets for filtering
@@ -442,30 +443,6 @@ export default async function ProfilePage({
               ))}
             </div>
 
-            {/* ── Transaksi Middleman (hanya untuk is_middleman) ── */}
-            {profile.is_middleman && middlemanTransactions.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ShieldCheck className="h-5 w-5 text-indigo-500" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Transaksi Middleman
-                  </h2>
-                  <span className="ml-auto text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-full">
-                    {middlemanTransactions.length} aktif
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {middlemanTransactions.map((tx) => (
-                    <TransactionCard
-                      key={tx.id}
-                      transaction={tx}
-                      currentUserId={currentUser!.id}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* ── Tabs: Lelang Saya | Bid Saya ── */}
             <OwnProfileTabs
               myAuctionsContent={
@@ -547,6 +524,14 @@ export default async function ProfilePage({
                               <ConfirmationCountdown
                                 deadline={(a as unknown as { confirmation_deadline: string }).confirmation_deadline}
                                 label="Batas buyer konfirmasi"
+                              />
+                            )}
+                            {/* Deal langsung tanpa middleman — perluTindakan sudah
+                                difilter dari lelang ber-transaksi escrow (sellerTxAuctionIds). */}
+                            {a.winner && (
+                              <ConfirmTransactionButton
+                                auctionId={a.id}
+                                winnerUsername={a.winner.username}
                               />
                             )}
                           </div>

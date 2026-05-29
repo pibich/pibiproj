@@ -62,6 +62,25 @@ export async function POST(
     );
   }
 
+  // Anti dobel-hitung: jika sudah ada transaksi escrow (middleman) untuk lelang ini,
+  // penyelesaian + statistik HARUS lewat alur middleman (release-funds), bukan jalur ini.
+  // Selaras dengan constraint UNIQUE(auction_id) pada tabel transactions.
+  const { data: existingTx } = await db
+    .from("transactions")
+    .select("id")
+    .eq("auction_id", auctionId)
+    .maybeSingle();
+
+  if (existingTx) {
+    return NextResponse.json(
+      {
+        error:
+          "Transaksi sedang diproses middleman. Gunakan alur middleman untuk menyelesaikannya.",
+      },
+      { status: 409 },
+    );
+  }
+
   const { error: updateError } = await db
     .from("auctions")
     .update({ transaction_confirmed: true })

@@ -18,6 +18,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BidForm } from "@/components/auction/BidForm";
+import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { ImageGallery } from "@/components/auction/ImageGallery";
 import { Badge } from "@/components/ui/Badge";
@@ -161,6 +162,16 @@ export default async function AuctionDetailPage({
     totalSellerAuctions > 0
       ? Math.round((completedSellerAuctions / totalSellerAuctions) * 100)
       : null;
+
+  // Apakah sudah ada transaksi escrow (middleman) untuk lelang ini?
+  // RLS hanya mengizinkan pihak transaksi (seller/buyer/middleman) membaca baris ini,
+  // jadi untuk anon/user lain akan null — itu memang yang kita mau.
+  const { data: escrowTx } = await supabase
+    .from("transactions")
+    .select("id")
+    .eq("auction_id", id)
+    .maybeSingle();
+  const hasEscrowTransaction = !!escrowTx;
 
   supabase
     .from("auctions")
@@ -394,12 +405,22 @@ export default async function AuctionDetailPage({
                   <>
                     <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 rounded-lg px-3 py-2">
                       <Clock className="h-4 w-4 shrink-0" />
-                      Menunggu Transaksi — gunakan chat dan hubungi middleman
+                      {hasEscrowTransaction
+                        ? "Transaksi sedang diproses melalui middleman."
+                        : "Menunggu Transaksi — gunakan chat dan hubungi middleman."}
                     </div>
                     {auction.confirmation_deadline && (
                       <ConfirmationCountdown
                         deadline={auction.confirmation_deadline}
                         label="Batas buyer konfirmasi"
+                      />
+                    )}
+                    {/* Konfirmasi langsung (tanpa middleman). Disembunyikan jika
+                        transaksi escrow sudah berjalan agar tidak dobel-hitung. */}
+                    {!hasEscrowTransaction && (
+                      <ConfirmTransactionButton
+                        auctionId={auction.id}
+                        winnerUsername={auction.winner.username}
                       />
                     )}
                   </>
@@ -433,6 +454,53 @@ export default async function AuctionDetailPage({
               )}
             </div>
           )}
+
+          {/* Status transaksi publik — terlihat oleh siapa pun (termasuk belum login)
+              yang bukan seller & bukan winner. Seller & winner punya kartunya sendiri di atas. */}
+          {!isSeller &&
+            auction.winner_id !== currentUser?.id &&
+            (auction.status === "completed" || auction.status === "closed") &&
+            auction.winner_id &&
+            auction.winner && (
+              <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Status Transaksi
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-semibold text-sm shrink-0">
+                    {getInitials(auction.winner.name)}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Pemenang</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {auction.winner.name}{" "}
+                      <span className="font-normal text-gray-500">
+                        @{auction.winner.username}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                {auction.transaction_confirmed ? (
+                  <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    Transaksi Selesai
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 rounded-lg px-3 py-2">
+                      <Clock className="h-4 w-4 shrink-0" />
+                      Menunggu konfirmasi transaksi
+                    </div>
+                    {auction.confirmation_deadline && (
+                      <ConfirmationCountdown
+                        deadline={auction.confirmation_deadline}
+                        label="Batas konfirmasi"
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">

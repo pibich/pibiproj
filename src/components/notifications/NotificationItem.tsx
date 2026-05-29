@@ -14,11 +14,15 @@ type NotificationType =
   | "funds_released"
   | "confirmation_expired";
 
+type RecipientRole = "seller" | "buyer" | null;
+
 interface NotificationItemProps {
   type: NotificationType;
   auctionTitle?: string | null;
   createdAt?: string;
   isRead: boolean;
+  /** Peran penerima relatif terhadap lelang — untuk menyusun kalimat yang jelas. */
+  recipientRole?: RecipientRole;
 }
 
 const icons: Record<NotificationType, React.ElementType> = {
@@ -46,25 +50,38 @@ const colors: Record<NotificationType, string> = {
 function getLabel(
   type: NotificationType,
   auctionTitle?: string | null,
+  recipientRole?: RecipientRole,
 ): string {
   const title = auctionTitle ? `"${auctionTitle}"` : "lelang";
   switch (type) {
     case "auction_won":
-      return `Anda memenangkan ${title}`;
+      return `Anda memenangkan lelang ${title}`;
     case "auction_ended":
-      return `Lelang Anda telah berakhir: ${title}`;
+      return `Lelang ${title} telah berakhir`;
     case "transaction_confirmed":
-      return `Transaksi terkonfirmasi: ${title}`;
+      if (recipientRole === "seller")
+        return `Anda telah mengonfirmasi transaksi lelang ${title}`;
+      if (recipientRole === "buyer")
+        return `Transaksi lelang ${title} telah dikonfirmasi penjual`;
+      return `Transaksi lelang ${title} telah dikonfirmasi`;
     case "awaiting_shipment":
-      return `Pembayaran dikonfirmasi — silakan kirim paket: ${title}`;
+      return `Pembayaran lelang ${title} dikonfirmasi — silakan kirim paket`;
     case "shipping_proof_submitted":
-      return `Seller upload bukti pengiriman: ${title}`;
+      return `Penjual mengunggah bukti pengiriman untuk lelang ${title}`;
     case "delivery_confirmed":
-      return `Buyer konfirmasi penerimaan paket: ${title}`;
+      return `Pembeli mengonfirmasi penerimaan paket lelang ${title}`;
     case "funds_released":
-      return `Dana telah dilepaskan untuk: ${title}`;
+      return `Dana untuk lelang ${title} telah dilepaskan`;
     case "confirmation_expired":
+<<<<<<< Updated upstream
       return `Peringatan: batas waktu konfirmasi ${title} telah habis`;
+=======
+      return `Batas waktu konfirmasi lelang ${title} telah habis`;
+    case "auction_approved":
+      return `Lelang ${title} telah disetujui`;
+    case "auction_rejected":
+      return `Lelang ${title} ditolak`;
+>>>>>>> Stashed changes
   }
 }
 
@@ -73,6 +90,7 @@ export function NotificationItem({
   auctionTitle,
   createdAt,
   isRead,
+  recipientRole,
 }: NotificationItemProps) {
   const Icon = icons[type];
   const colorClass = colors[type];
@@ -90,7 +108,7 @@ export function NotificationItem({
         <p
           className={`text-sm leading-snug ${!isRead ? "font-medium text-gray-900" : "text-gray-700"}`}
         >
-          {getLabel(type, auctionTitle)}
+          {getLabel(type, auctionTitle, recipientRole)}
         </p>
         {createdAt && (
           <p className="text-xs text-gray-400 mt-0.5">

@@ -139,6 +139,16 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                           <Settings className="h-4 w-4" />
                           Pengaturan
                         </Link>
+                        {user.is_middleman && (
+                          <Link
+                            href="/middleman/dashboard"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-indigo-600 hover:bg-indigo-50 transition-colors"
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                            Dashboard Middleman
+                          </Link>
+                        )}
                         {user.role === "admin" && (
                           <Link
                             href="/admin"

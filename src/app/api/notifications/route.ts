@@ -4,7 +4,12 @@ import type { Database } from "@/types/supabase";
 
 type NotificationWithAuction =
   Database["public"]["Tables"]["notifications"]["Row"] & {
-    auction: { id: string; title: string } | null;
+    auction: {
+      id: string;
+      title: string;
+      seller_id: string;
+      winner_id: string | null;
+    } | null;
   };
 
 export async function GET() {
@@ -20,7 +25,7 @@ export async function GET() {
 
   const { data: notifications, error } = await supabase
     .from("notifications")
-    .select("*, auction:auctions(id, title)")
+    .select("*, auction:auctions(id, title, seller_id, winner_id)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);

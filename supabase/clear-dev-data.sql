@@ -1,19 +1,23 @@
 -- ============================================================
--- CLEAR ALL DEVELOPMENT DATA
--- Run this in Supabase SQL Editor
+-- CLEAR DATA LELANG (USER TETAP UTUH)
+-- Hapus semua data lelang/transaksi/bid/notifikasi, TANPA menghapus user.
+-- Jalankan di Supabase Dashboard → SQL Editor.
+--
+-- Untuk reset TOTAL (termasuk semua user + akun login), gunakan
+-- file `reset-all-data.sql`.
 -- ============================================================
 
--- 1. Hapus semua bids
-DELETE FROM bids;
+BEGIN;
 
--- 2. Hapus semua notifikasi
-DELETE FROM notifications;
+-- Urutan penting: hapus tabel anak yang mereferensikan auctions lebih dulu.
+DELETE FROM transactions;     -- escrow middleman (ref: auctions)
+DELETE FROM buyer_warnings;   -- peringatan pembeli (ref: auctions)
+DELETE FROM bids;             -- penawaran (ref: auctions)
+DELETE FROM notifications;    -- notifikasi (ref: auctions)
+DELETE FROM reports;          -- laporan (ref: auctions)
+DELETE FROM watchlist;        -- watchlist (ref: auctions)
 
--- 3. Hapus semua reports
-DELETE FROM reports;
-
--- 4. Hapus semua watchlist
-DELETE FROM watchlist;
-
--- 5. Hapus semua auctions (bids, notif, reports, watchlist sudah dihapus duluan)
+-- Terakhir: lelang itu sendiri.
 DELETE FROM auctions;
+
+COMMIT;

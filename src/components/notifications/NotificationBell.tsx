@@ -2,13 +2,18 @@
 
 import { Bell } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Notification } from "@/types/supabase";
 import { NotificationItem } from "./NotificationItem";
 
 type NotificationWithAuction = Notification & {
-  auction: { id: string; title: string } | null;
+  auction: {
+    id: string;
+    title: string;
+    seller_id: string;
+    winner_id: string | null;
+  } | null;
 };
 
 export function NotificationBell({
@@ -26,15 +31,20 @@ export function NotificationBell({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/notifications")
-      .then((r) => r.json())
-      .then((data) => {
-        setNotifications(data.notifications ?? []);
-        setUnreadCount(data.unread_count ?? 0);
-      })
-      .catch(() => {});
+  const loadNotifications = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      const data = await res.json();
+      setNotifications(data.notifications ?? []);
+      setUnreadCount(data.unread_count ?? 0);
+    } catch {
+      // abaikan kegagalan jaringan sementara
+    }
   }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,10 +58,10 @@ export function NotificationBell({
           table: "notifications",
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          const newNotif = payload.new as NotificationWithAuction;
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((c) => c + 1);
+        () => {
+          // Payload realtime tidak menyertakan join `auction`, sehingga label &
+          // navigasi tidak lengkap. Re-fetch agar data ber-join lengkap.
+          loadNotifications();
         },
       )
       .subscribe();
@@ -59,7 +69,7 @@ export function NotificationBell({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, channelId]);
+  }, [userId, channelId, loadNotifications]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -131,6 +141,13 @@ export function NotificationBell({
                   auctionTitle={n.auction?.title}
                   createdAt={n.created_at}
                   isRead={n.is_read}
+                  recipientRole={
+                    n.auction?.seller_id === userId
+                      ? "seller"
+                      : n.auction?.winner_id === userId
+                        ? "buyer"
+                        : null
+                  }
                 />
               </button>
             ))}
