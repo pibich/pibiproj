@@ -27,3 +27,26 @@ export async function updateAvatarAction(
     return { error: "Terjadi kesalahan. Silakan coba lagi." };
   }
 }
+
+export async function updateFacebookVisibilityAction(
+  isPublic: boolean,
+): Promise<{ error?: string }> {
+  try {
+    const user = await requireUser();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ facebook_public: isPublic })
+      .eq("id", user.id);
+
+    if (error) return { error: "Gagal memperbarui visibilitas Facebook." };
+
+    revalidatePath("/settings");
+    revalidatePath(`/profile/${user.username}`);
+
+    return {};
+  } catch {
+    return { error: "Terjadi kesalahan. Silakan coba lagi." };
+  }
+}

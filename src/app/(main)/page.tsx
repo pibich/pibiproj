@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Auction, Category, Profile } from "@/types/supabase";
 
 export const metadata: Metadata = {
-  title: "TCG Marketplace — Lelang Kartu TCG Terpercaya",
+  title: "TCG Auction — Lelang Kartu TCG Terpercaya",
 };
 
 type AuctionWithRelations = Auction & {
@@ -139,7 +139,7 @@ export default async function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-slate-800 mb-2">
-            Mengapa TCG Marketplace?
+            Mengapa TCG Auction?
           </h2>
           <p className="text-slate-500 text-sm max-w-md mx-auto">
             Semua yang kamu butuhkan untuk transaksi kartu TCG yang aman dan

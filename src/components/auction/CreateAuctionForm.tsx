@@ -442,6 +442,14 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
         </div>
       </div>
 
+      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <span>
+          Lelang akan ditinjau admin/middleman terlebih dahulu sebelum tampil
+          publik. Anda akan menerima notifikasi setelah disetujui atau ditolak.
+        </span>
+      </div>
+
       <div className="flex gap-3 pt-2">
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Batal

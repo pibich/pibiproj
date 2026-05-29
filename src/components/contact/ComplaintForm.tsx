@@ -11,7 +11,7 @@ export function ComplaintForm({ csPhone }: { csPhone: string }) {
     const message = (form.elements.namedItem("message") as HTMLTextAreaElement)
       .value;
 
-    const text = `Halo CS TCG Marketplace,
+    const text = `Halo CS TCG Auction,
 
 Nama: ${name}
 Email: ${email}

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "TCG Marketplace — Lelang Kartu TCG Terpercaya",
-    template: "%s | TCG Marketplace",
+    default: "TCG Auction — Lelang Kartu TCG Terpercaya",
+    template: "%s | TCG Auction",
   },
   description:
     "Platform lelang kartu TCG (Pokemon, MTG, Yu-Gi-Oh!, One Piece) terpercaya di Indonesia.",

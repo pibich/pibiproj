@@ -21,6 +21,28 @@ export async function GET(request: NextRequest) {
     const { error: exchangeError } =
       await supabase.auth.exchangeCodeForSession(code);
     if (!exchangeError) {
+      // If a Facebook identity is now linked, persist its display name to the
+      // public profiles table so it can be shown on the user's profile.
+      // Wrapped in try/catch so a sync failure never breaks the redirect.
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        const facebook = user?.identities?.find(
+          (id) => id.provider === "facebook",
+        );
+        const facebookName =
+          (facebook?.identity_data?.name as string | undefined) ??
+          (facebook?.identity_data?.full_name as string | undefined);
+        if (user && facebookName) {
+          await supabase
+            .from("profiles")
+            .update({ facebook_name: facebookName })
+            .eq("id", user.id);
+        }
+      } catch {
+        // ignore — linking already succeeded, name sync is best-effort
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

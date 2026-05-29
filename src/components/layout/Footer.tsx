@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export function Footer() {
@@ -10,15 +9,16 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-sky-900/30">
-                <Sparkles className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-sky-900/30">
+                {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
+                <img src="/logo.svg" alt="TCG Auction" className="w-8 h-8" />
               </div>
               <span className="font-bold text-white">
-                TCG <span className="text-sky-400">Marketplace</span>
+                TCG <span className="text-sky-400">Auction</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
-              TCG Marketplace adalah platform lelang kartu TCG terpercaya di
+              TCG Auction adalah platform lelang kartu TCG terpercaya di
               Indonesia.
             </p>
           </div>
@@ -75,7 +75,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-slate-700/50 mt-8 pt-6 text-xs text-center text-slate-500">
-          © {year} TCG Marketplace. Hak cipta dilindungi.
+          © {year} TCG Auction. Hak cipta dilindungi.
         </div>
       </div>
     </footer>

@@ -42,6 +42,8 @@ export default async function SettingsPage({
         <AccountSettingsForm user={user} />
         <LinkedAccountsSection
           hasFacebook={hasFacebook}
+          facebookName={user.facebook_name}
+          facebookPublic={user.facebook_public}
           linkedSuccess={linked}
           oauthError={oauth_error}
         />

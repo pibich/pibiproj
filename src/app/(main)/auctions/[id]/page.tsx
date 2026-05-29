@@ -17,6 +17,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AuctionApprovalActions } from "@/components/admin/AuctionApprovalActions";
 import { BidForm } from "@/components/auction/BidForm";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { ImageGallery } from "@/components/auction/ImageGallery";
@@ -49,6 +50,8 @@ function getStatusLabel(status: string, winnerId: string | null): string {
   if (status === "completed") return "Terkonfirmasi";
   if (status === "cancelled") return "Dibatalkan";
   if (status === "active") return "Aktif";
+  if (status === "pending_approval") return "Menunggu Persetujuan";
+  if (status === "rejected") return "Ditolak";
   return status;
 }
 
@@ -104,6 +107,19 @@ export default async function AuctionDetailPage({
   if (auctionError || !auctionRaw) notFound();
 
   let auction = auctionRaw;
+
+  // Lelang yang menunggu persetujuan / ditolak hanya boleh dilihat oleh penjual
+  // dan approver (admin/middleman). Pengguna lain → 404 (disembunyikan).
+  const isApprover =
+    !!currentUser &&
+    (currentUser.role === "admin" || currentUser.is_middleman);
+  if (
+    (auction.status === "pending_approval" || auction.status === "rejected") &&
+    currentUser?.id !== auction.seller.id &&
+    !isApprover
+  ) {
+    notFound();
+  }
 
   // Lazy close: if auction is still "active" but end_time has passed, close it now
   if (
@@ -173,6 +189,8 @@ export default async function AuctionDetailPage({
     (auction.end_time ? new Date(auction.end_time) < new Date() : false);
 
   const isSeller = currentUser?.id === auction.seller.id;
+  const isPending = auction.status === "pending_approval";
+  const isRejected = auction.status === "rejected";
 
   const sortedBids = [...auction.bids].sort(
     (a, b) => Number(b.amount) - Number(a.amount),
@@ -222,14 +240,61 @@ export default async function AuctionDetailPage({
                   ? "success"
                   : auction.status === "completed"
                     ? "info"
-                    : auction.status === "closed" && !auction.winner_id
-                      ? "danger"
-                      : "default"
+                    : auction.status === "pending_approval"
+                      ? "warning"
+                      : auction.status === "rejected" ||
+                          (auction.status === "closed" && !auction.winner_id)
+                        ? "danger"
+                        : "default"
               }
             >
               {getStatusLabel(auction.status, auction.winner_id)}
             </Badge>
           </div>
+
+          {/* Banner status persetujuan — untuk penjual & approver */}
+          {isPending && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Menunggu persetujuan</p>
+                <p className="text-amber-700 mt-0.5">
+                  {isSeller
+                    ? "Lelang ini sedang ditinjau admin/middleman dan belum tampil publik. Anda akan diberi tahu setelah ditinjau."
+                    : "Lelang ini belum tampil publik. Tinjau dan setujui atau tolak di bawah."}
+                </p>
+              </div>
+            </div>
+          )}
+          {isRejected && (
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Lelang ditolak</p>
+                {auction.rejection_reason && (
+                  <p className="mt-0.5">
+                    <span className="font-medium">Alasan:</span>{" "}
+                    {auction.rejection_reason}
+                  </p>
+                )}
+                {isSeller && (
+                  <p className="mt-1 text-red-600">
+                    Silakan perbaiki dan buat lelang baru.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Kontrol persetujuan — hanya approver, saat menunggu */}
+          {isPending && isApprover && (
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                Tinjau Lelang
+              </p>
+              <AuctionApprovalActions auctionId={auction.id} />
+            </div>
+          )}
 
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-3">
@@ -279,17 +344,25 @@ export default async function AuctionDetailPage({
               />
             )}
 
-            <BidForm
-              auctionId={auction.id}
-              currentPrice={auction.current_price}
-              minIncrement={auction.min_bid_increment}
-              buyNowPrice={auction.buy_now_price}
-              auctionEnded={isEnded}
-              isLoggedIn={!!currentUser}
-              isSeller={isSeller}
-            />
+            {isPending || isRejected ? (
+              <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
+                {isPending
+                  ? "Bid belum dapat dilakukan sampai lelang disetujui."
+                  : "Lelang ini ditolak dan tidak menerima bid."}
+              </div>
+            ) : (
+              <BidForm
+                auctionId={auction.id}
+                currentPrice={auction.current_price}
+                minIncrement={auction.min_bid_increment}
+                buyNowPrice={auction.buy_now_price}
+                auctionEnded={isEnded}
+                isLoggedIn={!!currentUser}
+                isSeller={isSeller}
+              />
+            )}
 
-            {currentUser && !isSeller && (
+            {currentUser && !isSeller && !isPending && !isRejected && (
               <div className="flex gap-2 pt-1 border-t border-gray-100">
                 <Link
                   href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}

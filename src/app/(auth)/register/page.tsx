@@ -9,16 +9,17 @@ export default function RegisterPage() {
       <div className="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl shadow-sky-100 border border-sky-100 p-8">
         <div className="flex flex-col items-center gap-2 mb-8">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-sky-400 to-blue-500 rounded-xl flex items-center justify-center shadow-md shadow-sky-200">
-              <span className="text-white font-bold text-lg">T</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-sky-200">
+              {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
+              <img src="/logo.svg" alt="TCG Auction" className="w-10 h-10" />
             </div>
             <span className="text-xl font-bold text-slate-800">
-              TCG <span className="text-sky-500">Marketplace</span>
+              TCG <span className="text-sky-500">Auction</span>
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-800">Buat Akun Baru</h1>
           <p className="text-sm text-slate-500">
-            Bergabung dengan komunitas TCG Marketplace
+            Bergabung dengan komunitas TCG Auction
           </p>
         </div>
         <RegisterForm />

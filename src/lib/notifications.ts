@@ -9,7 +9,10 @@ type NotificationType =
   | "shipping_proof_submitted"
   | "delivery_confirmed"
   | "funds_released"
-  | "confirmation_expired";
+  | "confirmation_expired"
+  | "auction_pending_approval"
+  | "auction_approved"
+  | "auction_rejected";
 
 export async function createNotification(
   supabase: SupabaseClient<Database>,

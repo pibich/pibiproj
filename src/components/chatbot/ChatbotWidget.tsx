@@ -73,7 +73,7 @@ export function ChatbotWidget() {
       setMessages([
         mkMsg(
           "model",
-          "Halo! Saya asisten TCG Marketplace. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
+          "Halo! Saya asisten TCG Auction. Saya dapat membantu Anda tentang cara bid, cara jual, cara lapor pengguna, atau menghubungi customer service. Ada yang bisa saya bantu?",
         ),
       ]);
     }
@@ -156,12 +156,12 @@ export function ChatbotWidget() {
                 <p className="font-semibold text-sm text-gray-900">
                   Butuh Bantuan?
                 </p>
-                <p className="text-xs text-gray-500">Asisten TCG Marketplace</p>
+                <p className="text-xs text-gray-500">Asisten TCG Auction</p>
               </div>
             </div>
 
             <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-              Saya siap membantu kamu navigasi TCG Marketplace dengan mudah.
+              Saya siap membantu kamu navigasi TCG Auction dengan mudah.
             </p>
 
             <ul className="text-xs text-gray-500 mb-4 space-y-1.5">
@@ -212,7 +212,7 @@ export function ChatbotWidget() {
             </div>
             <div>
               <p className="font-semibold text-sm">Bantuan</p>
-              <p className="text-xs text-blue-100">Asisten TCG Marketplace</p>
+              <p className="text-xs text-blue-100">Asisten TCG Auction</p>
             </div>
           </div>
 

@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Bagaimana sistem pembayaran bekerja?",
-    a: "TCG Marketplace menghubungkan pembeli dan penjual, tetapi tidak memproses pembayaran. Setelah lelang selesai, pembeli dan penjual mengatur pembayaran secara langsung.",
+    a: "TCG Auction menghubungkan pembeli dan penjual, tetapi tidak memproses pembayaran. Setelah lelang selesai, pembeli dan penjual mengatur pembayaran secara langsung.",
   },
   {
     q: "Apa yang terjadi jika pemenang lelang tidak membayar?",
@@ -59,7 +59,7 @@ export default async function ContactPage() {
             <a
               href={buildWhatsAppUrl(
                 csPhone,
-                "Halo, saya membutuhkan bantuan mengenai TCG Marketplace.",
+                "Halo, saya membutuhkan bantuan mengenai TCG Auction.",
               )}
               target="_blank"
               rel="noopener noreferrer"

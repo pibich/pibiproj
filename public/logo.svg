@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="TCG Auction">
+  <defs>
+    <linearGradient id="tcgBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="tcgCard" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e0f2fe"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded app background -->
+  <rect width="64" height="64" rx="15" fill="url(#tcgBg)"/>
+
+  <!-- TCG card (tilted), with holo star + text lines -->
+  <g transform="rotate(-13 25 34)">
+    <rect x="12" y="16" width="26" height="37" rx="4" fill="url(#tcgCard)" stroke="#bae6fd" stroke-width="1"/>
+    <path d="M25 23l2.3 4.7 5.2.8-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.8z" fill="#f59e0b"/>
+    <rect x="17" y="41" width="16" height="2.8" rx="1.4" fill="#93c5fd"/>
+    <rect x="17" y="46.5" width="11" height="2.8" rx="1.4" fill="#bfdbfe"/>
+  </g>
+
+  <!-- Auction gavel (in front), angled -->
+  <g transform="translate(41 22) rotate(-36)">
+    <rect x="-13" y="-7" width="26" height="14" rx="7" fill="#fbbf24"/>
+    <rect x="-8.5" y="-7" width="3.2" height="14" rx="1.6" fill="#f59e0b"/>
+    <rect x="5.3" y="-7" width="3.2" height="14" rx="1.6" fill="#f59e0b"/>
+    <rect x="-3" y="6" width="6" height="26" rx="3" fill="#fcd34d"/>
+  </g>
+
+  <!-- Sounding block -->
+  <rect x="30" y="53" width="24" height="6" rx="3" fill="#fde68a"/>
+</svg>

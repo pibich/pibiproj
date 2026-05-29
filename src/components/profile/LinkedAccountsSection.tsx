@@ -1,21 +1,28 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { updateFacebookVisibilityAction } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
 
 interface LinkedAccountsSectionProps {
   hasFacebook: boolean;
+  facebookName: string | null;
+  facebookPublic: boolean;
   linkedSuccess?: string;
   oauthError?: string;
 }
 
 export function LinkedAccountsSection({
   hasFacebook: initialHasFacebook,
+  facebookName,
+  facebookPublic: initialFacebookPublic,
   linkedSuccess,
   oauthError,
 }: LinkedAccountsSectionProps) {
   const [loading, setLoading] = useState(false);
+  const [isPublic, setIsPublic] = useState(initialFacebookPublic);
+  const [visibilityPending, startVisibilityTransition] = useTransition();
   const [error, setError] = useState<string | null>(
     oauthError
       ? oauthError.includes("email")
@@ -71,6 +78,18 @@ export function LinkedAccountsSection({
     }
   }
 
+  function handleToggleVisibility() {
+    const next = !isPublic;
+    setIsPublic(next);
+    startVisibilityTransition(async () => {
+      const result = await updateFacebookVisibilityAction(next);
+      if (result.error) {
+        setIsPublic(!next); // revert on failure
+        setError(result.error);
+      }
+    });
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-5">
       <div>
@@ -116,7 +135,9 @@ export function LinkedAccountsSection({
           <div>
             <p className="text-sm font-medium text-gray-900">Facebook</p>
             <p className="text-xs text-gray-500">
-              {hasFacebook ? "Terhubung" : "Belum terhubung"}
+              {hasFacebook
+                ? (facebookName ?? "Terhubung")
+                : "Belum terhubung"}
             </p>
           </div>
         </div>
@@ -138,6 +159,36 @@ export function LinkedAccountsSection({
           </button>
         )}
       </div>
+
+      {hasFacebook && facebookName && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border border-gray-100 rounded-xl">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900">
+              Tampilkan nama Facebook di profil publik
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Saat aktif, nama <span className="font-medium">{facebookName}</span>{" "}
+              terlihat oleh pengguna lain di halaman profil kamu.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPublic}
+            onClick={handleToggleVisibility}
+            disabled={visibilityPending}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
+              isPublic ? "bg-[#1877F2]" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                isPublic ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+      )}
 
       <p className="text-xs text-gray-400">
         Menghubungkan akun Facebook digunakan sebagai verifikasi identitas

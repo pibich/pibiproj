@@ -1,4 +1,10 @@
-import { Clock, FileWarning, ShieldCheck, Users } from "lucide-react";
+import {
+  ClipboardCheck,
+  Clock,
+  FileWarning,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import type { Metadata } from "next";
 import {
   AdminReportTable,
@@ -16,6 +22,7 @@ export default async function AdminReportsPage() {
   const [
     { count: totalUsers },
     { count: pendingReports },
+    { count: pendingApprovals },
     { count: activeMiddlemen },
     { count: timedOut },
     { data: reports },
@@ -28,6 +35,10 @@ export default async function AdminReportsPage() {
       .from("reports")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending"),
+    supabase
+      .from("auctions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending_approval"),
     supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
@@ -63,6 +74,13 @@ export default async function AdminReportsPage() {
       icon: FileWarning,
       color: "text-orange-600",
       bg: "bg-orange-50",
+    },
+    {
+      label: "Lelang Menunggu",
+      value: pendingApprovals ?? 0,
+      icon: ClipboardCheck,
+      color: "text-indigo-600",
+      bg: "bg-indigo-50",
     },
     {
       label: "Middleman Aktif",

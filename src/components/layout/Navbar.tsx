@@ -9,7 +9,6 @@ import {
   Plus,
   Settings,
   ShieldCheck,
-  Sparkles,
   User,
   Users,
   X,
@@ -42,11 +41,12 @@ export function Navbar({ user, onLogout }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-sky-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md shadow-sky-200 group-hover:shadow-sky-300 transition-shadow">
-              <Sparkles className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-sky-200 group-hover:shadow-sky-300 transition-shadow">
+              {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
+              <img src="/logo.svg" alt="TCG Auction" className="w-8 h-8" />
             </div>
             <span className="font-bold text-slate-800 hidden sm:block tracking-tight">
-              TCG <span className="text-sky-500">Marketplace</span>
+              TCG <span className="text-sky-500">Auction</span>
             </span>
           </Link>
 

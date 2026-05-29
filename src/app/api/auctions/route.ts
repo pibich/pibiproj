@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { createNotification } from "@/lib/notifications";
 import { containsProfanity } from "@/lib/profanity";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient();
@@ -86,15 +87,41 @@ export async function POST(req: NextRequest) {
       buy_now_price: body.buy_now_price ?? null,
       min_bid_increment: body.min_bid_increment ?? 1000,
       images: body.images ?? [],
-      status: body.status ?? "draft",
+      // Lelang baru wajib ditinjau admin/middleman sebelum tampil publik.
+      // Draft (jika dipakai di masa depan) tetap dihormati; selain itu → pending.
+      status: body.status === "draft" ? "draft" : "pending_approval",
       start_time: body.start_time ?? null,
       end_time: body.end_time,
     })
-    .select("id")
+    .select("id, title, status")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Beri tahu semua admin & middleman bahwa ada lelang yang perlu disetujui.
+  // Pakai service-role agar bisa membaca daftar approver & menulis notifikasi
+  // untuk user lain tanpa terhalang RLS.
+  if (data.status === "pending_approval") {
+    try {
+      const adminDb = createAdminClient();
+      const { data: approvers } = await adminDb
+        .from("profiles")
+        .select("id")
+        .or("role.eq.admin,is_middleman.eq.true")
+        .neq("id", user.id);
+
+      for (const approver of approvers ?? []) {
+        await createNotification(adminDb, {
+          user_id: approver.id,
+          type: "auction_pending_approval",
+          auction_id: data.id,
+        });
+      }
+    } catch {
+      // Notifikasi best-effort — kegagalan tidak membatalkan pembuatan lelang.
+    }
   }
 
   return NextResponse.json({ id: data.id }, { status: 201 });

@@ -1,4 +1,10 @@
-import { FileWarning, ShieldCheck, UserCog, Users } from "lucide-react";
+import {
+  ClipboardCheck,
+  FileWarning,
+  ShieldCheck,
+  UserCog,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/dal";
@@ -30,6 +36,13 @@ export default async function AdminLayout({
         >
           <FileWarning className="h-4 w-4" />
           Laporan
+        </Link>
+        <Link
+          href="/admin/approvals"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
+        >
+          <ClipboardCheck className="h-4 w-4" />
+          Persetujuan
         </Link>
         <Link
           href="/admin/middleman"
