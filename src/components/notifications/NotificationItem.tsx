@@ -2,7 +2,16 @@
 
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { AlertTriangle, Banknote, CheckCircle, Package, Truck, Trophy } from "lucide-react";
+import {
+  AlertTriangle,
+  Banknote,
+  CheckCircle,
+  Package,
+  ThumbsUp,
+  Truck,
+  Trophy,
+  XCircle,
+} from "lucide-react";
 
 type NotificationType =
   | "auction_won"
@@ -12,7 +21,9 @@ type NotificationType =
   | "shipping_proof_submitted"
   | "delivery_confirmed"
   | "funds_released"
-  | "confirmation_expired";
+  | "confirmation_expired"
+  | "auction_approved"
+  | "auction_rejected";
 
 type RecipientRole = "seller" | "buyer" | null;
 
@@ -34,6 +45,8 @@ const icons: Record<NotificationType, React.ElementType> = {
   delivery_confirmed: CheckCircle,
   funds_released: Banknote,
   confirmation_expired: AlertTriangle,
+  auction_approved: ThumbsUp,
+  auction_rejected: XCircle,
 };
 
 const colors: Record<NotificationType, string> = {
@@ -45,6 +58,8 @@ const colors: Record<NotificationType, string> = {
   delivery_confirmed: "text-emerald-500 bg-emerald-50",
   funds_released: "text-purple-500 bg-purple-50",
   confirmation_expired: "text-red-500 bg-red-50",
+  auction_approved: "text-green-500 bg-green-50",
+  auction_rejected: "text-red-500 bg-red-50",
 };
 
 function getLabel(
@@ -73,15 +88,11 @@ function getLabel(
     case "funds_released":
       return `Dana untuk lelang ${title} telah dilepaskan`;
     case "confirmation_expired":
-<<<<<<< Updated upstream
-      return `Peringatan: batas waktu konfirmasi ${title} telah habis`;
-=======
       return `Batas waktu konfirmasi lelang ${title} telah habis`;
     case "auction_approved":
       return `Lelang ${title} telah disetujui`;
     case "auction_rejected":
       return `Lelang ${title} ditolak`;
->>>>>>> Stashed changes
   }
 }
 

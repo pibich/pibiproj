@@ -386,37 +386,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      blacklist: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          type: "auto" | "manual";
-          name: string | null;
-          username: string | null;
-          email: string | null;
-          phone: string | null;
-          reason: string | null;
-          added_by: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          type?: "auto" | "manual";
-          name?: string | null;
-          username?: string | null;
-          email?: string | null;
-          phone?: string | null;
-          reason?: string | null;
-          added_by?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          type?: "auto" | "manual";
-          reason?: string | null;
-        };
-        Relationships: [];
-      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

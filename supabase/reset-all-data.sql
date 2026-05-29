@@ -29,13 +29,10 @@ DELETE FROM chatbot_usage;    -- kuota chatbot per user (ref: profiles)
 -- 2) Lelang
 DELETE FROM auctions;
 
--- 3) Daftar blacklist (mereferensikan/menyimpan user yang akan dihapus)
-DELETE FROM blacklist;
-
--- 4) Profil publik
+-- 3) Profil publik
 DELETE FROM profiles;
 
--- 5) Akun login — menghapus auth.users akan ikut menghapus
+-- 4) Akun login — menghapus auth.users akan ikut menghapus
 --    auth.identities / auth.sessions via cascade internal Supabase.
 DELETE FROM auth.users;
 

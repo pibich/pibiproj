@@ -14,8 +14,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Sistem Blacklist",
-    desc: "Cek daftar penjual/pembeli bermasalah sebelum bertransaksi.",
+    title: "Transaksi Aman dengan Middleman",
+    desc: "Gunakan middleman terverifikasi sebagai perantara agar pembayaran dan pengiriman terjamin.",
     color: "from-emerald-400 to-teal-500",
     bg: "bg-emerald-50",
     accent: "text-emerald-600",
