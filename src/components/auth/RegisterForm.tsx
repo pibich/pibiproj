@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { type ActionState, registerAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PROVINCES } from "@/lib/provinces";
 
 const initialState: ActionState = {};
 
@@ -88,6 +89,36 @@ export function RegisterForm() {
         autoComplete="tel"
         error={state.fieldErrors?.phone?.[0]}
       />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="province" className="text-sm font-medium text-gray-700">
+          Provinsi
+        </label>
+        <select
+          id="province"
+          name="province"
+          required
+          defaultValue=""
+          aria-invalid={!!state.fieldErrors?.province?.[0]}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 invalid:text-gray-400"
+        >
+          <option value="" disabled>
+            Pilih provinsi domisili
+          </option>
+          {PROVINCES.map((p) => (
+            <option key={p} value={p} className="text-gray-900">
+              {p}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-gray-400">
+          Membantu pembeli/penjual memperkirakan ongkos kirim.
+        </p>
+        {state.fieldErrors?.province?.[0] && (
+          <p className="text-xs text-red-600">
+            {state.fieldErrors.province[0]}
+          </p>
+        )}
+      </div>
       <Input
         id="password"
         name="password"

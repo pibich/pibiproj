@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 interface ComboboxOption {
   value: string;
   label: string;
+  /** Optional icon image src shown before the label. */
+  icon?: string | null;
 }
 
 interface ComboboxProps {
@@ -37,7 +39,8 @@ export function Combobox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+  const selectedOption = options.find((o) => o.value === value);
+  const selectedLabel = selectedOption?.label ?? "";
 
   const filtered = query
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
@@ -95,9 +98,22 @@ export function Combobox({
         )}
       >
         <span
-          className={cn("truncate", !value && !allLabel && "text-gray-400")}
+          className={cn(
+            "flex items-center gap-2 truncate",
+            !value && !allLabel && "text-gray-400",
+          )}
         >
-          {value ? selectedLabel : (allLabel ?? placeholder)}
+          {value && selectedOption?.icon && (
+            // biome-ignore lint/performance/noImgElement: small local category icon
+            <img
+              src={selectedOption.icon}
+              alt=""
+              className="w-5 h-5 object-contain shrink-0"
+            />
+          )}
+          <span className="truncate">
+            {value ? selectedLabel : (allLabel ?? placeholder)}
+          </span>
         </span>
         <div className="flex items-center gap-1 shrink-0">
           {value && !required && (
@@ -170,7 +186,17 @@ export function Combobox({
                     value === opt.value && "text-blue-600 font-medium",
                   )}
                 >
-                  <span className="truncate">{opt.label}</span>
+                  <span className="flex items-center gap-2 truncate">
+                    {opt.icon && (
+                      // biome-ignore lint/performance/noImgElement: small local category icon
+                      <img
+                        src={opt.icon}
+                        alt=""
+                        className="w-5 h-5 object-contain shrink-0"
+                      />
+                    )}
+                    <span className="truncate">{opt.label}</span>
+                  </span>
                   {value === opt.value && (
                     <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />
                   )}

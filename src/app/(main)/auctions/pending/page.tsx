@@ -1,6 +1,5 @@
 import { Clock, FileX, Gavel } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
 import { AuctionListCard } from "@/components/profile/AuctionListCard";
@@ -64,12 +63,6 @@ export default async function PendingAuctionsPage() {
             <p className="text-gray-500 text-sm">
               Tidak ada lelang yang menunggu persetujuan atau ditolak.
             </p>
-            <Link
-              href="/auctions/create"
-              className="inline-block mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Buat Lelang →
-            </Link>
           </div>
         ) : (
           <div className="flex flex-col gap-8">

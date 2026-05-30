@@ -11,7 +11,10 @@ import {
   Flag,
   Gavel,
   Info,
+  MapPin,
   MessageSquare,
+  ShieldCheck,
+  Truck,
   TrendingUp,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -19,10 +22,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuctionApprovalActions } from "@/components/admin/AuctionApprovalActions";
 import { BidForm } from "@/components/auction/BidForm";
+import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
 import { CountdownTimer } from "@/components/auction/CountdownTimer";
 import { ImageGallery } from "@/components/auction/ImageGallery";
 import { Badge } from "@/components/ui/Badge";
 import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
+import { getCategoryIcon } from "@/lib/categories";
 import { getUser } from "@/lib/dal";
 import { createNotification } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
@@ -59,8 +64,8 @@ type BidWithBidder = Bid & {
   bidder: Pick<Profile, "username" | "name" | "buyer_warning_count"> | null;
 };
 type FullAuction = Auction & {
-  seller: Pick<Profile, "id" | "username" | "name" | "avatar_url">;
-  winner: Pick<Profile, "id" | "username" | "name"> | null;
+  seller: Pick<Profile, "id" | "username" | "name" | "avatar_url" | "province">;
+  winner: Pick<Profile, "id" | "username" | "name" | "province"> | null;
   category: Pick<Category, "name" | "slug">;
   bids: BidWithBidder[];
 };
@@ -93,8 +98,8 @@ export default async function AuctionDetailPage({
     .from("auctions")
     .select(
       `*,
-      seller:profiles!seller_id(id, username, name, avatar_url),
-      winner:profiles!winner_id(id, username, name),
+      seller:profiles!seller_id(id, username, name, avatar_url, province),
+      winner:profiles!winner_id(id, username, name, province),
       category:categories(name, slug),
       bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`,
     )
@@ -229,10 +234,30 @@ export default async function AuctionDetailPage({
 
           <div className="flex gap-2 flex-wrap">
             {auction.category && (
-              <Badge variant="info">{auction.category.name}</Badge>
+              <Badge variant="info">
+                <span className="inline-flex items-center gap-1">
+                  {getCategoryIcon(auction.category.slug) && (
+                    // biome-ignore lint/performance/noImgElement: small local category icon
+                    <img
+                      src={getCategoryIcon(auction.category.slug) as string}
+                      alt=""
+                      className="w-4 h-4 object-contain"
+                    />
+                  )}
+                  {auction.category.name}
+                </span>
+              </Badge>
             )}
             <Badge variant={conditionColors[auction.condition] ?? "default"}>
               {conditionLabels[auction.condition] ?? auction.condition}
+            </Badge>
+            <Badge variant={auction.free_shipping ? "success" : "default"}>
+              <span className="inline-flex items-center gap-1">
+                <Truck className="h-3 w-3" />
+                {auction.free_shipping
+                  ? "Gratis Ongkir"
+                  : "Ongkir Ditanggung Pembeli"}
+              </span>
             </Badge>
             <Badge
               variant={
@@ -390,6 +415,12 @@ export default async function AuctionDetailPage({
                 <p className="text-xs text-gray-500">
                   @{auction.seller.username}
                 </p>
+                {auction.seller.province && (
+                  <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {auction.seller.province}
+                  </p>
+                )}
               </div>
             </Link>
             <div className="mt-3 pt-3 border-t border-gray-100">
@@ -457,6 +488,12 @@ export default async function AuctionDetailPage({
                     <p className="text-xs text-gray-500">
                       @{auction.winner.username}
                     </p>
+                    {auction.winner.province && (
+                      <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {auction.winner.province}
+                      </p>
+                    )}
                   </div>
                 </Link>
                 {auction.transaction_confirmed ? (
@@ -466,9 +503,19 @@ export default async function AuctionDetailPage({
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 text-amber-600 text-sm bg-amber-50 rounded-lg px-3 py-2">
-                      <Clock className="h-4 w-4 shrink-0" />
-                      Menunggu Transaksi — gunakan chat dan hubungi middleman
+                    <div className="flex flex-col gap-1.5 text-amber-700 bg-amber-50 rounded-lg px-3 py-2.5">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-4 w-4 shrink-0" />
+                        Menunggu transaksi diselesaikan
+                      </div>
+                      <p className="text-xs leading-relaxed text-amber-700/90">
+                        Selesaikan pembayaran &amp; pengiriman dengan pemenang
+                        lewat chat. Untuk keamanan tambahan Anda bisa mengundang{" "}
+                        <span className="font-medium">middleman</span> (opsional)
+                        dari halaman chat. Setelah transaksi beres, tekan{" "}
+                        <span className="font-medium">Konfirmasi Transaksi</span>{" "}
+                        di bawah.
+                      </p>
                     </div>
                     {auction.confirmation_deadline && (
                       <ConfirmationCountdown
@@ -478,10 +525,25 @@ export default async function AuctionDetailPage({
                     )}
                   </>
                 )}
+                <Link
+                  href={`/chat?seller=${auction.winner_id}&auction=${auction.id}`}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Chat Pemenang
+                </Link>
+                {!auction.transaction_confirmed && (
+                  <ConfirmTransactionButton
+                    auctionId={auction.id}
+                    winnerUsername={auction.winner.username}
+                  />
+                )}
               </div>
             )}
 
-          {!isSeller && auction.winner_id === currentUser?.id && (
+          {!isSeller &&
+            (auction.status === "completed" || auction.status === "closed") &&
+            auction.winner_id === currentUser?.id && (
             <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 Status Transaksi
@@ -493,10 +555,68 @@ export default async function AuctionDetailPage({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 text-blue-600 text-sm bg-blue-50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium bg-blue-50 rounded-lg px-3 py-2">
                     <Info className="h-4 w-4 shrink-0" />
-                    Anda memenangkan lelang ini. Segera hubungi seller untuk memulai transaksi.
+                    Selamat, Anda memenangkan lelang ini!
                   </div>
+
+                  <div className="flex flex-col gap-3 text-sm text-gray-600">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Langkah selanjutnya
+                    </p>
+                    <div className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                        1
+                      </span>
+                      <p>
+                        Buka{" "}
+                        <Link
+                          href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
+                          className="text-blue-600 font-medium hover:underline"
+                        >
+                          chat dengan penjual
+                        </Link>{" "}
+                        dan mulai percakapan untuk membahas proses transaksi —
+                        cara pembayaran, pengiriman, dan detail lainnya.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                        2
+                      </span>
+                      <p>
+                        Anda dan penjual bisa langsung bertransaksi tanpa
+                        perantara. Namun untuk keamanan tambahan, Anda{" "}
+                        <span className="font-medium text-gray-800">
+                          boleh mengundang middleman
+                        </span>{" "}
+                        (opsional) — pengguna terverifikasi yang dapat diundang
+                        ke percakapan untuk menjamin transaksi berjalan aman,
+                        langsung dari halaman chat.
+                      </p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                        3
+                      </span>
+                      <p>
+                        Setelah transaksi selesai, penjual akan menekan{" "}
+                        <span className="font-medium text-gray-800">
+                          Konfirmasi Transaksi
+                        </span>{" "}
+                        dan pembelian Anda otomatis ditandai sukses.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/middleman"
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-blue-200 text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    Pelajari & lihat daftar middleman
+                  </Link>
+
                   {auction.confirmation_deadline && (
                     <ConfirmationCountdown
                       deadline={auction.confirmation_deadline}

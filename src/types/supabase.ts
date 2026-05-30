@@ -16,6 +16,7 @@ export type Database = {
           username: string;
           email: string;
           phone: string;
+          province: string | null;
           avatar_url: string | null;
           role: "user" | "admin";
           buyer_warning_count: number;
@@ -34,6 +35,7 @@ export type Database = {
           username: string;
           email: string;
           phone: string;
+          province?: string | null;
           avatar_url?: string | null;
           role?: "user" | "admin";
           buyer_warning_count?: number;
@@ -48,6 +50,7 @@ export type Database = {
         };
         Update: {
           name?: string;
+          province?: string | null;
           avatar_url?: string | null;
           role?: "user" | "admin";
           buyer_warning_count?: number;
@@ -103,6 +106,7 @@ export type Database = {
           current_price: number;
           buy_now_price: number | null;
           min_bid_increment: number;
+          free_shipping: boolean;
           status:
             | "draft"
             | "active"
@@ -142,6 +146,7 @@ export type Database = {
           current_price: number;
           buy_now_price?: number | null;
           min_bid_increment?: number;
+          free_shipping?: boolean;
           status?:
             | "draft"
             | "active"
@@ -176,6 +181,7 @@ export type Database = {
           images?: string[];
           buy_now_price?: number | null;
           min_bid_increment?: number;
+          free_shipping?: boolean;
           status?:
             | "draft"
             | "active"

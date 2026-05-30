@@ -46,7 +46,8 @@ export function AuctionFilters({
 
   const categoryOptions = categories.map((c) => ({
     value: c.id,
-    label: `${getCategoryIcon(c.name)} ${c.name}`,
+    label: c.name,
+    icon: getCategoryIcon(c.slug),
   }));
   const conditionOptions = Object.entries(conditionLabels).map(([k, v]) => ({
     value: k,

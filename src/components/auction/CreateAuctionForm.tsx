@@ -45,6 +45,7 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
   const [uploading, setUploading] = useState(false);
   const [categoryId, setCategoryId] = useState("");
   const [conditionVal, setConditionVal] = useState("");
+  const [freeShipping, setFreeShipping] = useState(false);
 
   const conditions = [
     "mint",
@@ -192,6 +193,7 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
           current_price: startingPrice,
           buy_now_price: buyNowPrice,
           min_bid_increment: Number(data.get("min_bid_increment")) || 1000,
+          free_shipping: freeShipping,
           images,
           start_time: startTimeISO,
           end_time: endTimeISO,
@@ -324,7 +326,8 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
               name="category_id"
               options={categories.map((cat) => ({
                 value: cat.id,
-                label: `${getCategoryIcon(cat.name)} ${cat.name}`,
+                label: cat.name,
+                icon: getCategoryIcon(cat.slug),
               }))}
               value={categoryId}
               onChange={setCategoryId}
@@ -385,6 +388,43 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
           min={500}
           required
         />
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-gray-700">
+            Ongkos Kirim
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setFreeShipping(true)}
+              aria-pressed={freeShipping}
+              className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
+                freeShipping
+                  ? "bg-emerald-600 border-emerald-600 text-white"
+                  : "bg-white border-gray-300 text-gray-600 hover:border-emerald-400"
+              }`}
+            >
+              Gratis Ongkir
+            </button>
+            <button
+              type="button"
+              onClick={() => setFreeShipping(false)}
+              aria-pressed={!freeShipping}
+              className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
+                !freeShipping
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-white border-gray-300 text-gray-600 hover:border-blue-400"
+              }`}
+            >
+              Ongkir Ditanggung Pembeli
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">
+            {freeShipping
+              ? "Anda (penjual) menanggung biaya pengiriman."
+              : "Biaya pengiriman ditanggung oleh pemenang lelang."}
+          </p>
+        </div>
 
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1.5">

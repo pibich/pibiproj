@@ -4,9 +4,9 @@ import {
   CheckCircle2,
   Clock,
   Gavel,
+  MapPin,
   MessageSquare,
   Package,
-  Plus,
   ShieldCheck,
   ShoppingBag,
   TrendingUp,
@@ -18,6 +18,7 @@ import { notFound } from "next/navigation";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
 import { MobileAccountMenu } from "@/components/profile/MobileAccountMenu";
+import { ApprovalStatusButton } from "@/components/profile/ApprovalStatusButton";
 import { AuctionListCard } from "@/components/profile/AuctionListCard";
 import { OwnProfileTabs } from "@/components/profile/OwnProfileTabs";
 import { ProfileReportSection } from "@/components/profile/ProfileReportSection";
@@ -360,6 +361,12 @@ export default async function ProfilePage({
                   <Calendar className="h-4 w-4" />
                   Bergabung sejak {formatDate(profile.created_at, "id")}
                 </span>
+                {profile.province && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {profile.province}
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <Gavel className="h-4 w-4" />
                   {activeAuctions.length} Lelang Aktif
@@ -599,20 +606,7 @@ export default async function ProfilePage({
                         Semua Lelang
                       </h3>
                       <div className="flex items-center gap-3">
-                        <Link
-                          href="/auctions/pending"
-                          className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium"
-                        >
-                          <Clock className="h-4 w-4" />
-                          Status persetujuan
-                        </Link>
-                        <Link
-                          href="/auctions/create"
-                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Buat Lelang
-                        </Link>
+                        <ApprovalStatusButton />
                       </div>
                     </div>
                     {auctions.length === 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Eye, Gavel } from "lucide-react";
+import { Clock, Eye, Gavel, Truck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
@@ -206,8 +206,16 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         {/* Category + condition */}
         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
           {auction.category && (
-            <span className="text-xs text-sky-500 font-medium">
-              {getCategoryIcon(auction.category.name)} {auction.category.name}
+            <span className="flex items-center gap-1 text-xs text-sky-500 font-medium">
+              {getCategoryIcon(auction.category.slug) && (
+                // biome-ignore lint/performance/noImgElement: small local category icon
+                <img
+                  src={getCategoryIcon(auction.category.slug) as string}
+                  alt=""
+                  className="w-4 h-4 object-contain shrink-0"
+                />
+              )}
+              {auction.category.name}
             </span>
           )}
           <span className="text-sky-200">·</span>
@@ -217,6 +225,14 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           >
             {conditionLabels[auction.condition] ?? auction.condition}
           </Badge>
+          {auction.free_shipping && (
+            <Badge variant="success" className="text-xs">
+              <span className="inline-flex items-center gap-1">
+                <Truck className="h-3 w-3" />
+                Gratis Ongkir
+              </span>
+            </Badge>
+          )}
         </div>
 
         <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-2 group-hover:text-sky-600 transition-colors duration-200">

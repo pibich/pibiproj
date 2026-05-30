@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       current_price: body.current_price,
       buy_now_price: body.buy_now_price ?? null,
       min_bid_increment: body.min_bid_increment ?? 1000,
+      free_shipping: body.free_shipping ?? false,
       images: body.images ?? [],
       // Lelang baru wajib ditinjau admin/middleman sebelum tampil publik.
       // Draft (jika dipakai di masa depan) tetap dihormati; selain itu → pending.

@@ -1,10 +1,11 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import { AlertCircle, Camera, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, Loader2, MapPin } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
-import { updateAvatarAction } from "@/app/actions/profile";
+import { updateAvatarAction, updateProvinceAction } from "@/app/actions/profile";
 import { createClient } from "@/lib/supabase/client";
+import { PROVINCES } from "@/lib/provinces";
 import { getInitials } from "@/lib/utils";
 import type { Profile } from "@/types/supabase";
 
@@ -28,6 +29,28 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
   const [, startTransition] = useTransition();
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [province, setProvince] = useState(user.province ?? "");
+  const [savingProvince, startProvinceTransition] = useTransition();
+  const [provinceSuccess, setProvinceSuccess] = useState(false);
+  const [provinceError, setProvinceError] = useState<string | null>(null);
+
+  function handleSaveProvince() {
+    setProvinceError(null);
+    setProvinceSuccess(false);
+    if (!province) {
+      setProvinceError("Silakan pilih provinsi terlebih dahulu.");
+      return;
+    }
+    startProvinceTransition(async () => {
+      const result = await updateProvinceAction(province);
+      if (result.error) {
+        setProvinceError(result.error);
+      } else {
+        setProvinceSuccess(true);
+      }
+    });
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -186,6 +209,62 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
           <p className="text-xs font-medium text-gray-500 mb-1">No. Telepon</p>
           <p className="text-sm text-gray-900">{user.phone}</p>
         </div>
+      </div>
+
+      {/* Editable province */}
+      <div className="border-t border-gray-100 pt-5 flex flex-col gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 text-gray-500" />
+            Provinsi
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Membantu pembeli/penjual memperkirakan ongkos kirim.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <select
+            value={province}
+            onChange={(e) => {
+              setProvince(e.target.value);
+              setProvinceSuccess(false);
+              setProvinceError(null);
+            }}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-64"
+          >
+            <option value="" disabled>
+              Pilih provinsi domisili
+            </option>
+            {PROVINCES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleSaveProvince}
+            disabled={savingProvince || province === (user.province ?? "")}
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-fit flex items-center gap-1.5"
+          >
+            {savingProvince && <Loader2 className="h-4 w-4 animate-spin" />}
+            Simpan
+          </button>
+        </div>
+
+        {provinceSuccess && (
+          <p className="text-sm text-green-600 flex items-center gap-1.5">
+            <CheckCircle2 className="h-4 w-4" />
+            Provinsi berhasil diperbarui
+          </p>
+        )}
+        {provinceError && (
+          <p className="text-sm text-red-500 flex items-center gap-1.5">
+            <AlertCircle className="h-4 w-4" />
+            {provinceError}
+          </p>
+        )}
       </div>
     </div>
   );
