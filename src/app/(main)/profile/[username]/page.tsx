@@ -598,13 +598,22 @@ export default async function ProfilePage({
                         <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
                         Semua Lelang
                       </h3>
-                      <Link
-                        href="/auctions/create"
-                        className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Buat Lelang
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href="/auctions/pending"
+                          className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 font-medium"
+                        >
+                          <Clock className="h-4 w-4" />
+                          Status persetujuan
+                        </Link>
+                        <Link
+                          href="/auctions/create"
+                          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Buat Lelang
+                        </Link>
+                      </div>
                     </div>
                     {auctions.length === 0 ? (
                       <div className="text-center py-10 bg-white rounded-xl border border-gray-200">
