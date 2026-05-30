@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   Gavel,
+  MessageSquare,
   Package,
   Plus,
   ShieldCheck,
@@ -351,13 +352,6 @@ export default async function ProfilePage({
                     {profile.successful_purchases} pembelian sukses
                   </Badge>
                 )}
-                {canReport && (
-                  <ProfileReportSection
-                    reportedUserId={profile.id}
-                    reportedUsername={profile.username}
-                    openReport={report === "true"}
-                  />
-                )}
               </div>
 
               {/* Stats row */}
@@ -388,12 +382,35 @@ export default async function ProfilePage({
                   </span>
                 )}
               </div>
+
+              {/* Chat & report buttons — only on others' profile when logged in */}
+              {canReport && (
+                <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
+                  <Link
+                    href={`/chat?seller=${profile.id}`}
+                    className="inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Chat Penjual
+                  </Link>
+                  <ProfileReportSection
+                    reportedUserId={profile.id}
+                    reportedUsername={profile.username}
+                    openReport={report === "true"}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Account menu — own profile, mobile only */}
-        {isOwnProfile && <MobileAccountMenu />}
+        {isOwnProfile && (
+          <MobileAccountMenu
+            isMiddleman={profile.is_middleman}
+            isAdmin={profile.role === "admin"}
+          />
+        )}
 
         {/* ── Own profile: dashboard sections ─────────────────────────── */}
         {isOwnProfile && (

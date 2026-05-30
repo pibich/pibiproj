@@ -25,12 +25,12 @@ export function ProfileReportSection({
   return (
     <>
       <Button
-        size="sm"
+        size="md"
         variant="outline"
         className="border-red-200 text-red-600 hover:bg-red-50"
         onClick={() => setModalOpen(true)}
       >
-        <Flag className="h-3.5 w-3.5" />
+        <Flag className="h-4 w-4" />
         Laporkan
       </Button>
 

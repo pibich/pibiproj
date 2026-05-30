@@ -2,16 +2,24 @@
 
 import {
   ChevronRight,
+  ClipboardCheck,
   LogOut,
   MessageSquare,
   Settings,
   ShieldCheck,
+  UserCog,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 
-export function MobileAccountMenu() {
+export function MobileAccountMenu({
+  isMiddleman = false,
+  isAdmin = false,
+}: {
+  isMiddleman?: boolean;
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
 
   async function handleLogout() {
@@ -22,6 +30,18 @@ export function MobileAccountMenu() {
 
   const links = [
     { href: "/settings", label: "Pengaturan Akun", icon: Settings },
+    ...(isMiddleman
+      ? [
+          {
+            href: "/middleman/dashboard",
+            label: "Dashboard Middleman",
+            icon: ClipboardCheck,
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [{ href: "/admin", label: "Admin Panel", icon: UserCog }]
+      : []),
     { href: "/middleman", label: "Middleman", icon: ShieldCheck },
     { href: "/contact", label: "Hubungi Kami", icon: MessageSquare },
   ];

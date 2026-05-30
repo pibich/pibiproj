@@ -88,17 +88,18 @@ export function AdminReportTable({
   return (
     <div className="flex flex-col gap-4">
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit text-sm">
-        {(["pending", "approved", "rejected", "all"] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-              filter === f
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
+      <div className="-mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-max text-sm">
+          {(["pending", "approved", "rejected", "all"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-md font-medium transition-colors shrink-0 whitespace-nowrap ${
+                filter === f
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
             {f === "all"
               ? "Semua"
               : f === "pending"
@@ -106,13 +107,14 @@ export function AdminReportTable({
                 : f === "approved"
                   ? "Disetujui"
                   : "Ditolak"}
-            {f === "pending" && (
-              <span className="ml-1.5 bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">
-                {reports.filter((r) => r.status === "pending").length}
-              </span>
-            )}
-          </button>
-        ))}
+              {f === "pending" && (
+                <span className="ml-1.5 bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">
+                  {reports.filter((r) => r.status === "pending").length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
@@ -132,8 +134,8 @@ export function AdminReportTable({
               key={report.id}
               className="bg-white rounded-xl border border-gray-200 p-5"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-2 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {statusBadge(report.status)}
                     <Badge variant="outline">
@@ -144,7 +146,7 @@ export function AdminReportTable({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-2 gap-4 text-sm break-words [&_p]:min-w-0">
                     <div>
                       <p className="text-xs font-medium text-gray-500 mb-0.5">
                         Pelapor

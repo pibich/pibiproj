@@ -29,35 +29,37 @@ export default async function AdminLayout({
         <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
       </div>
 
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        <Link
-          href="/admin"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-        >
-          <FileWarning className="h-4 w-4" />
-          Laporan
-        </Link>
-        <Link
-          href="/admin/approvals"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-        >
-          <ClipboardCheck className="h-4 w-4" />
-          Persetujuan
-        </Link>
-        <Link
-          href="/admin/middleman"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-        >
-          <Users className="h-4 w-4" />
-          Middleman
-        </Link>
-        <Link
-          href="/admin/users"
-          className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors"
-        >
-          <UserCog className="h-4 w-4" />
-          Pengguna
-        </Link>
+      <div className="-mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-max">
+          <Link
+            href="/admin"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            <FileWarning className="h-4 w-4" />
+            Laporan
+          </Link>
+          <Link
+            href="/admin/approvals"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            <ClipboardCheck className="h-4 w-4" />
+            Persetujuan
+          </Link>
+          <Link
+            href="/admin/middleman"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            <Users className="h-4 w-4" />
+            Middleman
+          </Link>
+          <Link
+            href="/admin/users"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
+          >
+            <UserCog className="h-4 w-4" />
+            Pengguna
+          </Link>
+        </div>
       </div>
 
       {children}

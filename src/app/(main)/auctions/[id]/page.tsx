@@ -361,24 +361,6 @@ export default async function AuctionDetailPage({
                 isSeller={isSeller}
               />
             )}
-
-            {currentUser && !isSeller && !isPending && !isRejected && (
-              <div className="flex gap-2 pt-1 border-t border-gray-100">
-                <Link
-                  href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Chat Penjual
-                </Link>
-                <Link
-                  href={`/profile/${auction.seller.username}?report=true`}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <Flag className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -432,6 +414,25 @@ export default async function AuctionDetailPage({
                 </div>
               )}
             </div>
+
+            {currentUser && !isSeller && !isPending && !isRejected && (
+              <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                <Link
+                  href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Chat Penjual
+                </Link>
+                <Link
+                  href={`/profile/${auction.seller.username}?report=true`}
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  aria-label="Laporkan penjual"
+                >
+                  <Flag className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
 
           {isSeller &&
