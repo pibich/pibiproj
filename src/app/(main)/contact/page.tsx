@@ -71,8 +71,8 @@ export default async function ContactPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-              <Clock className="h-6 w-6 text-blue-600" />
+            <div className="w-12 h-12 bg-teal-100 rounded-2xl flex items-center justify-center">
+              <Clock className="h-6 w-6 text-teal-600" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -82,7 +82,7 @@ export default async function ContactPage() {
                 Senin - Jumat: 09.00 - 17.00 WIB
               </p>
             </div>
-            <div className="bg-blue-50 rounded-xl p-3 text-sm text-blue-700 flex items-center gap-2">
+            <div className="bg-teal-50 rounded-xl p-3 text-sm text-teal-700 flex items-center gap-2">
               <Mail className="h-4 w-4 shrink-0" />
               Waktu respons: 1-2 hari kerja
             </div>

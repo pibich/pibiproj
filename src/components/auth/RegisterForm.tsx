@@ -2,7 +2,7 @@
 
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { type ActionState, registerAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -15,6 +15,9 @@ export function RegisterForm() {
     registerAction,
     initialState,
   );
+  // Controlled so the selection survives the form's auto-reset on a failed
+  // submit (uncontrolled <select> defaultValue restore is unreliable).
+  const [province, setProvince] = useState("");
 
   if (state.success) {
     return (
@@ -29,7 +32,7 @@ export function RegisterForm() {
         </p>
         <Link
           href="/login"
-          className="text-sm text-blue-600 hover:underline font-medium"
+          className="text-sm text-teal-600 hover:underline font-medium"
         >
           Sudah punya akun? Masuk
         </Link>
@@ -58,6 +61,7 @@ export function RegisterForm() {
         placeholder="Masukkan nama lengkap"
         required
         autoComplete="name"
+        defaultValue={state.values?.name ?? ""}
         error={state.fieldErrors?.name?.[0]}
       />
       <Input
@@ -67,6 +71,7 @@ export function RegisterForm() {
         placeholder="Masukkan username unik"
         required
         autoComplete="username"
+        defaultValue={state.values?.username ?? ""}
         error={state.fieldErrors?.username?.[0]}
       />
       <Input
@@ -77,6 +82,7 @@ export function RegisterForm() {
         placeholder="contoh@email.com"
         required
         autoComplete="email"
+        defaultValue={state.values?.email ?? ""}
         error={state.fieldErrors?.email?.[0]}
       />
       <Input
@@ -87,6 +93,7 @@ export function RegisterForm() {
         placeholder="08xxxxxxxxxx"
         required
         autoComplete="tel"
+        defaultValue={state.values?.phone ?? ""}
         error={state.fieldErrors?.phone?.[0]}
       />
       <div className="flex flex-col gap-1.5">
@@ -97,9 +104,10 @@ export function RegisterForm() {
           id="province"
           name="province"
           required
-          defaultValue=""
+          value={province}
+          onChange={(e) => setProvince(e.target.value)}
           aria-invalid={!!state.fieldErrors?.province?.[0]}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 invalid:text-gray-400"
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 invalid:text-gray-400"
         >
           <option value="" disabled>
             Pilih provinsi domisili
@@ -148,7 +156,7 @@ export function RegisterForm() {
         Sudah punya akun?{" "}
         <Link
           href="/login"
-          className="font-medium text-blue-600 hover:underline"
+          className="font-medium text-teal-600 hover:underline"
         >
           Masuk
         </Link>

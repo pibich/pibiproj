@@ -91,3 +91,34 @@ export function buildWhatsAppUrl(phone: string, message: string): string {
   const encoded = encodeURIComponent(message);
   return `https://wa.me/${phone}?text=${encoded}`;
 }
+
+export class TimeoutError extends Error {
+  constructor(message = "Permintaan melebihi batas waktu") {
+    super(message);
+    this.name = "TimeoutError";
+  }
+}
+
+/**
+ * Races a promise (or thenable, e.g. a Supabase query builder) against a timer.
+ * Rejects with a {@link TimeoutError} if it doesn't settle within `ms`, so a
+ * stalled network call surfaces as a handled error instead of a hung UI.
+ */
+export function withTimeout<T>(
+  promise: PromiseLike<T>,
+  ms: number,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new TimeoutError()), ms);
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}

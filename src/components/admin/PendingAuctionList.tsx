@@ -59,13 +59,13 @@ export function PendingAuctionList({
           <div className="flex-1 min-w-0">
             <Link
               href={`/auctions/${a.id}`}
-              className="font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1"
+              className="font-semibold text-gray-900 hover:text-teal-600 transition-colors line-clamp-1"
             >
               {a.title}
             </Link>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500">
               {a.category && <span>{a.category.name}</span>}
-              <span className="font-medium text-blue-600">
+              <span className="font-medium text-teal-600">
                 {formatIDR(a.starting_price)}
               </span>
               <span>diajukan {formatRelativeTime(a.created_at)}</span>
@@ -75,7 +75,7 @@ export function PendingAuctionList({
                 href={`/profile/${a.seller.username}`}
                 className="flex items-center gap-2 mt-2 w-fit hover:opacity-80 transition-opacity"
               >
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-semibold">
+                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-[10px] font-semibold">
                   {getInitials(a.seller.name)}
                 </div>
                 <span className="text-xs text-gray-600">

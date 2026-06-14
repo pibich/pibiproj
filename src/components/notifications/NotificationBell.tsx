@@ -95,7 +95,7 @@ export function NotificationBell({
       <button
         type="button"
         onClick={handleOpen}
-        className="relative p-2 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-all duration-200"
+        className="relative p-2 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-slate-50 transition-all duration-200"
         aria-label="Notifikasi"
       >
         <Bell className="h-5 w-5" />
@@ -107,8 +107,8 @@ export function NotificationBell({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1 w-80 bg-white rounded-xl border border-sky-100 shadow-xl shadow-sky-100/50 z-30 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-sky-50 to-blue-50">
+        <div className="absolute right-0 mt-1 w-80 bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-100/50 z-30 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-teal-50">
             <p className="text-sm font-semibold text-slate-800">Notifikasi</p>
           </div>
 

@@ -105,7 +105,7 @@ export function AddManualBlacklistForm({ adminId }: { adminId: string }) {
               onChange={handleChange}
               rows={3}
               placeholder="Jelaskan alasan blacklist..."
-              className="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent hover:border-sky-300 shadow-sm resize-none"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent hover:border-slate-300 shadow-sm resize-none"
             />
           </div>
           <div className="sm:col-span-2 flex justify-end">

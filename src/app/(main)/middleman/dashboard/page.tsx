@@ -96,8 +96,8 @@ export default async function MiddlemanDashboardPage() {
       label: "Perlu Persetujuan",
       value: pendingApprovals.length,
       icon: ClipboardCheck,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
     },
     {
       label: "Perlu Tindakan",
@@ -110,8 +110,8 @@ export default async function MiddlemanDashboardPage() {
       label: "Sedang Berjalan",
       value: active.length,
       icon: ClipboardList,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
     },
     {
       label: "Selesai",
@@ -128,7 +128,7 @@ export default async function MiddlemanDashboardPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center">
+          <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center">
             <ShieldCheck className="h-5 w-5 text-white" />
           </div>
           <div>

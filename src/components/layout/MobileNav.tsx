@@ -23,7 +23,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-white/90 backdrop-blur-md border-t border-sky-100 shadow-[0_-1px_12px_rgba(14,165,233,0.08)]">
+    <nav className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-[0_-1px_12px_rgba(14,165,233,0.08)]">
       <div className="flex items-center justify-evenly h-14">
         {/* Beranda */}
         <Link
@@ -31,8 +31,8 @@ export function MobileNav({ userId, username }: MobileNavProps) {
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             isActive("/")
-              ? "text-sky-600"
-              : "text-slate-400 hover:text-sky-500",
+              ? "text-teal-600"
+              : "text-slate-400 hover:text-teal-500",
           )}
         >
           <Home className="h-5 w-5 shrink-0" />
@@ -46,8 +46,8 @@ export function MobileNav({ userId, username }: MobileNavProps) {
             className={cn(
               "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
               isActive(href)
-                ? "text-sky-600"
-                : "text-slate-400 hover:text-sky-500",
+                ? "text-teal-600"
+                : "text-slate-400 hover:text-teal-500",
             )}
           >
             <Icon className="h-5 w-5 shrink-0" />
@@ -63,8 +63,8 @@ export function MobileNav({ userId, username }: MobileNavProps) {
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             isActive("/auctions/create")
-              ? "text-sky-600"
-              : "text-slate-400 hover:text-sky-500",
+              ? "text-teal-600"
+              : "text-slate-400 hover:text-teal-500",
           )}
         >
           <Plus className="h-5 w-5 shrink-0" />
@@ -76,7 +76,7 @@ export function MobileNav({ userId, username }: MobileNavProps) {
           href="/chat"
           className={cn(
             "relative flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
-            isOnChatPage ? "text-sky-600" : "text-slate-400 hover:text-sky-500",
+            isOnChatPage ? "text-teal-600" : "text-slate-400 hover:text-teal-500",
           )}
         >
           <div className="relative">
@@ -94,8 +94,8 @@ export function MobileNav({ userId, username }: MobileNavProps) {
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
             pathname.startsWith("/profile")
-              ? "text-sky-600"
-              : "text-slate-400 hover:text-sky-500",
+              ? "text-teal-600"
+              : "text-slate-400 hover:text-teal-500",
           )}
         >
           <User className="h-5 w-5 shrink-0" />

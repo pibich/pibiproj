@@ -9,12 +9,12 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-sky-900/30">
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-teal-900/30">
                 {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
                 <img src="/logo.svg" alt="TCG Auction" className="w-8 h-8" />
               </div>
               <span className="font-bold text-white">
-                TCG <span className="text-sky-400">Auction</span>
+                TCG <span className="text-teal-400">Auction</span>
               </span>
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
@@ -24,14 +24,14 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
               Tautan
             </h3>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
                 <Link
                   href="/auctions"
-                  className="hover:text-sky-300 transition-colors"
+                  className="hover:text-slate-300 transition-colors"
                 >
                   Lelang
                 </Link>
@@ -39,7 +39,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/middleman"
-                  className="hover:text-sky-300 transition-colors"
+                  className="hover:text-slate-300 transition-colors"
                 >
                   Middleman
                 </Link>
@@ -47,7 +47,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/contact"
-                  className="hover:text-sky-300 transition-colors"
+                  className="hover:text-slate-300 transition-colors"
                 >
                   Hubungi Kami
                 </Link>
@@ -56,7 +56,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-sky-300 mb-3 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
               Kontak
             </h3>
             <ul className="flex flex-col gap-2 text-sm">
@@ -65,7 +65,7 @@ export function Footer() {
                   href={`https://wa.me/${process.env.NEXT_PUBLIC_CS_WHATSAPP}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-sky-300 transition-colors"
+                  className="hover:text-slate-300 transition-colors"
                 >
                   WhatsApp CS
                 </a>

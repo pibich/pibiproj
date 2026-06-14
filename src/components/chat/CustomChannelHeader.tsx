@@ -80,7 +80,7 @@ export function CustomChannelHeader() {
                 key={uid ?? name}
                 onClick={() => uid && setProfileUserId(uid)}
                 title={name}
-                className="w-9 h-9 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-blue-700 text-xs font-semibold overflow-hidden shrink-0 hover:z-10 hover:scale-110 transition-transform relative"
+                className="w-9 h-9 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-teal-700 text-xs font-semibold overflow-hidden shrink-0 hover:z-10 hover:scale-110 transition-transform relative"
               >
                 {image ? (
                   // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
@@ -120,7 +120,7 @@ export function CustomChannelHeader() {
           <button
             type="button"
             onClick={() => setSchemaOpen(true)}
-            className="relative shrink-0 flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg px-2.5 py-1.5 transition-colors"
+            className="relative shrink-0 flex items-center gap-1.5 text-xs font-medium text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 hover:border-teal-300 rounded-lg px-2.5 py-1.5 transition-colors"
             title="Form Middleman"
           >
             <ClipboardList className="h-3.5 w-3.5 shrink-0" />

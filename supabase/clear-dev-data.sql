@@ -12,8 +12,5 @@ DELETE FROM notifications;
 -- 3. Hapus semua reports
 DELETE FROM reports;
 
--- 4. Hapus semua watchlist
-DELETE FROM watchlist;
-
--- 5. Hapus semua auctions (bids, notif, reports, watchlist sudah dihapus duluan)
+-- 4. Hapus semua auctions (bids, notif, reports sudah dihapus duluan)
 DELETE FROM auctions;

@@ -354,7 +354,7 @@ export default async function AuctionDetailPage({
           <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4">
             <div>
               <p className="text-sm text-gray-500">Harga Saat Ini</p>
-              <p className="text-3xl font-bold text-blue-600">
+              <p className="text-3xl font-bold text-teal-600">
                 {formatIDR(auction.current_price)}
               </p>
               <p className="text-xs text-gray-400 mt-0.5">
@@ -396,7 +396,7 @@ export default async function AuctionDetailPage({
               href={`/profile/${auction.seller.username}`}
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm">
+              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-semibold text-sm">
                 {auction.seller.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -555,7 +555,7 @@ export default async function AuctionDetailPage({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium bg-blue-50 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 text-teal-600 text-sm font-medium bg-teal-50 rounded-lg px-3 py-2">
                     <Info className="h-4 w-4 shrink-0" />
                     Selamat, Anda memenangkan lelang ini!
                   </div>
@@ -565,14 +565,14 @@ export default async function AuctionDetailPage({
                       Langkah selanjutnya
                     </p>
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
                         1
                       </span>
                       <p>
                         Buka{" "}
                         <Link
                           href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
-                          className="text-blue-600 font-medium hover:underline"
+                          className="text-teal-600 font-medium hover:underline"
                         >
                           chat dengan penjual
                         </Link>{" "}
@@ -581,7 +581,7 @@ export default async function AuctionDetailPage({
                       </p>
                     </div>
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
                         2
                       </span>
                       <p>
@@ -596,7 +596,7 @@ export default async function AuctionDetailPage({
                       </p>
                     </div>
                     <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
                         3
                       </span>
                       <p>
@@ -611,7 +611,7 @@ export default async function AuctionDetailPage({
 
                   <Link
                     href="/middleman"
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-blue-200 text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors"
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-teal-200 text-sm font-medium text-teal-700 hover:bg-teal-50 transition-colors"
                   >
                     <ShieldCheck className="h-4 w-4" />
                     Pelajari & lihat daftar middleman
@@ -642,7 +642,7 @@ export default async function AuctionDetailPage({
                   <div
                     key={bid.id}
                     className={`flex items-center justify-between text-sm ${
-                      i === 0 ? "text-blue-600 font-semibold" : "text-gray-600"
+                      i === 0 ? "text-teal-600 font-semibold" : "text-gray-600"
                     }`}
                   >
                     <div className="flex items-center gap-2">

@@ -51,7 +51,7 @@ export function CustomMessage() {
             onClick={() =>
               message.user?.id && setProfileUserId(message.user.id)
             }
-            className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold overflow-hidden hover:opacity-80 transition-opacity border-2 border-white shadow-sm"
+            className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-xs font-semibold overflow-hidden hover:opacity-80 transition-opacity border-2 border-white shadow-sm"
           >
             {message.user?.image ? (
               // biome-ignore lint/performance/noImgElement: external Stream CDN avatar
@@ -97,8 +97,8 @@ export function CustomMessage() {
               className={[
                 "rounded-2xl px-3 py-2 text-sm shadow-sm",
                 isOwn
-                  ? "bg-blue-500 text-white rounded-br-none"
-                  : "bg-blue-100 text-gray-900 rounded-bl-none",
+                  ? "bg-teal-500 text-white rounded-br-none"
+                  : "bg-teal-100 text-gray-900 rounded-bl-none",
               ].join(" ")}
             >
               {hasAttachments && (

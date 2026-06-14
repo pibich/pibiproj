@@ -124,7 +124,7 @@ export function ReportUserModal({
                     value={r}
                     checked={reason === r}
                     onChange={() => setReason(r)}
-                    className="accent-blue-600"
+                    className="accent-teal-600"
                   />
                   <span className="text-sm text-gray-700 group-hover:text-gray-900">
                     {REASON_LABELS[r]}
@@ -147,7 +147,7 @@ export function ReportUserModal({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Jelaskan kejadian yang dialami secara detail..."
               rows={3}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
             />
           </div>
 

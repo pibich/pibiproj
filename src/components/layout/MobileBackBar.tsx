@@ -10,7 +10,7 @@ export function MobileBackBar({ label = "Kembali" }: { label?: string }) {
       <button
         type="button"
         onClick={() => router.back()}
-        className="flex items-center gap-1.5 text-sm text-sky-600 hover:text-sky-700 font-medium"
+        className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium"
       >
         <ChevronLeft className="h-4 w-4" />
         {label}

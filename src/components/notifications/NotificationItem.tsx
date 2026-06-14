@@ -50,14 +50,14 @@ const icons: Record<NotificationType, React.ElementType> = {
 
 const colors: Record<NotificationType, string> = {
   auction_won: "text-green-500 bg-green-50",
-  auction_ended: "text-blue-500 bg-blue-50",
+  auction_ended: "text-teal-500 bg-teal-50",
   transaction_confirmed: "text-emerald-500 bg-emerald-50",
   awaiting_shipment: "text-orange-500 bg-orange-50",
-  shipping_proof_submitted: "text-blue-500 bg-blue-50",
+  shipping_proof_submitted: "text-teal-500 bg-teal-50",
   delivery_confirmed: "text-emerald-500 bg-emerald-50",
   funds_released: "text-purple-500 bg-purple-50",
   confirmation_expired: "text-red-500 bg-red-50",
-  auction_pending_approval: "text-indigo-500 bg-indigo-50",
+  auction_pending_approval: "text-teal-500 bg-teal-50",
   auction_approved: "text-green-500 bg-green-50",
   auction_rejected: "text-red-500 bg-red-50",
 };
@@ -106,7 +106,7 @@ export function NotificationItem({
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!isRead ? "bg-sky-50/40" : ""}`}
+      className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${!isRead ? "bg-slate-50/40" : ""}`}
     >
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${colorClass}`}
@@ -129,7 +129,7 @@ export function NotificationItem({
         )}
       </div>
       {!isRead && (
-        <div className="w-2 h-2 rounded-full bg-sky-500 shrink-0 mt-1.5" />
+        <div className="w-2 h-2 rounded-full bg-teal-500 shrink-0 mt-1.5" />
       )}
     </div>
   );

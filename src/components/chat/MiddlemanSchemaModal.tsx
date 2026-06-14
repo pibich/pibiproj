@@ -47,8 +47,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   awaiting_payment: "text-amber-600 bg-amber-50 border-amber-200",
-  awaiting_shipment: "text-blue-600 bg-blue-50 border-blue-200",
-  shipped: "text-indigo-600 bg-indigo-50 border-indigo-200",
+  awaiting_shipment: "text-teal-600 bg-teal-50 border-teal-200",
+  shipped: "text-teal-600 bg-teal-50 border-teal-200",
   delivery_confirmed: "text-emerald-600 bg-emerald-50 border-emerald-200",
   completed: "text-green-700 bg-green-50 border-green-200",
   cancelled: "text-gray-500 bg-gray-50 border-gray-200",
@@ -227,12 +227,12 @@ export function MiddlemanSchemaModal({
       />
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden max-h-[90vh]">
-        <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+        <div className="h-1 bg-gradient-to-r from-teal-500 to-teal-500" />
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-teal-600 flex items-center justify-center shrink-0">
               <ClipboardList className="h-[18px] w-[18px] text-white" />
             </div>
             <div>
@@ -248,7 +248,7 @@ export function MiddlemanSchemaModal({
             <button
               type="button"
               onClick={onOpenGuide}
-              className="p-1.5 rounded-lg text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+              className="p-1.5 rounded-lg text-teal-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
               title="Panduan"
             >
               <HelpCircle className="h-4 w-4" />
@@ -287,7 +287,7 @@ export function MiddlemanSchemaModal({
                   <select
                     value={selectedAuctionId}
                     onChange={(e) => handleAuctionSelect(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-3 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all appearance-none"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-3 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent focus:bg-white transition-all appearance-none"
                   >
                     <option value="">— Pilih lelang (opsional) —</option>
                     {auctions.map((a) => (
@@ -320,7 +320,7 @@ export function MiddlemanSchemaModal({
                   value={buyer}
                   onChange={(e) => setBuyer(e.target.value)}
                   placeholder="Nama buyer"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent focus:bg-white transition-all"
                 />
               )}
             </div>
@@ -340,7 +340,7 @@ export function MiddlemanSchemaModal({
                   value={seller}
                   onChange={(e) => setSeller(e.target.value)}
                   placeholder="Nama seller"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent focus:bg-white transition-all"
                 />
               )}
             </div>
@@ -352,7 +352,7 @@ export function MiddlemanSchemaModal({
               Price
             </label>
             {selectedAuction ? (
-              <div className="w-full rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-blue-700">
+              <div className="w-full rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-teal-700">
                 {formatIDR(selectedAuction.current_price)}
               </div>
             ) : (
@@ -364,7 +364,7 @@ export function MiddlemanSchemaModal({
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent focus:bg-white transition-all"
                 />
               </div>
             )}
@@ -384,8 +384,8 @@ export function MiddlemanSchemaModal({
                   className={[
                     "flex-1 py-2 rounded-xl text-xs font-semibold border transition-all",
                     tax === opt.value
-                      ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                      : "bg-gray-50 border-gray-200 text-gray-500 hover:border-blue-300 hover:text-blue-600",
+                      ? "bg-teal-600 border-teal-600 text-white shadow-sm"
+                      : "bg-gray-50 border-gray-200 text-gray-500 hover:border-teal-300 hover:text-teal-600",
                   ].join(" ")}
                 >
                   {opt.label}
@@ -395,14 +395,14 @@ export function MiddlemanSchemaModal({
           </div>
 
           {/* Preview */}
-          <div className="rounded-xl border border-blue-100 overflow-hidden">
-            <div className="px-3.5 py-2 bg-blue-600 flex items-center gap-2">
+          <div className="rounded-xl border border-teal-100 overflow-hidden">
+            <div className="px-3.5 py-2 bg-teal-600 flex items-center gap-2">
               <ShieldCheck className="h-3.5 w-3.5 text-white/80 shrink-0" />
               <span className="text-xs font-semibold text-white">
                 Preview Pesan
               </span>
             </div>
-            <div className="px-4 py-3 bg-blue-50 text-xs text-blue-900 leading-relaxed space-y-0.5">
+            <div className="px-4 py-3 bg-teal-50 text-xs text-teal-900 leading-relaxed space-y-0.5">
               <p className="font-semibold">📋 Form Middleman</p>
               {selectedAuction && (
                 <p className="pt-0.5">🎯 Lelang: {selectedAuction.title}</p>
@@ -410,13 +410,13 @@ export function MiddlemanSchemaModal({
               <p className="pt-1">
                 👤 Buyer:{" "}
                 {(displayBuyer ?? buyer) || (
-                  <span className="text-blue-400">...</span>
+                  <span className="text-teal-400">...</span>
                 )}
               </p>
               <p>
                 🏷️ Seller:{" "}
                 {(displaySeller ?? seller) || (
-                  <span className="text-blue-400">...</span>
+                  <span className="text-teal-400">...</span>
                 )}
               </p>
               <p>
@@ -425,7 +425,7 @@ export function MiddlemanSchemaModal({
                   ? formatIDR(selectedAuction.current_price)
                   : price
                     ? `Rp ${price}`
-                    : <span className="text-blue-400">...</span>}
+                    : <span className="text-teal-400">...</span>}
               </p>
               <p>🧾 Tax: {tax}</p>
             </div>
@@ -440,21 +440,21 @@ export function MiddlemanSchemaModal({
 
           {/* ── Panel Status Transaksi (middleman only) ── */}
           {isMiddleman && selectedAuctionId && (
-            <div className="rounded-xl border border-indigo-100 overflow-hidden">
-              <div className="px-3.5 py-2 bg-indigo-600 flex items-center gap-2">
+            <div className="rounded-xl border border-teal-100 overflow-hidden">
+              <div className="px-3.5 py-2 bg-teal-600 flex items-center gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 text-white/80 shrink-0" />
                 <span className="text-xs font-semibold text-white">
                   Status Transaksi
                 </span>
               </div>
-              <div className="px-4 py-3 bg-indigo-50 flex flex-col gap-3">
+              <div className="px-4 py-3 bg-teal-50 flex flex-col gap-3">
                 {loadingTx ? (
-                  <div className="flex items-center gap-2 text-indigo-500 text-xs">
+                  <div className="flex items-center gap-2 text-teal-500 text-xs">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Memuat status...
                   </div>
                 ) : !transactionData ? (
-                  <p className="text-xs text-indigo-400 italic">
+                  <p className="text-xs text-teal-400 italic">
                     Belum ada transaksi tercatat untuk lelang ini.
                   </p>
                 ) : (
@@ -569,7 +569,7 @@ export function MiddlemanSchemaModal({
             type="button"
             onClick={handleSend}
             disabled={!canSend}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors"
           >
             <Send className="h-3.5 w-3.5" />
             {submitting ? "Memproses..." : "Kirim"}

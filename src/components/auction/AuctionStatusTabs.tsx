@@ -27,7 +27,7 @@ export function AuctionStatusTabs() {
       <button
         onClick={() => setStatus("active")}
         className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-colors ${
-          !isEnded ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-50"
+          !isEnded ? "bg-teal-600 text-white" : "text-gray-500 hover:bg-gray-50"
         }`}
       >
         <Gavel className="h-4 w-4" />

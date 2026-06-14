@@ -10,7 +10,7 @@ export function ChatIconWithBadge({ userId }: { userId: string }) {
   return (
     <Link
       href="/chat"
-      className="relative p-2 rounded-lg text-slate-500 hover:text-sky-600 hover:bg-sky-50 transition-all duration-200"
+      className="relative p-2 rounded-lg text-slate-500 hover:text-teal-600 hover:bg-slate-50 transition-all duration-200"
       aria-label="Pesan"
     >
       <MessageSquare className="h-5 w-5" />

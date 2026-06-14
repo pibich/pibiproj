@@ -33,7 +33,7 @@ ${message}`;
           <input
             name="name"
             required
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -43,7 +43,7 @@ ${message}`;
           <input
             name="email"
             type="email"
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
       </div>
@@ -55,7 +55,7 @@ ${message}`;
           name="message"
           required
           rows={4}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
         />
       </div>
       <button

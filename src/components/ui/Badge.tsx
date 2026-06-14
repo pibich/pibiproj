@@ -16,8 +16,8 @@ export function Badge({
     success: "bg-emerald-100 text-emerald-700",
     warning: "bg-amber-100 text-amber-700",
     danger: "bg-red-100 text-red-600",
-    info: "bg-sky-100 text-sky-700",
-    outline: "border border-sky-200 text-sky-600 bg-white",
+    info: "bg-slate-100 text-teal-700",
+    outline: "border border-slate-200 text-teal-600 bg-white",
   };
 
   return (

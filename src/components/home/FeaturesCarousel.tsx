@@ -8,9 +8,9 @@ const features = [
     icon: Gavel,
     title: "Sistem Lelang Real-Time",
     desc: "Bid langsung dan pantau harga secara real-time hingga lelang berakhir.",
-    color: "from-sky-400 to-blue-500",
-    bg: "bg-sky-50",
-    accent: "text-sky-600",
+    color: "from-teal-400 to-teal-500",
+    bg: "bg-slate-50",
+    accent: "text-teal-600",
   },
   {
     icon: Shield,
@@ -89,7 +89,7 @@ export function FeaturesCarousel() {
     // biome-ignore lint/a11y/noStaticElementInteractions: drag-to-navigate carousel; keyboard navigation via dot buttons below
     <div
       className={[
-        "bg-white rounded-2xl border border-sky-100 shadow-sm overflow-hidden select-none",
+        "bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden select-none",
         isDragging ? "cursor-grabbing" : "cursor-grab",
       ].join(" ")}
       onMouseEnter={() => setIsPaused(true)}
@@ -103,7 +103,7 @@ export function FeaturesCarousel() {
       onTouchEnd={(e) => handleDragEnd(e.changedTouches[0].clientX)}
     >
       {/* Progress bar */}
-      <div className="h-1 bg-sky-50">
+      <div className="h-1 bg-slate-50">
         <div
           className={`h-full bg-gradient-to-r ${color} transition-none`}
           style={{
@@ -140,8 +140,8 @@ export function FeaturesCarousel() {
             onClick={() => setActive(i)}
             className={`rounded-full transition-all duration-300 ${
               i === active
-                ? "w-5 h-2 bg-sky-500"
-                : "w-2 h-2 bg-sky-200 hover:bg-sky-300"
+                ? "w-5 h-2 bg-teal-500"
+                : "w-2 h-2 bg-slate-200 hover:bg-slate-300"
             }`}
             aria-label={`Slide ${i + 1}`}
           />

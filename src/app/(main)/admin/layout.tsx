@@ -23,7 +23,7 @@ export default async function AdminLayout({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
           <ShieldCheck className="h-4 w-4 text-white" />
         </div>
         <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>

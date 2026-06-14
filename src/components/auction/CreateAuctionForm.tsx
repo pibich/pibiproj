@@ -1,12 +1,13 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import { AlertCircle, ImagePlus, Loader2, X } from "lucide-react";
+import { AlertCircle, Clock, ImagePlus, Loader2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
 import { getCategoryIcon } from "@/lib/categories";
 import { containsProfanity } from "@/lib/profanity";
 import { createClient } from "@/lib/supabase/client";
@@ -39,8 +40,10 @@ interface CreateAuctionFormProps {
 export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [successOpen, setSuccessOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [categoryId, setCategoryId] = useState("");
@@ -205,299 +208,367 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
       if (!res.ok) {
         setError(json.error ?? "Gagal membuat lelang");
       } else {
-        router.push(`/auctions/${json.id}`);
+        // Show a "pending approval" confirmation instead of navigating straight
+        // to the auction page — the new auction is pending and that detail page
+        // is heavy, which previously made the post sometimes feel stuck.
+        setSuccessOpen(true);
       }
     });
   }
 
+  function resetForm() {
+    setSuccessOpen(false);
+    setError(null);
+    setImages([]);
+    setCategoryId("");
+    setConditionVal("");
+    setFreeShipping(false);
+    formRef.current?.reset();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-5"
-    >
-      {error && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </div>
-      )}
+    <>
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-5"
+      >
+        {/* ── Cluster 1: Informasi Kartu ────────────────────────────────────── */}
+        <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <h2 className="text-sm font-semibold text-gray-700">
+            Informasi Kartu
+          </h2>
 
-      {/* ── Cluster 1: Informasi Kartu ────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Informasi Kartu</h2>
-
-        <Input
-          id="title"
-          name="title"
-          label="Judul Lelang"
-          placeholder="contoh: Charizard Holo Base Set PSA 10"
-          required
-        />
-
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="description"
-            className="text-sm font-medium text-gray-700"
-          >
-            Deskripsi
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            rows={4}
-            placeholder="Jelaskan kondisi kartu, nomor set, edisi, dll."
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="photo-upload"
-            className="text-sm font-medium text-gray-700"
-          >
-            Foto Kartu (maks. {MAX_IMAGES}){" "}
-            <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="photo-upload"
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPTED_TYPES.join(",")}
-            multiple
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <div className="flex gap-2 flex-wrap">
-            {images.map((img, i) => (
-              <div key={img} className="relative group">
-                {/* biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist */}
-                <img
-                  src={img}
-                  alt={`Gambar ${i + 1}`}
-                  className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-            {images.length < MAX_IMAGES && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors disabled:opacity-50"
-              >
-                {uploading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <>
-                    <ImagePlus className="h-5 w-5" />
-                    <span className="text-xs">Upload</span>
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-gray-400">
-            JPG, PNG, WebP, GIF · dikompres otomatis
-          </p>
-        </div>
-      </div>
-
-      {/* ── Cluster 2: Detail Lelang ──────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-        <h2 className="text-sm font-semibold text-gray-700">Detail Lelang</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="category_id"
-              className="text-sm font-medium text-gray-700"
-            >
-              Kategori <span className="text-red-500">*</span>
-            </label>
-            <Combobox
-              id="category_id"
-              name="category_id"
-              options={categories.map((cat) => ({
-                value: cat.id,
-                label: cat.name,
-                icon: getCategoryIcon(cat.slug),
-              }))}
-              value={categoryId}
-              onChange={setCategoryId}
-              placeholder="Pilih kategori"
-              required
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="condition"
-              className="text-sm font-medium text-gray-700"
-            >
-              Kondisi <span className="text-red-500">*</span>
-            </label>
-            <Combobox
-              id="condition"
-              name="condition"
-              options={conditions.map((c) => ({
-                value: c,
-                label: conditionLabels[c],
-              }))}
-              value={conditionVal}
-              onChange={setConditionVal}
-              placeholder="Pilih kondisi"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
           <Input
-            id="starting_price"
-            name="starting_price"
-            type="number"
-            label="Harga Mulai (Rp)"
-            placeholder="50000"
-            min={1000}
+            id="title"
+            name="title"
+            label="Judul Lelang"
+            placeholder="contoh: Charizard Holo Base Set PSA 10"
             required
           />
+
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="description"
+              className="text-sm font-medium text-gray-700"
+            >
+              Deskripsi
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              rows={4}
+              placeholder="Jelaskan kondisi kartu, nomor set, edisi, dll."
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="photo-upload"
+              className="text-sm font-medium text-gray-700"
+            >
+              Foto Kartu (maks. {MAX_IMAGES}){" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="photo-upload"
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPTED_TYPES.join(",")}
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <div className="flex gap-2 flex-wrap">
+              {images.map((img, i) => (
+                <div key={img} className="relative group">
+                  {/* biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist */}
+                  <img
+                    src={img}
+                    alt={`Gambar ${i + 1}`}
+                    className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {images.length < MAX_IMAGES && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-teal-400 hover:text-teal-400 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <ImagePlus className="h-5 w-5" />
+                      <span className="text-xs">Upload</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">
+              JPG, PNG, WebP, GIF · dikompres otomatis
+            </p>
+          </div>
+        </div>
+
+        {/* ── Cluster 2: Detail Lelang ──────────────────────────────────────── */}
+        <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
+          <h2 className="text-sm font-semibold text-gray-700">Detail Lelang</h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="category_id"
+                className="text-sm font-medium text-gray-700"
+              >
+                Kategori <span className="text-red-500">*</span>
+              </label>
+              <Combobox
+                id="category_id"
+                name="category_id"
+                options={categories.map((cat) => ({
+                  value: cat.id,
+                  label: cat.name,
+                  icon: getCategoryIcon(cat.slug),
+                }))}
+                value={categoryId}
+                onChange={setCategoryId}
+                placeholder="Pilih kategori"
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="condition"
+                className="text-sm font-medium text-gray-700"
+              >
+                Kondisi <span className="text-red-500">*</span>
+              </label>
+              <Combobox
+                id="condition"
+                name="condition"
+                options={conditions.map((c) => ({
+                  value: c,
+                  label: conditionLabels[c],
+                }))}
+                value={conditionVal}
+                onChange={setConditionVal}
+                placeholder="Pilih kondisi"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              id="starting_price"
+              name="starting_price"
+              type="number"
+              label="Harga Mulai (Rp)"
+              placeholder="50000"
+              min={1000}
+              required
+            />
+            <Input
+              id="buy_now_price"
+              name="buy_now_price"
+              type="number"
+              label="Harga Buy Now (Rp, opsional)"
+              placeholder="kosongkan jika tidak ada"
+              min={1000}
+            />
+          </div>
+
           <Input
-            id="buy_now_price"
-            name="buy_now_price"
+            id="min_bid_increment"
+            name="min_bid_increment"
             type="number"
-            label="Harga Buy Now (Rp, opsional)"
-            placeholder="kosongkan jika tidak ada"
-            min={1000}
+            label="Kenaikan Bid Minimum (Rp)"
+            placeholder="1000"
+            defaultValue={1000}
+            min={500}
+            required
           />
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-gray-700">
+              Ongkos Kirim
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFreeShipping(true)}
+                aria-pressed={freeShipping}
+                className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  freeShipping
+                    ? "bg-emerald-600 border-emerald-600 text-white"
+                    : "bg-white border-gray-300 text-gray-600 hover:border-emerald-400"
+                }`}
+              >
+                Gratis Ongkir
+              </button>
+              <button
+                type="button"
+                onClick={() => setFreeShipping(false)}
+                aria-pressed={!freeShipping}
+                className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  !freeShipping
+                    ? "bg-teal-600 border-teal-600 text-white"
+                    : "bg-white border-gray-300 text-gray-600 hover:border-teal-400"
+                }`}
+              >
+                Ongkir Ditanggung Pembeli
+              </button>
+            </div>
+            <p className="text-xs text-gray-400">
+              {freeShipping
+                ? "Anda (penjual) menanggung biaya pengiriman."
+                : "Biaya pengiriman ditanggung oleh pemenang lelang."}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">
+                Waktu Mulai (opsional)
+              </label>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Tanggal</span>
+                  <input
+                    id="start_date"
+                    name="start_date"
+                    type="date"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Jam</span>
+                  <input
+                    id="start_time_val"
+                    name="start_time_val"
+                    type="time"
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">
+                Waktu Selesai <span className="text-red-500">*</span>
+              </label>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Tanggal</span>
+                  <input
+                    id="end_date"
+                    name="end_date"
+                    type="date"
+                    required
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs text-gray-400">Jam</span>
+                  <input
+                    id="end_time_val"
+                    name="end_time_val"
+                    type="time"
+                    required
+                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Input
-          id="min_bid_increment"
-          name="min_bid_increment"
-          type="number"
-          label="Kenaikan Bid Minimum (Rp)"
-          placeholder="1000"
-          defaultValue={1000}
-          min={500}
-          required
-        />
-
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-gray-700">
-            Ongkos Kirim
+        <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            Lelang akan ditinjau admin/middleman terlebih dahulu sebelum tampil
+            publik. Anda akan menerima notifikasi setelah disetujui atau
+            ditolak.
           </span>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setFreeShipping(true)}
-              aria-pressed={freeShipping}
-              className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
-                freeShipping
-                  ? "bg-emerald-600 border-emerald-600 text-white"
-                  : "bg-white border-gray-300 text-gray-600 hover:border-emerald-400"
-              }`}
-            >
-              Gratis Ongkir
-            </button>
-            <button
-              type="button"
-              onClick={() => setFreeShipping(false)}
-              aria-pressed={!freeShipping}
-              className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
-                !freeShipping
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "bg-white border-gray-300 text-gray-600 hover:border-blue-400"
-              }`}
-            >
-              Ongkir Ditanggung Pembeli
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">
-            {freeShipping
-              ? "Anda (penjual) menanggung biaya pengiriman."
-              : "Biaya pengiriman ditanggung oleh pemenang lelang."}
-          </p>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Waktu Mulai (opsional)
-            </label>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-gray-400">Tanggal</span>
-                <input
-                  id="start_date"
-                  name="start_date"
-                  type="date"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-gray-400">Jam</span>
-                <input
-                  id="start_time_val"
-                  name="start_time_val"
-                  type="time"
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                />
-              </div>
-            </div>
+        <div className="flex gap-3 pt-2">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Batal
+          </Button>
+          <Button type="submit" loading={isPending} className="flex-1">
+            Buat Lelang
+          </Button>
+        </div>
+      </form>
+
+      {/* Validation / submit errors as a centered popup so the user doesn't have
+          to scroll to find a banner at the top of the form. */}
+      <Modal
+        open={!!error}
+        onClose={() => setError(null)}
+        title="Perhatian"
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3 text-sm text-gray-700">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
+            <p>{error}</p>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Waktu Selesai <span className="text-red-500">*</span>
-            </label>
-            <div className="flex flex-col gap-1.5">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-gray-400">Tanggal</span>
-                <input
-                  id="end_date"
-                  name="end_date"
-                  type="date"
-                  required
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                />
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-gray-400">Jam</span>
-                <input
-                  id="end_time_val"
-                  name="end_time_val"
-                  type="time"
-                  required
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                />
-              </div>
+          <Button
+            type="button"
+            onClick={() => setError(null)}
+            className="self-end"
+          >
+            Mengerti
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Post-create confirmation: the auction is awaiting admin review. */}
+      <Modal
+        open={successOpen}
+        onClose={() => router.push("/auctions")}
+        title="Lelang Menunggu Persetujuan"
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-amber-100 p-2 shrink-0">
+              <Clock className="h-5 w-5 text-amber-600" />
             </div>
+            <p className="text-sm text-gray-600">
+              Lelang Anda berhasil dibuat dan sedang menunggu peninjauan
+              admin/middleman. Anda akan menerima notifikasi setelah disetujui
+              atau ditolak.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              type="button"
+              onClick={() => router.push("/auctions/pending")}
+            >
+              Cek Status Persetujuan
+            </Button>
+            <Button type="button" variant="outline" onClick={resetForm}>
+              Buat Lelang Lagi
+            </Button>
           </div>
         </div>
-      </div>
-
-      <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-        <span>
-          Lelang akan ditinjau admin/middleman terlebih dahulu sebelum tampil
-          publik. Anda akan menerima notifikasi setelah disetujui atau ditolak.
-        </span>
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Batal
-        </Button>
-        <Button type="submit" loading={isPending} className="flex-1">
-          Buat Lelang
-        </Button>
-      </div>
-    </form>
+      </Modal>
+    </>
   );
 }

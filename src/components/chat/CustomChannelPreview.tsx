@@ -119,11 +119,11 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
         }}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors cursor-pointer select-none",
-          isActive ? "bg-blue-50" : "hover:bg-gray-50",
+          isActive ? "bg-teal-50" : "hover:bg-gray-50",
         )}
       >
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-semibold shrink-0">
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0">
           {displayImage ? (
             // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
             <img
@@ -146,7 +146,7 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
             </p>
             {/* Unread badge — hidden when hovering to show action buttons */}
             {!!unreadCount && !hovering && (
-              <span className="shrink-0 min-w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-semibold px-1">
+              <span className="shrink-0 min-w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-semibold px-1">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
@@ -169,7 +169,7 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
               type="button"
               onClick={handleMarkRead}
               title="Tandai sudah dibaca"
-              className="p-1.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+              className="p-1.5 rounded-md text-gray-400 hover:text-teal-500 hover:bg-teal-50 transition-colors"
             >
               <CheckCheck className="h-3.5 w-3.5" />
             </button>

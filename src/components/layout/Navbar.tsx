@@ -38,16 +38,16 @@ export function Navbar({ user, onLogout }: NavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-sky-100 shadow-sm shadow-sky-100/50">
+    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 shadow-sm shadow-slate-100/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-sky-200 group-hover:shadow-sky-300 transition-shadow">
+            <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-slate-200 group-hover:shadow-slate-300 transition-shadow">
               {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
               <img src="/logo.svg" alt="TCG Auction" className="w-8 h-8" />
             </div>
             <span className="font-bold text-slate-800 hidden sm:block tracking-tight">
-              TCG <span className="text-sky-500">Auction</span>
+              TCG <span className="text-teal-500">Auction</span>
             </span>
           </Link>
 
@@ -56,7 +56,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
               <Link
                 key={href}
                 href={href}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:text-sky-600 hover:bg-sky-50 transition-all duration-200 font-medium"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:text-teal-600 hover:bg-slate-50 transition-all duration-200 font-medium"
               >
                 <Icon className="h-4 w-4" />
                 {label}
@@ -70,7 +70,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                 <Link href="/auctions/create">
                   <Button
                     size="sm"
-                    className="hidden sm:flex shadow-sm shadow-sky-200"
+                    className="hidden sm:flex shadow-sm shadow-slate-200"
                   >
                     <Plus className="h-4 w-4" />
                     Buat Lelang
@@ -85,9 +85,9 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-sky-50 transition-all duration-200"
+                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all duration-200"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 text-xs font-semibold ring-2 ring-sky-200">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-teal-100 flex items-center justify-center text-teal-700 text-xs font-semibold ring-2 ring-slate-200">
                       {user.avatar_url ? (
                         // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
                         <img
@@ -115,19 +115,19 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                         className="fixed inset-0 z-10"
                         onClick={() => setUserMenuOpen(false)}
                       />
-                      <div className="absolute right-0 mt-1 w-52 bg-white/90 backdrop-blur-md rounded-xl border border-sky-100 shadow-xl shadow-sky-100/50 z-20 py-1">
-                        <div className="px-4 py-2.5 border-b border-sky-50 bg-gradient-to-r from-sky-50 to-blue-50 rounded-t-xl">
+                      <div className="absolute right-0 mt-1 w-52 bg-white/90 backdrop-blur-md rounded-xl border border-slate-100 shadow-xl shadow-slate-100/50 z-20 py-1">
+                        <div className="px-4 py-2.5 border-b border-slate-50 bg-gradient-to-r from-slate-50 to-teal-50 rounded-t-xl">
                           <p className="text-sm font-semibold text-slate-800 truncate">
                             {user.name}
                           </p>
-                          <p className="text-xs text-sky-500 truncate">
+                          <p className="text-xs text-teal-500 truncate">
                             @{user.username}
                           </p>
                         </div>
                         <Link
                           href={`/profile/${user.username}`}
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-teal-600 transition-colors"
                         >
                           <User className="h-4 w-4" />
                           Profil
@@ -135,7 +135,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                         <Link
                           href="/settings"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-teal-600 transition-colors"
                         >
                           <Settings className="h-4 w-4" />
                           Pengaturan
@@ -144,7 +144,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                           <Link
                             href="/middleman/dashboard"
                             onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-indigo-600 hover:bg-sky-50 transition-colors"
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-teal-600 hover:bg-slate-50 transition-colors"
                           >
                             <ClipboardCheck className="h-4 w-4" />
                             Dashboard Middleman
@@ -154,13 +154,13 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                           <Link
                             href="/admin"
                             onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-sky-600 hover:bg-sky-50 transition-colors"
+                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-teal-600 hover:bg-slate-50 transition-colors"
                           >
                             <ShieldCheck className="h-4 w-4" />
                             Admin Panel
                           </Link>
                         )}
-                        <div className="border-t border-sky-50 mt-1 pt-1">
+                        <div className="border-t border-slate-50 mt-1 pt-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -193,7 +193,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
 
             <button
               type="button"
-              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-sky-50 hover:text-sky-600 transition-colors"
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-50 hover:text-teal-600 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >
@@ -208,13 +208,13 @@ export function Navbar({ user, onLogout }: NavbarProps) {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-sky-100 bg-white/90 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden border-t border-slate-100 bg-white/90 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
           {user ? (
             <>
               <Link
                 href="/auctions/create"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-sky-600 hover:bg-sky-50 font-semibold transition-colors"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-teal-600 hover:bg-slate-50 font-semibold transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Buat Lelang
@@ -222,7 +222,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
               <Link
                 href="/settings"
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 hover:text-teal-600 transition-colors font-medium"
               >
                 <Settings className="h-4 w-4" />
                 Pengaturan
@@ -234,7 +234,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600 transition-colors font-medium"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 hover:text-teal-600 transition-colors font-medium"
               >
                 <Icon className="h-4 w-4" />
                 {label}

@@ -9,72 +9,37 @@ import {
   Package,
   ShieldCheck,
   ShoppingBag,
+  Star,
   TrendingUp,
   Trophy,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AuctionCard } from "@/components/auction/AuctionCard";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
 import { MobileAccountMenu } from "@/components/profile/MobileAccountMenu";
-import { ApprovalStatusButton } from "@/components/profile/ApprovalStatusButton";
-import { AuctionListCard } from "@/components/profile/AuctionListCard";
-import { OwnProfileTabs } from "@/components/profile/OwnProfileTabs";
+import { MyAuctionsTab } from "@/components/profile/MyAuctionsTab";
+import { MyBidsTab } from "@/components/profile/MyBidsTab";
 import { ProfileReportSection } from "@/components/profile/ProfileReportSection";
+import { ProfileTabs } from "@/components/profile/ProfileTabs";
+import type {
+  AuctionWithRelations,
+  BidWithAuction,
+  ProfileTransaction as TransactionWithRelations,
+  WonAuction,
+} from "@/components/profile/profile-types";
+import { SellerListingsTab } from "@/components/profile/SellerListingsTab";
+import {
+  type SellerReviewItem,
+  SellerReviews,
+} from "@/components/profile/SellerReviews";
 import { TransactionCard } from "@/components/transaction/TransactionCard";
 import { Badge } from "@/components/ui/Badge";
-import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
+import { StarRating } from "@/components/ui/StarRating";
 import { getUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatIDR, formatRelativeTime, getInitials } from "@/lib/utils";
-import type { Auction, BuyerWarning, Category, Profile } from "@/types/supabase";
-
-type AuctionWithRelations = Auction & {
-  seller: Pick<Profile, "username" | "name">;
-  winner: Pick<Profile, "username" | "name"> | null;
-  category: Pick<Category, "name" | "slug">;
-  _count: { bids: number };
-};
-
-type BidWithAuction = {
-  id: string;
-  amount: number;
-  is_winning: boolean;
-  created_at: string;
-  auction: Pick<
-    Auction,
-    "id" | "title" | "current_price" | "status" | "end_time" | "images" | "winner_id" | "transaction_confirmed"
-  > | null;
-};
-
-type TransactionWithRelations = {
-  id: string;
-  auction_id: string;
-  seller_id: string;
-  buyer_id: string;
-  middleman_id: string | null;
-  amount: number;
-  status: "awaiting_payment" | "awaiting_shipment" | "shipped" | "delivery_confirmed" | "completed" | "cancelled";
-  shipping_tracking_number: string | null;
-  shipping_photo_url: string | null;
-  receipt_photo_url: string | null;
-  stream_channel_id: string | null;
-  auction: { id: string; title: string; images: string[] } | null;
-  seller: { id: string; username: string; name: string } | null;
-  buyer: { id: string; username: string; name: string } | null;
-  middleman: { id: string; username: string; name: string } | null;
-};
-
-type WonAuction = {
-  id: string;
-  title: string;
-  images: string[] | null;
-  current_price: number;
-  seller_id: string;
-  confirmation_deadline: string | null;
-  seller: { username: string; name: string } | null;
-};
+import { formatDate, getInitials } from "@/lib/utils";
+import type { BuyerWarning } from "@/types/supabase";
 
 export async function generateMetadata({
   params,
@@ -109,7 +74,7 @@ export default async function ProfilePage({
   const isOwnProfile = !!currentUser && currentUser.id === profile.id;
   const canReport = !!currentUser && currentUser.id !== profile.id;
 
-  const [auctionsResult, sellerStatsResult] = await Promise.all([
+  const [auctionsResult, sellerStatsResult, reviewsResult] = await Promise.all([
     supabase
       .from("auctions")
       .select(
@@ -124,10 +89,26 @@ export default async function ProfilePage({
       .select("status")
       .eq("seller_id", profile.id)
       .neq("status", "cancelled"),
+    supabase
+      .from("reviews")
+      .select(
+        `id, rating, comment, receipt_photo_url, created_at, buyer:profiles!buyer_id(username, name, avatar_url), auction:auctions(id, title)`,
+      )
+      .eq("seller_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
-  const auctions = (auctionsResult.data ?? []) as unknown as AuctionWithRelations[];
+  const auctions = (auctionsResult.data ??
+    []) as unknown as AuctionWithRelations[];
   const sellerStats = sellerStatsResult.data ?? [];
+
+  const reviews = (reviewsResult.data ?? []) as unknown as SellerReviewItem[];
+  const reviewCount = reviews.length;
+  const reviewAverage =
+    reviewCount > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : 0;
 
   const activeAuctions = auctions.filter((a) => a.status === "active");
   const completedAuctions = auctions.filter(
@@ -137,6 +118,9 @@ export default async function ProfilePage({
   const totalAuctions = sellerStats.length;
   const completedCount = sellerStats.filter(
     (a) => a.status === "completed",
+  ).length;
+  const pendingApprovalCount = sellerStats.filter(
+    (a) => a.status === "pending_approval",
   ).length;
   const sellerSuccessRate =
     totalAuctions > 0
@@ -152,7 +136,9 @@ export default async function ProfilePage({
   let wonAuctionsCount = 0;
   let sellerTransactions: TransactionWithRelations[] = [];
   let buyerTransactions: TransactionWithRelations[] = [];
-  let middlemanTransactions: TransactionWithRelations[] = [];
+  // The buyer's completed purchases (history), each tagged with whether it has
+  // already been reviewed so the card can show the right action.
+  let completedPurchases: TransactionWithRelations[] = [];
   let wonAuctions: WonAuction[] = [];
   let buyerWarnings: BuyerWarning[] = [];
 
@@ -165,7 +151,32 @@ export default async function ProfilePage({
       .not("status", "in", '("completed","cancelled")')
       .order("updated_at", { ascending: false });
 
-    const [bidsRes, wonCountRes, txRes, wonAuctionsRes, warningsRes] = await Promise.all([
+    // Completed purchases are excluded from `txQuery` above; fetch them
+    // separately so the buyer can be prompted to review them.
+    const completedBuyerTxQuery = supabase
+      .from("transactions")
+      .select(
+        `*, auction:auctions(id, title, images), seller:profiles!seller_id(id, username, name), buyer:profiles!buyer_id(id, username, name), middleman:profiles!middleman_id(id, username, name)`,
+      )
+      .eq("buyer_id", profile.id)
+      .eq("status", "completed")
+      .order("updated_at", { ascending: false });
+
+    // Which transactions this user has already reviewed (reliable, no embed).
+    const myReviewsQuery = supabase
+      .from("reviews")
+      .select("transaction_id")
+      .eq("buyer_id", profile.id);
+
+    const [
+      bidsRes,
+      wonCountRes,
+      txRes,
+      completedBuyerTxRes,
+      myReviewsRes,
+      wonAuctionsRes,
+      warningsRes,
+    ] = await Promise.all([
       supabase
         .from("bids")
         .select(
@@ -179,9 +190,13 @@ export default async function ProfilePage({
         .eq("winner_id", profile.id)
         .in("status", ["completed", "closed"]),
       txQuery,
+      completedBuyerTxQuery,
+      myReviewsQuery,
       supabase
         .from("auctions")
-        .select("id, title, images, current_price, seller_id, confirmation_deadline, seller:profiles!seller_id(username, name)")
+        .select(
+          "id, title, images, current_price, seller_id, confirmation_deadline, seller:profiles!seller_id(username, name)",
+        )
         .eq("winner_id", profile.id)
         .in("status", ["closed", "completed"])
         .eq("transaction_confirmed", false)
@@ -202,12 +217,29 @@ export default async function ProfilePage({
 
     const allTx = (txRes.data ?? []) as unknown as TransactionWithRelations[];
     sellerTransactions = allTx.filter((t) => t.seller_id === profile.id);
-    buyerTransactions = allTx.filter((t) => t.buyer_id === profile.id && t.seller_id !== profile.id);
-    middlemanTransactions = allTx.filter((t) => t.middleman_id === profile.id);
+    buyerTransactions = allTx.filter(
+      (t) => t.buyer_id === profile.id && t.seller_id !== profile.id,
+    );
+
+    // Completed purchases form the buyer's purchase history. Tag each with
+    // whether it's already reviewed so the card shows "Beri Ulasan" or
+    // "Ulasan sudah terkirim".
+    const reviewedTxIds = new Set(
+      ((myReviewsRes.data ?? []) as { transaction_id: string }[]).map(
+        (r) => r.transaction_id,
+      ),
+    );
+    const completedBuyerTx = (completedBuyerTxRes.data ??
+      []) as unknown as TransactionWithRelations[];
+    completedPurchases = completedBuyerTx
+      .filter((t) => t.seller_id !== profile.id)
+      .map((t) => ({ ...t, reviewed: reviewedTxIds.has(t.id) }));
   }
 
   // Derived sets for filtering
-  const sellerTxAuctionIds = new Set(sellerTransactions.map((t) => t.auction_id));
+  const sellerTxAuctionIds = new Set(
+    sellerTransactions.map((t) => t.auction_id),
+  );
   const buyerTxAuctionIds = new Set(buyerTransactions.map((t) => t.auction_id));
 
   // "Berakhir - Perlu Tindakan": ended with winner, no transaction yet
@@ -227,19 +259,21 @@ export default async function ProfilePage({
   // Bids by category
   const bidAktif = myBids.filter((b) => b.auction?.status === "active");
   const bidEnded = myBids.filter(
-    (b) =>
-      b.auction?.status === "closed" ||
-      b.auction?.status === "completed",
+    (b) => b.auction?.status === "closed" || b.auction?.status === "completed",
   );
-  const bidMenang = bidEnded.filter((b) => b.auction?.winner_id === currentUser?.id);
-  const bidKalah = bidEnded.filter((b) => b.auction?.winner_id !== currentUser?.id);
+  const bidMenang = bidEnded.filter(
+    (b) => b.auction?.winner_id === currentUser?.id,
+  );
+  const bidKalah = bidEnded.filter(
+    (b) => b.auction?.winner_id !== currentUser?.id,
+  );
 
   const ownStats = [
     {
       label: "Lelang Aktif",
       value: activeAuctions.length,
       icon: Gavel,
-      color: "text-blue-600",
+      color: "text-teal-600",
     },
     {
       label: "Total Bid",
@@ -278,135 +312,172 @@ export default async function ProfilePage({
     <>
       {!isOwnProfile && <MobileBackBar />}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Profile card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 mb-4">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
-            {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-700 text-2xl font-bold shrink-0">
-              {profile.avatar_url ? (
-                // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.name}
-                  className="w-20 h-20 rounded-2xl object-cover"
-                />
-              ) : (
-                getInitials(profile.name)
-              )}
-            </div>
+        {/* Cover banner + profile card */}
+        <div className="relative mb-4">
+          {/* Cover */}
+          <div className="h-24 sm:h-32 rounded-2xl bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 relative overflow-hidden">
+            <div className="absolute -top-10 -left-8 w-40 h-40 rounded-full bg-white/10" />
+            <div className="absolute top-4 right-24 w-24 h-24 rounded-full bg-white/10" />
+            <div className="absolute -bottom-12 right-1/4 w-36 h-36 rounded-full bg-white/10" />
+          </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0 w-full text-center sm:text-left">
-              <h1 className="text-xl font-bold text-gray-900">
-                {profile.name}
-              </h1>
-              <p className="text-gray-500 text-sm">@{profile.username}</p>
+          {/* Profile card overlapping the cover */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mx-2 sm:mx-4 -mt-14 relative">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
+              {/* Avatar */}
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-2xl font-bold shrink-0 ring-4 ring-white overflow-hidden -mt-12 sm:-mt-14">
+                {profile.avatar_url ? (
+                  // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  getInitials(profile.name)
+                )}
+              </div>
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-1.5 mt-2 justify-center sm:justify-start">
-                {profile.buyer_warning_count > 0 && (
-                  <Badge variant="warning" className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    {profile.buyer_warning_count}x peringatan
-                  </Badge>
-                )}
-                {isTimedOut && (
-                  <Badge variant="danger" className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    Timeout
-                  </Badge>
-                )}
-                {profile.is_middleman && (
-                  <Badge variant="success" className="flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3" />
-                    Middleman
-                  </Badge>
-                )}
-                {profile.facebook_name &&
-                  (profile.facebook_public || isOwnProfile) && (
-                    <Badge variant="info" className="flex items-center gap-1">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        className="h-3 w-3"
-                        aria-hidden="true"
+              {/* Info */}
+              <div className="flex-1 min-w-0 w-full">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div className="min-w-0 text-center sm:text-left">
+                    <h1 className="text-xl font-bold text-gray-900 truncate">
+                      {profile.name}
+                    </h1>
+                    <p className="text-gray-500 text-sm">@{profile.username}</p>
+                  </div>
+
+                  {/* Success badges — top-right on desktop */}
+                  <div className="flex flex-wrap gap-1.5 justify-center sm:justify-end shrink-0">
+                    {(profile.successful_sales ?? 0) > 0 && (
+                      <Badge
+                        variant="success"
+                        className="flex items-center gap-1"
                       >
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      {profile.facebook_name}
-                      {isOwnProfile && !profile.facebook_public && (
-                        <span className="text-[10px] opacity-70">
-                          (hanya kamu)
-                        </span>
-                      )}
+                        <Trophy className="h-3 w-3" />
+                        {profile.successful_sales} Penjualan Sukses
+                      </Badge>
+                    )}
+                    {(profile.successful_purchases ?? 0) > 0 && (
+                      <Badge variant="info" className="flex items-center gap-1">
+                        <ShoppingBag className="h-3 w-3" />
+                        {profile.successful_purchases} Pembelian Sukses
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status badges */}
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-center sm:justify-start">
+                  {profile.buyer_warning_count > 0 && (
+                    <Badge
+                      variant="warning"
+                      className="flex items-center gap-1"
+                    >
+                      <AlertTriangle className="h-3 w-3" />
+                      {profile.buyer_warning_count}x peringatan
                     </Badge>
                   )}
-                {(profile.successful_sales ?? 0) > 0 && (
-                  <Badge variant="success" className="flex items-center gap-1">
-                    <Trophy className="h-3 w-3" />
-                    {profile.successful_sales} penjualan sukses
-                  </Badge>
-                )}
-                {(profile.successful_purchases ?? 0) > 0 && (
-                  <Badge variant="success" className="flex items-center gap-1">
-                    <ShoppingBag className="h-3 w-3" />
-                    {profile.successful_purchases} pembelian sukses
-                  </Badge>
-                )}
-              </div>
-
-              {/* Stats row */}
-              <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 flex-wrap justify-center sm:justify-start">
-                <span className="flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  Bergabung sejak {formatDate(profile.created_at, "id")}
-                </span>
-                {profile.province && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {profile.province}
-                  </span>
-                )}
-                <span className="flex items-center gap-1">
-                  <Gavel className="h-4 w-4" />
-                  {activeAuctions.length} Lelang Aktif
-                </span>
-                {sellerSuccessRate !== null ? (
-                  <span
-                    className={`flex items-center gap-1 font-medium ${
-                      sellerSuccessRate >= 60
-                        ? "text-green-600"
-                        : "text-yellow-600"
-                    }`}
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                    {sellerSuccessRate}% berhasil
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-gray-400 text-xs">
-                    <TrendingUp className="h-3.5 w-3.5" />
-                    Belum ada riwayat lelang
-                  </span>
-                )}
-              </div>
-
-              {/* Chat & report buttons — only on others' profile when logged in */}
-              {canReport && (
-                <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
-                  <Link
-                    href={`/chat?seller=${profile.id}`}
-                    className="inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Chat Penjual
-                  </Link>
-                  <ProfileReportSection
-                    reportedUserId={profile.id}
-                    reportedUsername={profile.username}
-                    openReport={report === "true"}
-                  />
+                  {isTimedOut && (
+                    <Badge variant="danger" className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Timeout
+                    </Badge>
+                  )}
+                  {profile.is_middleman && (
+                    <Badge
+                      variant="success"
+                      className="flex items-center gap-1"
+                    >
+                      <ShieldCheck className="h-3 w-3" />
+                      Middleman
+                    </Badge>
+                  )}
+                  {profile.facebook_name &&
+                    (profile.facebook_public || isOwnProfile) && (
+                      <Badge variant="info" className="flex items-center gap-1">
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="h-3 w-3"
+                          aria-hidden="true"
+                        >
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        {profile.facebook_name}
+                        {isOwnProfile && !profile.facebook_public && (
+                          <span className="text-[10px] opacity-70">
+                            (hanya kamu)
+                          </span>
+                        )}
+                      </Badge>
+                    )}
                 </div>
-              )}
+
+                {/* Meta row — includes rating, always shown */}
+                <div className="flex items-center gap-x-4 gap-y-1.5 mt-3 text-sm text-gray-500 flex-wrap justify-center sm:justify-start">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    Bergabung {formatDate(profile.created_at, "id")}
+                  </span>
+                  {profile.province && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      {profile.province}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1">
+                    <Gavel className="h-4 w-4" />
+                    {activeAuctions.length} Lelang Aktif
+                  </span>
+                  {sellerSuccessRate !== null && (
+                    <span
+                      className={`flex items-center gap-1 font-medium ${
+                        sellerSuccessRate >= 60
+                          ? "text-green-600"
+                          : "text-yellow-600"
+                      }`}
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      {sellerSuccessRate}% berhasil
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1.5">
+                    <StarRating value={reviewAverage} size={14} />
+                    {reviewCount > 0 ? (
+                      <>
+                        <span className="font-medium text-gray-700">
+                          {reviewAverage.toFixed(1)}
+                        </span>
+                        <span className="text-gray-400">
+                          ({reviewCount} ulasan)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-gray-400">Belum ada rating</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Chat & report — others' profile when logged in */}
+                {canReport && (
+                  <div className="mt-4 flex items-center gap-2 justify-center sm:justify-start">
+                    <Link
+                      href={`/chat?seller=${profile.id}`}
+                      className="inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Chat Penjual
+                    </Link>
+                    <ProfileReportSection
+                      reportedUserId={profile.id}
+                      reportedUsername={profile.username}
+                      openReport={report === "true"}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -457,10 +528,20 @@ export default async function ProfilePage({
                   <div className="flex flex-col gap-1 ml-6 border-l-2 border-orange-200 pl-3">
                     {buyerWarnings.map((w, i) => (
                       <div key={w.id} className="text-xs text-orange-600">
-                        <span className="font-semibold">Peringatan {buyerWarnings.length - i}</span>
-                        {w.note && <span className="text-orange-500"> — {w.note}</span>}
+                        <span className="font-semibold">
+                          Peringatan {buyerWarnings.length - i}
+                        </span>
+                        {w.note && (
+                          <span className="text-orange-500"> — {w.note}</span>
+                        )}
                         <span className="text-orange-400 ml-1">
-                          ({new Date(w.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })})
+                          (
+                          {new Date(w.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                          )
                         </span>
                       </div>
                     ))}
@@ -469,350 +550,112 @@ export default async function ProfilePage({
               </div>
             )}
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {/* Stat cards */}
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
               {ownStats.map(({ label, value, icon: Icon, color }) => (
                 <div
                   key={label}
-                  className="bg-white rounded-xl border border-gray-200 p-4"
+                  className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 flex flex-col items-center sm:items-start text-center sm:text-left"
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon className={`h-4 w-4 ${color}`} />
-                    <span className="text-xs text-gray-500">{label}</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                  <Icon className={`h-4 w-4 mb-1.5 ${color}`} />
+                  <p className={`text-xl sm:text-2xl font-bold ${color}`}>
+                    {value}
+                  </p>
+                  <span className="text-[11px] sm:text-xs text-gray-500 leading-tight">
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {/* ── Transaksi Middleman (hanya untuk is_middleman) ── */}
-            {profile.is_middleman && middlemanTransactions.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <ShieldCheck className="h-5 w-5 text-indigo-500" />
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Transaksi Middleman
-                  </h2>
-                  <span className="ml-auto text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-full">
-                    {middlemanTransactions.length} aktif
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {middlemanTransactions.map((tx) => (
-                    <TransactionCard
-                      key={tx.id}
-                      transaction={tx}
+            {/* Transaksi yang diurus sebagai middleman hanya tampil di
+                halaman /middleman/dashboard, bukan di profil. */}
+
+            {/* ── Tabs: Penjual | Pembeli | Ulasan ── */}
+            <ProfileTabs
+              defaultTab="auctions"
+              tabs={[
+                {
+                  id: "auctions",
+                  label: "Penjual",
+                  icon: <Gavel className="h-4 w-4" />,
+                  content: (
+                    <MyAuctionsTab
+                      activeAuctions={activeAuctions}
+                      sellerTransactions={sellerTransactions}
+                      perluTindakan={perluTindakan}
+                      auctions={auctions}
+                      pendingApprovalCount={pendingApprovalCount}
                       currentUserId={currentUser!.id}
                     />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Tabs: Lelang Saya | Bid Saya ── */}
-            <OwnProfileTabs
-              myAuctionsContent={
-                <div className="flex flex-col gap-6">
-                  {/* 1. Berlangsung */}
-                  {activeAuctions.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                        Berlangsung
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {activeAuctions.length} lelang
-                        </span>
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {activeAuctions.map((a) => {
-                          const bidCount = (a as unknown as { bids?: { count: number }[] }).bids?.[0]?.count ?? 0;
-                          return (
-                            <AuctionListCard
-                              key={a.id}
-                              image={a.images?.[0] ?? null}
-                              title={a.title}
-                              href={`/auctions/${a.id}`}
-                              price={a.current_price}
-                              badge={{ label: "AKTIF", variant: "success" }}
-                              subInfo={`${bidCount} bid${a.end_time ? ` · Berakhir ${formatRelativeTime(a.end_time)}` : ""}`}
-                            />
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 2. Dalam Transaksi (seller) */}
-                  {sellerTransactions.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                        Dalam Transaksi
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {sellerTransactions.length} transaksi
-                        </span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {sellerTransactions.map((tx) => (
-                          <TransactionCard
-                            key={tx.id}
-                            transaction={tx}
-                            currentUserId={currentUser!.id}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 3. Berakhir - Perlu Tindakan */}
-                  {perluTindakan.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                        Berakhir — Perlu Tindakan
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {perluTindakan.length} lelang
-                        </span>
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {perluTindakan.map((a) => (
-                          <div key={a.id} className="flex flex-col gap-1.5">
-                            <AuctionListCard
-                              image={a.images?.[0] ?? null}
-                              title={a.title}
-                              href={`/auctions/${a.id}`}
-                              price={a.current_price}
-                              badge={{ label: "BUTUH TINDAKAN", variant: "warning" }}
-                              subInfo={a.winner ? `Pemenang: @${a.winner.username}` : undefined}
-                              actionLabel="Lihat Lelang"
-                            />
-                            {(a as unknown as { confirmation_deadline?: string | null }).confirmation_deadline && (
-                              <ConfirmationCountdown
-                                deadline={(a as unknown as { confirmation_deadline: string }).confirmation_deadline}
-                                label="Batas buyer konfirmasi"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 4. Semua Lelang (collapsed — show all auctions grid) */}
-                  <section>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-                        Semua Lelang
-                      </h3>
-                      <div className="flex items-center gap-3">
-                        <ApprovalStatusButton />
-                      </div>
-                    </div>
-                    {auctions.length === 0 ? (
-                      <div className="text-center py-10 bg-white rounded-xl border border-gray-200">
-                        <Gavel className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                        <p className="text-gray-500 text-sm">
-                          Anda belum membuat lelang
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {auctions.map((a) => (
-                          <AuctionCard key={a.id} auction={a} />
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                </div>
-              }
-              myBidsContent={
-                <div className="flex flex-col gap-6">
-                  {/* 1. Bid Aktif */}
-                  {bidAktif.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                        Bid Aktif
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {bidAktif.length} bid
-                        </span>
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {bidAktif.map((bid) => (
-                          <AuctionListCard
-                            key={bid.id}
-                            image={bid.auction?.images?.[0] ?? null}
-                            title={bid.auction?.title ?? "Lelang"}
-                            href={`/auctions/${bid.auction?.id}`}
-                            price={bid.auction?.current_price ?? 0}
-                            badge={
-                              bid.is_winning
-                                ? { label: "TERTINGGI", variant: "success" }
-                                : { label: "DIKALAHKAN", variant: "warning" }
-                            }
-                            subInfo={`Bid saya: ${formatIDR(bid.amount)} | Saat ini: ${formatIDR(bid.auction?.current_price ?? 0)}`}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 2. Dalam Transaksi (buyer) */}
-                  {buyerTransactions.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-                        Dalam Transaksi
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {buyerTransactions.length} transaksi
-                        </span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {buyerTransactions.map((tx) => (
-                          <TransactionCard
-                            key={tx.id}
-                            transaction={tx}
-                            currentUserId={currentUser!.id}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 3. Menang - Belum Transaksi */}
-                  {menangBelumTransaksi.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                        Menang — Belum Transaksi
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {menangBelumTransaksi.length} lelang
-                        </span>
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {menangBelumTransaksi.map((a) => (
-                          <div key={a.id} className="flex flex-col gap-1.5">
-                            <AuctionListCard
-                              image={a.images?.[0] ?? null}
-                              title={a.title}
-                              href={`/auctions/${a.id}`}
-                              price={a.current_price}
-                              badge={{ label: "MENANG", variant: "success" }}
-                              subInfo={a.seller ? `Seller: @${a.seller.username}` : undefined}
-                              chatHref={`/chat?seller=${a.seller_id}`}
-                            />
-                            {a.confirmation_deadline && (
-                              <ConfirmationCountdown
-                                deadline={a.confirmation_deadline}
-                                label="Batas konfirmasi ke seller"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 4. Tidak Menang */}
-                  {bidKalah.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-                        Tidak Menang
-                        <span className="ml-auto normal-case font-normal text-gray-400">
-                          {bidKalah.length} bid
-                        </span>
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {bidKalah.map((bid) => (
-                          <AuctionListCard
-                            key={bid.id}
-                            image={bid.auction?.images?.[0] ?? null}
-                            title={bid.auction?.title ?? "Lelang"}
-                            href={`/auctions/${bid.auction?.id}`}
-                            price={bid.auction?.current_price ?? 0}
-                            badge={{ label: "TIDAK MENANG", variant: "default" }}
-                            subInfo={`Bid saya: ${formatIDR(bid.amount)}`}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* Won bids in bidMenang that are in transaction are covered by buyerTransactions */}
-                  {bidMenang.length > 0 && buyerTransactions.length === 0 && menangBelumTransaksi.length === 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                        Menang
-                      </h3>
-                      <div className="flex flex-col gap-2">
-                        {bidMenang.map((bid) => (
-                          <AuctionListCard
-                            key={bid.id}
-                            image={bid.auction?.images?.[0] ?? null}
-                            title={bid.auction?.title ?? "Lelang"}
-                            href={`/auctions/${bid.auction?.id}`}
-                            price={bid.auction?.current_price ?? 0}
-                            badge={{ label: "MENANG", variant: "success" }}
-                            subInfo={bid.auction?.transaction_confirmed ? "Transaksi selesai" : undefined}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  )}
-
-                  {myBids.length === 0 && (
-                    <div className="text-center py-10 bg-white rounded-xl border border-gray-200">
-                      <Package className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">
-                        Anda belum melakukan bid
-                      </p>
-                    </div>
-                  )}
-                </div>
-              }
+                  ),
+                },
+                {
+                  id: "bids",
+                  label: "Pembeli",
+                  icon: <Package className="h-4 w-4" />,
+                  content: (
+                    <MyBidsTab
+                      bidAktif={bidAktif}
+                      bidKalah={bidKalah}
+                      bidMenang={bidMenang}
+                      buyerTransactions={buyerTransactions}
+                      completedPurchases={completedPurchases}
+                      menangBelumTransaksi={menangBelumTransaksi}
+                      currentUserId={currentUser!.id}
+                    />
+                  ),
+                },
+                {
+                  id: "ulasan",
+                  label: "Ulasan",
+                  icon: <Star className="h-4 w-4" />,
+                  count: reviewCount,
+                  content: (
+                    <SellerReviews
+                      reviews={reviews}
+                      average={reviewAverage}
+                      count={reviewCount}
+                    />
+                  ),
+                },
+              ]}
             />
           </div>
         )}
 
-        {/* ── Others' profile: public auction sections ─────────────────── */}
+        {/* ── Others' profile: reputation-first tabs ─────────────────── */}
         {!isOwnProfile && (
-          <>
-            {activeAuctions.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Lelang Aktif
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {activeAuctions.map((a) => (
-                    <AuctionCard key={a.id} auction={a} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {completedAuctions.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  Lelang Selesai
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {completedAuctions.map((a) => (
-                    <AuctionCard key={a.id} auction={a} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {auctions.length === 0 && (
-              <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-                <Gavel className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">Belum ada lelang</p>
-              </div>
-            )}
-          </>
+          <ProfileTabs
+            defaultTab="ulasan"
+            tabs={[
+              {
+                id: "ulasan",
+                label: "Ulasan",
+                icon: <Star className="h-4 w-4" />,
+                count: reviewCount,
+                content: (
+                  <SellerReviews
+                    reviews={reviews}
+                    average={reviewAverage}
+                    count={reviewCount}
+                  />
+                ),
+              },
+              {
+                id: "lelang",
+                label: "Lelang",
+                icon: <Gavel className="h-4 w-4" />,
+                count: activeAuctions.length,
+                content: (
+                  <SellerListingsTab
+                    activeAuctions={activeAuctions}
+                    completedAuctions={completedAuctions}
+                  />
+                ),
+              },
+            ]}
+          />
         )}
       </div>
     </>

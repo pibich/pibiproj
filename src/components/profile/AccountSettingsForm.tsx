@@ -138,7 +138,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-sky-100 to-blue-100 flex items-center justify-center text-sky-700 text-xl font-bold ring-4 ring-sky-100 group shrink-0 focus:outline-none focus:ring-blue-400"
+          className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-teal-100 flex items-center justify-center text-teal-700 text-xl font-bold ring-4 ring-slate-100 group shrink-0 focus:outline-none focus:ring-teal-400"
         >
           {avatarUrl ? (
             // biome-ignore lint/performance/noImgElement: user avatar
@@ -164,7 +164,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-fit"
+            className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors w-fit"
           >
             {uploading ? "Mengunggah..." : "Ganti Foto"}
           </button>
@@ -231,7 +231,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
               setProvinceSuccess(false);
               setProvinceError(null);
             }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-64"
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 sm:w-64"
           >
             <option value="" disabled>
               Pilih provinsi domisili
@@ -246,7 +246,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
             type="button"
             onClick={handleSaveProvince}
             disabled={savingProvince || province === (user.province ?? "")}
-            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors w-fit flex items-center gap-1.5"
+            className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors w-fit flex items-center gap-1.5"
           >
             {savingProvince && <Loader2 className="h-4 w-4 animate-spin" />}
             Simpan

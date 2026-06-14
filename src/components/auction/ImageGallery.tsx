@@ -83,7 +83,7 @@ export function ImageGallery({ images, title }: ImageGalleryProps) {
               onClick={() => setActiveIndex(i)}
               className={`h-16 w-16 object-cover rounded-lg border-2 shrink-0 cursor-pointer transition-all ${
                 i === activeIndex
-                  ? "border-blue-500 opacity-100"
+                  ? "border-teal-500 opacity-100"
                   : "border-transparent opacity-60 hover:opacity-90 hover:border-gray-300"
               }`}
             />

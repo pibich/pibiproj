@@ -32,6 +32,7 @@ export function LoginForm() {
         placeholder="contoh@email.com"
         required
         autoComplete="email"
+        defaultValue={state.values?.email ?? ""}
         error={state.fieldErrors?.email?.[0]}
       />
       <Input
@@ -53,7 +54,7 @@ export function LoginForm() {
         Belum punya akun?{" "}
         <Link
           href="/register"
-          className="font-medium text-blue-600 hover:underline"
+          className="font-medium text-teal-600 hover:underline"
         >
           Daftar Sekarang
         </Link>

@@ -93,8 +93,8 @@ export function Combobox({
         onClick={handleToggle}
         className={cn(
           "w-full flex items-center justify-between gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white text-left transition-colors",
-          "focus:outline-none focus:ring-2 focus:ring-blue-500",
-          open && "ring-2 ring-blue-500 border-transparent",
+          "focus:outline-none focus:ring-2 focus:ring-teal-500",
+          open && "ring-2 ring-teal-500 border-transparent",
         )}
       >
         <span
@@ -154,7 +154,7 @@ export function Combobox({
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
               placeholder="Cari kategori..."
-              className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
           <div className="max-h-52 overflow-y-auto">
@@ -163,12 +163,12 @@ export function Combobox({
                 type="button"
                 onClick={() => handleSelect("")}
                 className={cn(
-                  "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-sky-50 transition-colors text-left",
-                  !value && "text-blue-600 font-medium",
+                  "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left",
+                  !value && "text-teal-600 font-medium",
                 )}
               >
                 {allLabel}
-                {!value && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                {!value && <Check className="h-3.5 w-3.5 text-teal-600" />}
               </button>
             )}
             {filtered.length === 0 ? (
@@ -182,8 +182,8 @@ export function Combobox({
                   type="button"
                   onClick={() => handleSelect(opt.value)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-sky-50 transition-colors text-left",
-                    value === opt.value && "text-blue-600 font-medium",
+                    "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 transition-colors text-left",
+                    value === opt.value && "text-teal-600 font-medium",
                   )}
                 >
                   <span className="flex items-center gap-2 truncate">
@@ -198,7 +198,7 @@ export function Combobox({
                     <span className="truncate">{opt.label}</span>
                   </span>
                   {value === opt.value && (
-                    <Check className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                    <Check className="h-3.5 w-3.5 text-teal-600 shrink-0" />
                   )}
                 </button>
               ))

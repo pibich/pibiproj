@@ -5,8 +5,8 @@ import {
   CheckCircle,
   Clock,
   Eye,
-  Gavel,
   Package,
+  Star,
   Truck,
 } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { TransactionStatus } from "@/types/supabase";
 import { ReceiptProofModal } from "./ReceiptProofModal";
+import { ReviewModal } from "./ReviewModal";
 import { ShippingProofModal } from "./ShippingProofModal";
 
 type TransactionWithRelations = {
@@ -28,6 +29,8 @@ type TransactionWithRelations = {
   shipping_photo_url: string | null;
   receipt_photo_url: string | null;
   stream_channel_id: string | null;
+  /** True if the buyer already left a review for this transaction. */
+  reviewed?: boolean;
   auction: { id: string; title: string; images: string[] } | null;
   seller: { id: string; username: string; name: string } | null;
   buyer: { id: string; username: string; name: string } | null;
@@ -67,7 +70,11 @@ const statusLabels: Record<TransactionStatus, string> = {
 };
 
 function formatIDR(amount: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
 }
 
 export function TransactionCard({
@@ -78,6 +85,10 @@ export function TransactionCard({
   const router = useRouter();
   const [showShipping, setShowShipping] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  // Optimistic flip so the button updates instantly on submit, without waiting
+  // for router.refresh() to re-fetch the server data.
+  const [reviewedLocal, setReviewedLocal] = useState(false);
   const [confirmRelease, setConfirmRelease] = useState(false);
   const [confirmPayment, setConfirmPayment] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -93,7 +104,9 @@ export function TransactionCard({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/transactions/${tx.id}/${endpoint}`, { method: "PATCH" });
+      const res = await fetch(`/api/transactions/${tx.id}/${endpoint}`, {
+        method: "PATCH",
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error ?? "Terjadi kesalahan");
@@ -112,26 +125,34 @@ export function TransactionCard({
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gray-50">
-          <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
             {auctionImage ? (
               // biome-ignore lint/performance/noImgElement: Supabase CDN
-              <img src={auctionImage} alt="" className="w-full h-full object-cover" />
+              <img
+                src={auctionImage}
+                alt=""
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Gavel className="h-4 w-4 text-gray-400" />
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-amber-500">
+                <Package className="h-5 w-5 text-white" />
               </div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 line-clamp-1">{auctionTitle}</p>
-            <p className="text-xs text-gray-500">{formatIDR(tx.amount)}</p>
+            <p className="text-sm font-semibold text-gray-900 line-clamp-1">
+              {auctionTitle}
+            </p>
+            <p className="text-sm font-bold text-teal-600">
+              {formatIDR(tx.amount)}
+            </p>
           </div>
           <Link
             href={`/auctions/${tx.auction_id}`}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
           >
             <Eye className="h-4 w-4" />
           </Link>
@@ -144,24 +165,37 @@ export function TransactionCard({
               const done = i <= currentStep;
               const active = i === currentStep;
               return (
-                <div key={step.status} className="flex items-center flex-1 last:flex-none">
+                <div
+                  key={step.status}
+                  className="flex items-center flex-1 last:flex-none"
+                >
                   <div className="flex flex-col items-center">
                     <div
                       className={[
                         "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
                         done && !active ? "bg-emerald-500 text-white" : "",
-                        active ? "bg-blue-600 text-white ring-2 ring-blue-200" : "",
+                        active
+                          ? "bg-teal-600 text-white ring-2 ring-teal-200"
+                          : "",
                         !done ? "bg-gray-100 text-gray-400" : "",
                       ].join(" ")}
                     >
-                      {done && !active ? <CheckCircle className="h-3 w-3" /> : i + 1}
+                      {done && !active ? (
+                        <CheckCircle className="h-3 w-3" />
+                      ) : (
+                        i + 1
+                      )}
                     </div>
-                    <span className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-blue-600 font-semibold" : done ? "text-emerald-600" : "text-gray-400"}`}>
+                    <span
+                      className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-teal-600 font-semibold" : done ? "text-emerald-600" : "text-gray-400"}`}
+                    >
                       {step.label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-emerald-400" : "bg-gray-200"}`} />
+                    <div
+                      className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-emerald-400" : "bg-gray-200"}`}
+                    />
                   )}
                 </div>
               );
@@ -172,15 +206,20 @@ export function TransactionCard({
         {/* Status detail */}
         <div className="px-4 pb-3">
           {tx.status === "shipped" && tx.shipping_tracking_number && (
-            <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-xs text-teal-700 bg-teal-50 rounded-lg px-3 py-2">
               <Truck className="h-3.5 w-3.5 shrink-0" />
-              <span>Resi: <strong>{tx.shipping_tracking_number}</strong></span>
+              <span>
+                Resi: <strong>{tx.shipping_tracking_number}</strong>
+              </span>
             </div>
           )}
           {tx.status === "delivery_confirmed" && (
             <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
               <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-              <span>Buyer telah konfirmasi penerimaan. Menunggu middleman melepaskan dana.</span>
+              <span>
+                Buyer telah konfirmasi penerimaan. Menunggu middleman melepaskan
+                dana.
+              </span>
             </div>
           )}
           {tx.middleman && tx.status !== "completed" && (
@@ -194,12 +233,15 @@ export function TransactionCard({
         {/* Action buttons */}
         <div className="px-4 pb-4 flex flex-col gap-2">
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">
+              {error}
+            </p>
           )}
 
           {/* Middleman: konfirmasi pembayaran */}
-          {isMiddleman && tx.status === "awaiting_payment" && (
-            confirmPayment ? (
+          {isMiddleman &&
+            tx.status === "awaiting_payment" &&
+            (confirmPayment ? (
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -212,7 +254,7 @@ export function TransactionCard({
                   type="button"
                   onClick={() => callAction("confirm-payment")}
                   disabled={loading}
-                  className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50"
+                  className="flex-1 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold disabled:opacity-50"
                 >
                   {loading ? "Memproses..." : "Ya, Konfirmasi"}
                 </button>
@@ -221,13 +263,12 @@ export function TransactionCard({
               <button
                 type="button"
                 onClick={() => setConfirmPayment(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-semibold"
               >
                 <CheckCircle className="h-4 w-4" />
                 Konfirmasi Pembayaran Diterima
               </button>
-            )
-          )}
+            ))}
 
           {/* Seller: upload bukti pengiriman */}
           {isSeller && tx.status === "awaiting_shipment" && (
@@ -254,11 +295,13 @@ export function TransactionCard({
           )}
 
           {/* Middleman: lepaskan dana */}
-          {isMiddleman && tx.status === "delivery_confirmed" && (
-            confirmRelease ? (
+          {isMiddleman &&
+            tx.status === "delivery_confirmed" &&
+            (confirmRelease ? (
               <div className="flex flex-col gap-2">
                 <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  Pastikan Anda sudah memverifikasi foto bukti penerimaan dari buyer sebelum melepaskan dana.
+                  Pastikan Anda sudah memverifikasi foto bukti penerimaan dari
+                  buyer sebelum melepaskan dana.
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -300,19 +343,40 @@ export function TransactionCard({
                   Lepaskan Dana ke Seller
                 </button>
               </div>
-            )
-          )}
+            ))}
+
+          {/* Buyer: beri ulasan setelah transaksi selesai */}
+          {isBuyer &&
+            tx.status === "completed" &&
+            (tx.reviewed || reviewedLocal ? (
+              <div className="flex items-center gap-2 text-xs text-emerald-600">
+                <Star className="h-3.5 w-3.5 shrink-0 fill-emerald-500 text-emerald-500" />
+                <span>Ulasan Anda sudah terkirim. Terima kasih!</span>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowReview(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold"
+              >
+                <Star className="h-4 w-4" />
+                Beri Ulasan Penjual
+              </button>
+            ))}
 
           {/* Status info jika tidak ada action */}
           {((isSeller && !["awaiting_shipment"].includes(tx.status)) ||
             (isBuyer && !["shipped"].includes(tx.status)) ||
-            (isMiddleman && !["awaiting_payment", "delivery_confirmed"].includes(tx.status))) &&
+            (isMiddleman &&
+              !["awaiting_payment", "delivery_confirmed"].includes(
+                tx.status,
+              ))) &&
             tx.status !== "completed" && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Clock className="h-3.5 w-3.5 shrink-0" />
-              <span>{statusLabels[tx.status]}</span>
-            </div>
-          )}
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span>{statusLabels[tx.status]}</span>
+              </div>
+            )}
         </div>
       </div>
 
@@ -321,7 +385,11 @@ export function TransactionCard({
           transactionId={tx.id}
           auctionTitle={auctionTitle}
           onClose={() => setShowShipping(false)}
-          onSuccess={() => { setShowShipping(false); router.refresh(); onActionComplete?.(); }}
+          onSuccess={() => {
+            setShowShipping(false);
+            router.refresh();
+            onActionComplete?.();
+          }}
         />
       )}
 
@@ -330,7 +398,26 @@ export function TransactionCard({
           transactionId={tx.id}
           auctionTitle={auctionTitle}
           onClose={() => setShowReceipt(false)}
-          onSuccess={() => { setShowReceipt(false); router.refresh(); onActionComplete?.(); }}
+          onSuccess={() => {
+            setShowReceipt(false);
+            router.refresh();
+            onActionComplete?.();
+          }}
+        />
+      )}
+
+      {showReview && (
+        <ReviewModal
+          transactionId={tx.id}
+          auctionTitle={auctionTitle}
+          receiptPhotoUrl={tx.receipt_photo_url}
+          onClose={() => setShowReview(false)}
+          onSuccess={() => {
+            setShowReview(false);
+            setReviewedLocal(true);
+            router.refresh();
+            onActionComplete?.();
+          }}
         />
       )}
     </>

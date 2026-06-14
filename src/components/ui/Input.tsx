@@ -28,10 +28,10 @@ export function Input({
         className={cn(
           "rounded-lg border px-3 py-2 text-sm transition-all duration-200",
           "placeholder:text-slate-400",
-          "focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent",
+          "focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent",
           error
             ? "border-red-300 bg-red-50"
-            : "border-sky-200 bg-white hover:border-sky-300 shadow-sm",
+            : "border-slate-200 bg-white hover:border-slate-300 shadow-sm",
           className,
         )}
         {...props}

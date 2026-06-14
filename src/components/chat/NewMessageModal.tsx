@@ -199,7 +199,7 @@ export function NewMessageModal({
               placeholder="Nama grup (opsional, auto-dibuat jika kosong)"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         )}
@@ -213,7 +213,7 @@ export function NewMessageModal({
               placeholder="Cari nama atau username..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
         </div>
@@ -226,7 +226,7 @@ export function NewMessageModal({
                 type="button"
                 key={u.id}
                 onClick={() => toggleUser(u)}
-                className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs rounded-full px-2.5 py-1 hover:bg-blue-100 transition-colors"
+                className="flex items-center gap-1 bg-teal-50 text-teal-700 text-xs rounded-full px-2.5 py-1 hover:bg-teal-100 transition-colors"
               >
                 {u.is_middleman && (
                   <ShieldCheck className="h-3 w-3 text-green-500 shrink-0" />
@@ -266,10 +266,10 @@ export function NewMessageModal({
                     onClick={() => toggleUser(user)}
                     className={[
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors w-full",
-                      isSelected ? "bg-blue-50" : "hover:bg-gray-50",
+                      isSelected ? "bg-teal-50" : "hover:bg-gray-50",
                     ].join(" ")}
                   >
-                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-semibold shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0 overflow-hidden">
                       {user.avatar_url ? (
                         // biome-ignore lint/performance/noImgElement: external user avatar URL
                         <img
@@ -293,7 +293,7 @@ export function NewMessageModal({
                       <p className="text-xs text-gray-500">@{user.username}</p>
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 text-blue-600 shrink-0" />
+                      <Check className="h-4 w-4 text-teal-600 shrink-0" />
                     )}
                   </button>
                 );
@@ -309,7 +309,7 @@ export function NewMessageModal({
             type="button"
             onClick={handleCreate}
             disabled={creating || !canCreate}
-            className="w-full bg-blue-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-teal-600 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {creating ? (
               <Loader2 className="h-4 w-4 animate-spin" />

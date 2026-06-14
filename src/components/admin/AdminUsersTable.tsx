@@ -90,7 +90,7 @@ export function AdminUsersTable({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari nama atau username..."
-          className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
         />
       </div>
 
@@ -142,7 +142,7 @@ export function AdminUsersTable({
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-semibold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-xs font-semibold shrink-0">
                             {user.avatar_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img

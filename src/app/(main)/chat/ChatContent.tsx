@@ -14,7 +14,7 @@ function ChatLoading() {
   return (
     <div className="h-full flex items-center justify-center bg-white">
       <div className="flex flex-col items-center gap-2 text-gray-400">
-        <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-sm">Memuat chat...</p>
       </div>
     </div>
@@ -63,7 +63,7 @@ export function ChatContent({
   }
 
   return (
-    <div className="min-h-screen bg-sky-50 py-6 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto flex flex-col gap-4">
         <h1 className="text-xl font-bold text-gray-900">Pesan</h1>
         <div style={{ height: "min(calc(100dvh - 10rem), 680px)" }}>

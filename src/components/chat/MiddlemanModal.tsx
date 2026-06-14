@@ -93,9 +93,9 @@ export function MiddlemanModal({
                   type="button"
                   key={mm.id}
                   onClick={() => onSelect(mm.id, mm.name)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 text-left transition-colors w-full group"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-teal-50 text-left transition-colors w-full group"
                 >
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-semibold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0">
                     {mm.avatar_url ? (
                       // biome-ignore lint/performance/noImgElement: external user avatar URL
                       <img
@@ -116,7 +116,7 @@ export function MiddlemanModal({
                       {mm.username}
                     </div>
                   </div>
-                  <MessageSquare className="h-4 w-4 text-gray-300 group-hover:text-blue-400 transition-colors shrink-0" />
+                  <MessageSquare className="h-4 w-4 text-gray-300 group-hover:text-teal-400 transition-colors shrink-0" />
                 </button>
               ))}
             </div>

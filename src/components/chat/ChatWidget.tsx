@@ -292,7 +292,7 @@ function ClickableAvatar({
         title={userName}
         className={[
           sizeClass,
-          "rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-700 font-semibold shrink-0",
+          "rounded-full overflow-hidden bg-teal-100 flex items-center justify-center text-teal-700 font-semibold shrink-0",
           userName ? "cursor-pointer hover:opacity-80 transition-opacity" : "",
           rest.className ?? "",
         ].join(" ")}
@@ -411,7 +411,7 @@ function ChannelListLayout({
           <button
             type="button"
             onClick={() => setNewMessageOpen(true)}
-            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 rounded-lg px-2 py-1 transition-colors"
+            className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg px-2 py-1 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Buat Pesan
@@ -461,7 +461,7 @@ function ChannelListLayout({
                   <button
                     type="button"
                     onClick={handleBack}
-                    className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700"
+                    className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     Kembali
@@ -593,7 +593,7 @@ export function ChatWidget({
     return (
       <div className="h-full flex items-center justify-center bg-white rounded-xl border border-gray-200 text-gray-500">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm">Memuat chat...</p>
         </div>
       </div>

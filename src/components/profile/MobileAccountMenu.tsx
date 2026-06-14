@@ -48,8 +48,8 @@ export function MobileAccountMenu({
 
   return (
     <div className="md:hidden bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
-      <div className="px-4 py-2.5 bg-gradient-to-r from-sky-50 to-blue-50 border-b border-gray-100">
-        <p className="text-xs font-semibold text-sky-600 uppercase tracking-wide">
+      <div className="px-4 py-2.5 bg-gradient-to-r from-slate-50 to-teal-50 border-b border-gray-100">
+        <p className="text-xs font-semibold text-teal-600 uppercase tracking-wide">
           Akun
         </p>
       </div>
@@ -58,7 +58,7 @@ export function MobileAccountMenu({
           <Link
             key={href}
             href={href}
-            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-sky-50 transition-colors"
+            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <Icon className="h-4.5 w-4.5 text-slate-400 shrink-0" />
             <span className="flex-1">{label}</span>

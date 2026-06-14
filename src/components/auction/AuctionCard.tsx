@@ -161,10 +161,10 @@ export function AuctionCard({ auction }: AuctionCardProps) {
   return (
     <Link
       href={`/auctions/${auction.id}`}
-      className="group block bg-white rounded-xl border border-sky-100 hover:border-sky-300 hover:shadow-lg hover:shadow-sky-100/60 transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
+      className="group block bg-white rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-100/60 transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-sky-50 to-blue-50 overflow-hidden">
+      <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-50 to-teal-50 overflow-hidden">
         {auction.images[0] ? (
           // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
           <img
@@ -174,7 +174,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Gavel className="h-12 w-12 text-sky-200" />
+            <Gavel className="h-12 w-12 text-slate-200" />
           </div>
         )}
 
@@ -206,7 +206,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
         {/* Category + condition */}
         <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
           {auction.category && (
-            <span className="flex items-center gap-1 text-xs text-sky-500 font-medium">
+            <span className="flex items-center gap-1 text-xs text-teal-500 font-medium">
               {getCategoryIcon(auction.category.slug) && (
                 // biome-ignore lint/performance/noImgElement: small local category icon
                 <img
@@ -218,7 +218,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               {auction.category.name}
             </span>
           )}
-          <span className="text-sky-200">·</span>
+          <span className="text-slate-200">·</span>
           <Badge
             variant={conditionColors[auction.condition] ?? "default"}
             className="text-xs"
@@ -235,7 +235,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
           )}
         </div>
 
-        <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-2 group-hover:text-sky-600 transition-colors duration-200">
+        <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-2 group-hover:text-teal-600 transition-colors duration-200">
           {auction.title}
         </h3>
 
@@ -246,7 +246,7 @@ export function AuctionCard({ auction }: AuctionCardProps) {
               <p className="text-[10px] text-slate-400 leading-tight">
                 Harga Saat Ini
               </p>
-              <p className="text-xs font-bold text-sky-600 truncate leading-tight">
+              <p className="text-xs font-bold text-teal-600 truncate leading-tight">
                 {formatIDR(auction.current_price)}
               </p>
             </div>
@@ -264,14 +264,14 @@ export function AuctionCard({ auction }: AuctionCardProps) {
             <p className="text-[10px] text-slate-400 leading-tight">
               {status === "completed" ? "Harga Final" : "Harga Saat Ini"}
             </p>
-            <p className="text-sm font-bold text-sky-600 leading-tight">
+            <p className="text-sm font-bold text-teal-600 leading-tight">
               {formatIDR(auction.current_price)}
             </p>
           </div>
         )}
 
         {/* Footer: bids + views + seller */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-sky-50">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
           <div className="flex items-center gap-3 text-xs text-slate-400">
             <span className="flex items-center gap-1">
               <Gavel className="h-3 w-3" />

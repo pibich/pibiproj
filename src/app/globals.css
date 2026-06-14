@@ -1,11 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f0f9ff;
-  --foreground: #0f172a;
-  --primary: #0ea5e9;
-  --primary-light: #38bdf8;
-  --primary-dark: #0284c7;
+  /* Warm, clean neutral canvas (was cool slate-50 #f8fafc) — keeps the teal
+     identity but makes white cards read softer and less clinical. */
+  --background: #fafaf9;
+  --foreground: #1c1917;
+  --primary: #0d9488;
+  --primary-light: #14b8a6;
+  --primary-dark: #0f766e;
 }
 
 @theme inline {
@@ -31,14 +33,14 @@ html {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f0f9ff;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #7dd3fc;
+  background: #cbd5e1;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0ea5e9;
+  background: #0d9488;
 }
 
 /* Animations */
@@ -167,12 +169,12 @@ html {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(186, 230, 253, 0.5);
+  border: 1px solid rgba(203, 213, 225, 0.5);
 }
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

@@ -65,8 +65,8 @@ export default async function AdminReportsPage() {
       label: "Total Pengguna",
       value: totalUsers ?? 0,
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
     },
     {
       label: "Laporan Pending",
@@ -79,8 +79,8 @@ export default async function AdminReportsPage() {
       label: "Lelang Menunggu",
       value: pendingApprovals ?? 0,
       icon: ClipboardCheck,
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
+      color: "text-teal-600",
+      bg: "bg-teal-50",
     },
     {
       label: "Middleman Aktif",

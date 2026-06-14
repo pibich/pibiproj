@@ -270,42 +270,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      watchlist: {
-        Row: {
-          id: string;
-          user_id: string;
-          auction_id: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          auction_id: string;
-          created_at?: string;
-        };
-        Update: Record<string, never>;
-        Relationships: [];
-      };
-      chatbot_usage: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          session_id: string | null;
-          message_count: number;
-          reset_date: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          session_id?: string | null;
-          message_count?: number;
-          reset_date?: string;
-        };
-        Update: {
-          message_count?: number;
-        };
-        Relationships: [];
-      };
       notifications: {
         Row: {
           id: string;
@@ -385,7 +349,13 @@ export type Database = {
           middleman_id?: string | null;
           amount: number;
           tax_bearer?: "Buyer" | "Seller" | "Buyer & Seller";
-          status?: "awaiting_payment" | "awaiting_shipment" | "shipped" | "delivery_confirmed" | "completed" | "cancelled";
+          status?:
+            | "awaiting_payment"
+            | "awaiting_shipment"
+            | "shipped"
+            | "delivery_confirmed"
+            | "completed"
+            | "cancelled";
           shipping_photo_url?: string | null;
           shipping_tracking_number?: string | null;
           shipping_notes?: string | null;
@@ -399,7 +369,13 @@ export type Database = {
         };
         Update: {
           middleman_id?: string | null;
-          status?: "awaiting_payment" | "awaiting_shipment" | "shipped" | "delivery_confirmed" | "completed" | "cancelled";
+          status?:
+            | "awaiting_payment"
+            | "awaiting_shipment"
+            | "shipped"
+            | "delivery_confirmed"
+            | "completed"
+            | "cancelled";
           shipping_photo_url?: string | null;
           shipping_tracking_number?: string | null;
           shipping_notes?: string | null;
@@ -465,6 +441,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      reviews: {
+        Row: {
+          id: string;
+          transaction_id: string;
+          auction_id: string;
+          seller_id: string;
+          buyer_id: string;
+          rating: number;
+          comment: string | null;
+          receipt_photo_url: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          transaction_id: string;
+          auction_id: string;
+          seller_id: string;
+          buyer_id: string;
+          rating: number;
+          comment?: string | null;
+          receipt_photo_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          rating?: number;
+          comment?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -478,8 +483,9 @@ export type Category = Database["public"]["Tables"]["categories"]["Row"];
 export type Auction = Database["public"]["Tables"]["auctions"]["Row"];
 export type Bid = Database["public"]["Tables"]["bids"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];
-export type WatchlistItem = Database["public"]["Tables"]["watchlist"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
-export type BuyerWarning = Database["public"]["Tables"]["buyer_warnings"]["Row"];
+export type BuyerWarning =
+  Database["public"]["Tables"]["buyer_warnings"]["Row"];
 export type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 export type TransactionStatus = Transaction["status"];
+export type Review = Database["public"]["Tables"]["reviews"]["Row"];
