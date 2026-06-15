@@ -1,15 +1,15 @@
+"use client";
+
 import { Gavel } from "lucide-react";
+import { useState } from "react";
 import { AuctionCard } from "@/components/auction/AuctionCard";
 import { ApprovalStatusButton } from "@/components/profile/ApprovalStatusButton";
 import { AuctionListCard } from "@/components/profile/AuctionListCard";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import type {
   AuctionWithRelations,
   ProfileTransaction,
 } from "@/components/profile/profile-types";
 import { TransactionCard } from "@/components/transaction/TransactionCard";
-import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
-import { formatRelativeTime } from "@/lib/utils";
 
 interface MyAuctionsTabProps {
   activeAuctions: AuctionWithRelations[];
@@ -30,6 +30,9 @@ function EmptyState({ message }: { message: string }) {
 }
 
 function Grid({ items }: { items: AuctionWithRelations[] }) {
+  if (items.length === 0) {
+    return <EmptyState message="Tidak ada lelang pada kategori ini." />;
+  }
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
       {items.map((a) => (
@@ -47,145 +50,98 @@ export function MyAuctionsTab({
   pendingApprovalCount,
   currentUserId,
 }: MyAuctionsTabProps) {
-  // "Selesai" = laku & transaksi tuntas; "Gagal" = berakhir tanpa pemenang.
-  const selesai = auctions.filter((a) => a.status === "completed");
+  const aktif = activeAuctions;
+  const selesai = auctions.filter(
+    (a) => a.status === "completed" || (a.status === "closed" && a.winner_id),
+  );
   const gagal = auctions.filter((a) => a.status === "closed" && !a.winner_id);
+  const menungguCount = perluTindakan.length + sellerTransactions.length;
 
-  const berlangsungCount =
-    activeAuctions.length + sellerTransactions.length + perluTindakan.length;
+  const filters = [
+    { key: "semua", label: "Semua", count: auctions.length },
+    { key: "aktif", label: "Aktif", count: aktif.length },
+    { key: "menunggu", label: "Menunggu Pembayaran", count: menungguCount },
+    { key: "selesai", label: "Selesai", count: selesai.length },
+    { key: "gagal", label: "Gagal", count: gagal.length },
+  ] as const;
 
-  const berlangsung =
-    berlangsungCount === 0 ? (
-      <EmptyState message="Tidak ada lelang yang sedang berlangsung." />
-    ) : (
-      <div className="flex flex-col gap-6">
-        {activeAuctions.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Lelang Aktif
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {activeAuctions.length} lelang
-              </span>
-            </h3>
-            <div className="flex flex-col gap-2">
-              {activeAuctions.map((a) => {
-                const bidCount =
-                  (a as unknown as { bids?: { count: number }[] }).bids?.[0]
-                    ?.count ?? 0;
-                return (
-                  <AuctionListCard
-                    key={a.id}
-                    image={a.images?.[0] ?? null}
-                    title={a.title}
-                    href={`/auctions/${a.id}`}
-                    price={a.current_price}
-                    badge={{ label: "AKTIF", variant: "success" }}
-                    subInfo={`${bidCount} bid${a.end_time ? ` · Berakhir ${formatRelativeTime(a.end_time)}` : ""}`}
-                  />
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {sellerTransactions.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />
-              Dalam Transaksi
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {sellerTransactions.length} transaksi
-              </span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {sellerTransactions.map((tx) => (
-                <TransactionCard
-                  key={tx.id}
-                  transaction={tx}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {perluTindakan.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-              Berakhir — Perlu Tindakan
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {perluTindakan.length} lelang
-              </span>
-            </h3>
-            <div className="flex flex-col gap-2">
-              {perluTindakan.map((a) => (
-                <div key={a.id} className="flex flex-col gap-1.5">
-                  <AuctionListCard
-                    image={a.images?.[0] ?? null}
-                    title={a.title}
-                    href={`/auctions/${a.id}`}
-                    price={a.current_price}
-                    badge={{ label: "BUTUH TINDAKAN", variant: "warning" }}
-                    subInfo={
-                      a.winner ? `Pemenang: @${a.winner.username}` : undefined
-                    }
-                    actionLabel="Lihat Lelang"
-                  />
-                  {(a as unknown as { confirmation_deadline?: string | null })
-                    .confirmation_deadline && (
-                    <ConfirmationCountdown
-                      deadline={
-                        (a as unknown as { confirmation_deadline: string })
-                          .confirmation_deadline
-                      }
-                      label="Batas buyer konfirmasi"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-    );
+  const [filter, setFilter] = useState<string>("semua");
 
   return (
-    <ProfileTabs
-      variant="secondary"
-      defaultTab="berlangsung"
-      rightAction={<ApprovalStatusButton count={pendingApprovalCount} />}
-      tabs={[
-        {
-          id: "berlangsung",
-          label: "Berlangsung",
-          count: berlangsungCount,
-          content: berlangsung,
-        },
-        {
-          id: "selesai",
-          label: "Selesai",
-          count: selesai.length,
-          content:
-            selesai.length === 0 ? (
-              <EmptyState message="Belum ada lelang yang selesai." />
-            ) : (
-              <Grid items={selesai} />
-            ),
-        },
-        {
-          id: "gagal",
-          label: "Gagal",
-          count: gagal.length,
-          content:
-            gagal.length === 0 ? (
-              <EmptyState message="Tidak ada lelang yang gagal (berakhir tanpa pemenang)." />
-            ) : (
-              <Grid items={gagal} />
-            ),
-        },
-      ]}
-    />
+    <div className="flex flex-col gap-5">
+      {/* Filter pills + approval status */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {filters.map((f) => {
+            const active = f.key === filter;
+            return (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-slate-900 text-white"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {f.label}
+                <span
+                  className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                    active
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {f.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <ApprovalStatusButton count={pendingApprovalCount} />
+      </div>
+
+      {/* Content */}
+      {filter === "semua" && <Grid items={auctions} />}
+      {filter === "aktif" && <Grid items={aktif} />}
+      {filter === "selesai" && <Grid items={selesai} />}
+      {filter === "gagal" && <Grid items={gagal} />}
+
+      {filter === "menunggu" &&
+        (menungguCount === 0 ? (
+          <EmptyState message="Tidak ada lelang yang menunggu pembayaran." />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {perluTindakan.map((a) => (
+              <AuctionListCard
+                key={a.id}
+                image={a.images?.[0] ?? null}
+                title={a.title}
+                href={`/auctions/${a.id}`}
+                price={a.current_price}
+                badge={{ label: "MENUNGGU PEMBAYARAN", variant: "warning" }}
+                subInfo={
+                  a.winner
+                    ? `Pemenang: @${a.winner.username} · Tunggu pembayaran atau gagalkan`
+                    : undefined
+                }
+                actionLabel="Kelola di halaman lelang"
+              />
+            ))}
+            {sellerTransactions.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {sellerTransactions.map((tx) => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+    </div>
   );
 }

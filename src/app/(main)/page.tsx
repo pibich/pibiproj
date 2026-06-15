@@ -1,11 +1,13 @@
-import { ArrowRight, Gavel, Sparkles } from "lucide-react";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { AuctionCard } from "@/components/auction/AuctionCard";
-import { FeaturesCarousel } from "@/components/home/FeaturesCarousel";
-import { Button } from "@/components/ui/Button";
+import { Suspense } from "react";
+import { AuctionBrowser } from "@/components/auction/AuctionBrowser";
+import { CategoryRail } from "@/components/home/CategoryRail";
+import type { FeaturedAuction } from "@/components/home/FeaturedLot";
+import { Hero } from "@/components/home/Hero";
+import { createNotification } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
-import type { Auction, Category, Profile } from "@/types/supabase";
+import type { Auction, Category, Database, Profile } from "@/types/supabase";
 
 export const metadata: Metadata = {
   title: "TCG Auction — Lelang Kartu TCG Terpercaya",
@@ -17,154 +19,201 @@ type AuctionWithRelations = Auction & {
   _count: { bids: number };
 };
 
-async function getFeaturedAuctions() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    category?: string;
+    condition?: string;
+    status?: string;
+    sort?: string;
+    q?: string;
+    buy?: string;
+    free?: string;
+  }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
-  const { data } = await supabase
+  const isEnded = params.status === "ended";
+
+  // Lazy close: move any expired active auctions to "closed" before rendering
+  const db = createAdminClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const now = new Date().toISOString();
+  const { data: justExpired } = await db
+    .from("auctions")
+    .select("id, seller_id, winner_id")
+    .eq("status", "active")
+    .lt("end_time", now);
+  if (justExpired?.length) {
+    await db
+      .from("auctions")
+      .update({ status: "closed" })
+      .in(
+        "id",
+        justExpired.map((a) => a.id),
+      );
+    for (const auction of justExpired) {
+      await createNotification(db, {
+        user_id: auction.seller_id,
+        type: "auction_ended",
+        auction_id: auction.id,
+      });
+      if (auction.winner_id) {
+        await createNotification(db, {
+          user_id: auction.winner_id,
+          type: "auction_won",
+          auction_id: auction.id,
+        });
+      }
+    }
+  }
+
+  // Categories (real games first, "lainnya" last)
+  const { data: rawCategories } = await supabase
+    .from("categories")
+    .select("*")
+    .order("name");
+  const categories = (rawCategories ?? []).sort((a, b) => {
+    const aOther = /lainnya/i.test(a.name);
+    const bOther = /lainnya/i.test(b.name);
+    if (aOther && !bOther) return 1;
+    if (!aOther && bOther) return -1;
+    return 0;
+  });
+
+  // Hero stats
+  const [
+    { count: activeCount },
+    { count: totalBids },
+    { count: categoryCount },
+  ] = await Promise.all([
+    supabase
+      .from("auctions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase.from("bids").select("*", { count: "exact", head: true }),
+    supabase
+      .from("categories")
+      .select("*", { count: "exact", head: true })
+      .not("slug", "eq", "lainnya"),
+  ]);
+
+  // Featured lot — priciest active auction
+  const { data: featuredRows } = await supabase
     .from("auctions")
     .select(
       `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`,
     )
     .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(20);
+    .order("current_price", { ascending: false })
+    .limit(1);
+  const featuredRaw = featuredRows?.[0] as
+    | (FeaturedAuction & { bids?: { count: number }[] })
+    | undefined;
+  const featured: FeaturedAuction | null = featuredRaw
+    ? { ...featuredRaw, bidCount: featuredRaw.bids?.[0]?.count ?? 0 }
+    : null;
 
-  return (data ?? []) as unknown as AuctionWithRelations[];
-}
+  // Filtered grid query
+  let query = supabase
+    .from("auctions")
+    .select(
+      `*, seller:profiles!seller_id(username, name), category:categories(name, slug), bids(count)`,
+    )
+    .neq("status", "draft")
+    .neq("status", "cancelled");
 
-export default async function HomePage() {
-  const supabase = await createClient();
-  const [auctions] = await Promise.all([getFeaturedAuctions()]);
+  if (isEnded) {
+    query = query.in("status", ["completed", "closed"]);
+  } else {
+    query = query.eq("status", "active");
+  }
 
-  const { count: categoryCount } = await supabase
-    .from("categories")
-    .select("*", { count: "exact", head: true })
-    .not("slug", "eq", "lainnya");
+  if (params.category) query = query.eq("category_id", params.category);
+  if (params.condition)
+    query = query.eq("condition", params.condition as Auction["condition"]);
+  if (params.q) query = query.ilike("title", `%${params.q}%`);
+  if (params.buy === "1") query = query.not("buy_now_price", "is", null);
+  if (params.free === "1") query = query.eq("free_shipping", true);
+
+  const effectiveSort =
+    params.sort ?? (isEnded ? "recently_ended" : "ending_soon");
+  switch (effectiveSort) {
+    case "ending_soon":
+      query = query.order("end_time", { ascending: true });
+      break;
+    case "recently_ended":
+      query = query.order("end_time", { ascending: false });
+      break;
+    case "popular":
+      query = query.order("view_count", { ascending: false });
+      break;
+    case "price_low":
+      query = query.order("current_price", { ascending: true });
+      break;
+    case "price_high":
+      query = query.order("current_price", { ascending: false });
+      break;
+    default:
+      query = query.order("created_at", { ascending: false });
+  }
+
+  const { data: auctions } = await query.limit(48);
+  const typedAuctions = (auctions ?? []) as unknown as AuctionWithRelations[];
+
+  // Attach each seller's average review rating for the card footer
+  const sellerIds = [...new Set(typedAuctions.map((a) => a.seller_id))];
+  if (sellerIds.length) {
+    const { data: reviewRows } = await supabase
+      .from("reviews")
+      .select("seller_id, rating")
+      .in("seller_id", sellerIds);
+    const agg = new Map<string, { sum: number; n: number }>();
+    for (const r of reviewRows ?? []) {
+      const cur = agg.get(r.seller_id) ?? { sum: 0, n: 0 };
+      cur.sum += r.rating;
+      cur.n += 1;
+      agg.set(r.seller_id, cur);
+    }
+    for (const a of typedAuctions) {
+      const s = agg.get(a.seller_id);
+      (
+        a as AuctionWithRelations & { sellerRating?: number | null }
+      ).sellerRating = s ? s.sum / s.n : null;
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-8 sm:gap-12 pb-16">
-      {/* Hero — compact banner so the auction grid leads the page */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 text-white">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-20 -right-20 w-72 h-72 bg-emerald-300/20 rounded-full blur-3xl animate-float" />
-          <div
-            className="absolute -bottom-24 -left-20 w-72 h-72 bg-teal-300/20 rounded-full blur-3xl animate-float"
-            style={{ animationDelay: "1.2s" }}
+    <div className="flex flex-col">
+      <Hero
+        featured={featured}
+        stats={[
+          { value: String(activeCount ?? 0), label: "Lelang aktif sekarang" },
+          {
+            value: (totalBids ?? 0).toLocaleString("id-ID"),
+            label: "Tawaran masuk",
+          },
+          { value: `${categoryCount ?? 0}`, label: "Game TCG didukung" },
+          { value: "100%", label: "Transaksi terjamin" },
+        ]}
+      />
+
+      <CategoryRail
+        categories={categories}
+        activeCategory={params.category}
+        totalActive={activeCount ?? 0}
+      />
+
+      <section id="lelang" className="scroll-mt-16 pt-2">
+        <Suspense>
+          <AuctionBrowser
+            auctions={typedAuctions}
+            totalActive={activeCount ?? 0}
           />
-          {/* Subtle dotted texture */}
-          <div className="absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle,white_1px,transparent_1px)] [background-size:22px_22px]" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 animate-fade-in-up">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-xs sm:text-sm font-medium mb-3 border border-white/25">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-200" />
-                Platform TCG #1 di Indonesia
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-bold mb-2.5 leading-tight tracking-tight">
-                Lelang Kartu TCG{" "}
-                <span className="bg-gradient-to-r from-emerald-200 to-teal-100 bg-clip-text text-transparent">
-                  Terpercaya
-                </span>
-              </h1>
-              <p className="text-sm sm:text-base text-teal-50/90 max-w-xl leading-relaxed">
-                Temukan kartu langka, bid real-time, dan bertransaksi aman lewat
-                sistem middleman tepercaya.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 shrink-0">
-              <div className="flex gap-2.5 flex-wrap">
-                <Link href="/auctions">
-                  <Button
-                    size="md"
-                    className="bg-white text-teal-600 hover:bg-slate-50 shadow-lg shadow-teal-900/20 border-0 from-white to-white"
-                  >
-                    <Gavel className="h-4 w-4" />
-                    Lihat Semua Lelang
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button
-                    size="md"
-                    variant="outline"
-                    className="border-white/50 text-white hover:bg-white/15 bg-white/10 backdrop-blur-sm"
-                  >
-                    Daftar Gratis
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex items-center gap-6 flex-wrap">
-                {[
-                  { value: "100%", label: "Terpercaya" },
-                  { value: "Real-Time", label: "Sistem Bid" },
-                  {
-                    value: `${categoryCount ?? 0} Game`,
-                    label: "TCG Supported",
-                  },
-                ].map(({ value, label }) => (
-                  <div key={label}>
-                    <div className="text-lg font-bold text-white leading-none">
-                      {value}
-                    </div>
-                    <div className="text-xs text-teal-100 mt-1">{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Active auctions */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">Lelang Aktif</h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Lelang yang sedang berjalan sekarang
-            </p>
-          </div>
-          <Link href="/auctions">
-            <Button variant="outline" size="sm">
-              Lihat Semua
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        </div>
-
-        {auctions.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Gavel className="h-8 w-8 text-slate-300" />
-            </div>
-            <p className="text-slate-500 mb-4">Belum ada lelang</p>
-            <Link href="/auctions/create" className="inline-block">
-              <Button size="sm">Buat Lelang</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-            {auctions.map((auction) => (
-              <AuctionCard key={auction.id} auction={auction} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Features */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">
-            Mengapa TCG Auction?
-          </h2>
-          <p className="text-slate-500 text-sm max-w-md mx-auto">
-            Semua yang kamu butuhkan untuk transaksi kartu TCG yang aman dan
-            mudah
-          </p>
-        </div>
-        <FeaturesCarousel />
+        </Suspense>
       </section>
     </div>
   );

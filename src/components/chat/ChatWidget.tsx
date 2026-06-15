@@ -27,6 +27,7 @@ import {
   ChevronRight,
   MessageSquare,
   Plus,
+  Search,
   Users,
   X,
 } from "lucide-react";
@@ -341,7 +342,29 @@ function ChannelListLayout({
   );
   const [newMessageOpen, setNewMessageOpen] = useState(false);
   const [mobileShowChat, setMobileShowChat] = useState(false);
+  const [search, setSearch] = useState("");
   const channelInitialized = useRef(false);
+
+  // Display title for a channel, used for client-side search filtering.
+  function channelTitle(ch: StreamChannel): string {
+    const mems = Object.values(ch.state.members);
+    const count =
+      (ch.data?.member_count as number | undefined) ?? mems.length;
+    if (count > 2) {
+      return (
+        (ch.data?.name as string | undefined) ??
+        mems
+          .filter((m) => m.user?.id !== userId)
+          .map((m) => (m.user?.name ?? "").split(" ")[0])
+          .filter(Boolean)
+          .join(", ")
+      );
+    }
+    const other = mems.find((m) => m.user?.id !== userId);
+    return (
+      other?.user?.name ?? (ch.data?.name as string | undefined) ?? "Chat"
+    );
+  }
 
   useEffect(() => {
     if (!initialTargetUserId || !client || channelInitialized.current) return;
@@ -404,18 +427,30 @@ function ChannelListLayout({
           mobileShowChat ? "hidden sm:flex" : "flex",
         ].join(" ")}
       >
-        <div className="shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-gray-100">
-          <span className="text-sm font-semibold text-gray-700">
-            Percakapan
-          </span>
-          <button
-            type="button"
-            onClick={() => setNewMessageOpen(true)}
-            className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg px-2 py-1 transition-colors"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Buat Pesan
-          </button>
+        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900">Pesan</h2>
+            <button
+              type="button"
+              onClick={() => setNewMessageOpen(true)}
+              title="Buat pesan baru"
+              className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700 border border-teal-200 hover:border-teal-300 rounded-lg px-2 py-1 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Buat Pesan
+            </button>
+          </div>
+          {/* Search */}
+          <div className="mt-3 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari percakapan…"
+              className="w-full rounded-full bg-gray-50 border border-gray-200 pl-9 pr-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-300 transition-colors"
+            />
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -428,18 +463,34 @@ function ChannelListLayout({
                 <p className="text-sm">Belum ada percakapan</p>
               </div>
             )}
-            renderChannels={(channels) => (
-              <div>
-                {(channels as StreamChannel[]).map((ch) => (
-                  <CustomChannelPreview
-                    key={ch.id}
-                    channel={ch}
-                    onSelect={() => handleSelectChannel(ch)}
-                    onHide={handleBack}
-                  />
-                ))}
-              </div>
-            )}
+            renderChannels={(channels) => {
+              const q = search.trim().toLowerCase();
+              const filtered = q
+                ? (channels as StreamChannel[]).filter((ch) =>
+                    channelTitle(ch).toLowerCase().includes(q),
+                  )
+                : (channels as StreamChannel[]);
+              if (q && filtered.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center gap-2 py-12 text-gray-400">
+                    <Search className="h-7 w-7 opacity-30" />
+                    <p className="text-sm">Tidak ada hasil untuk “{search}”</p>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  {filtered.map((ch) => (
+                    <CustomChannelPreview
+                      key={ch.id}
+                      channel={ch}
+                      onSelect={() => handleSelectChannel(ch)}
+                      onHide={handleBack}
+                    />
+                  ))}
+                </div>
+              );
+            }}
             Paginator={InfiniteScrollPaginator}
           />
         </div>

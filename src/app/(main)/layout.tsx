@@ -13,9 +13,7 @@ export default async function MainLayout({
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className={user ? "hidden md:block" : ""}>
-        <NavbarWrapper user={user} />
-      </div>
+      <NavbarWrapper user={user} hideOnMobile={!!user} />
       {user && <MobileHeader userId={user.id} />}
       <main className="flex-1 pb-16 md:pb-0">{children}</main>
       <div className="hidden md:block">

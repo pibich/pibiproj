@@ -12,6 +12,19 @@ interface Props {
   onHide?: () => void;
 }
 
+// Compact "time ago" label, e.g. "2 mnt", "1 jam", "3 hr".
+function formatShortAgo(date: Date): string {
+  const sec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (sec < 60) return "baru";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} mnt`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} jam`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day} hr`;
+  return `${Math.floor(day / 7)} mgg`;
+}
+
 export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
   const { client, channel: activeChannel, setActiveChannel } = useChatContext();
   const { setChannels } = useChannelListContext();
@@ -23,6 +36,8 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
   const memberCount =
     (channel.data?.member_count as number | undefined) ?? members.length;
   const isGroup = memberCount > 2;
+  const otherUser = members.find((m) => m.user?.id !== currentUserId)?.user;
+  const isOnline = !isGroup && !!otherUser?.online;
 
   let displayTitle: string;
   let displayImage: string | null = null;
@@ -46,6 +61,9 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
   const lastText = lastMsg?.text?.trim().slice(0, 80) ?? "";
   const unreadCount = channel.countUnread();
   const isActive = activeChannel?.id === channel.id;
+
+  const lastAt = channel.state.last_message_at ?? lastMsg?.created_at;
+  const lastTime = lastAt ? formatShortAgo(new Date(lastAt)) : "";
 
   function handleSelect() {
     setActiveChannel?.(channel);
@@ -123,18 +141,23 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
         )}
       >
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0">
-          {displayImage ? (
-            // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
-            <img
-              src={displayImage}
-              alt={displayTitle}
-              className="w-full h-full object-cover"
-            />
-          ) : displayTitle ? (
-            getInitials(displayTitle)
-          ) : (
-            <Users className="h-4 w-4" />
+        <div className="relative shrink-0">
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold">
+            {displayImage ? (
+              // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
+              <img
+                src={displayImage}
+                alt={displayTitle}
+                className="w-full h-full object-cover"
+              />
+            ) : displayTitle ? (
+              getInitials(displayTitle)
+            ) : (
+              <Users className="h-4 w-4" />
+            )}
+          </div>
+          {isOnline && (
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-teal-500 border-2 border-white" />
           )}
         </div>
 
@@ -144,12 +167,17 @@ export function CustomChannelPreview({ channel, onSelect, onHide }: Props) {
             <p className="text-sm font-semibold text-gray-900 truncate">
               {displayTitle}
             </p>
-            {/* Unread badge — hidden when hovering to show action buttons */}
-            {!!unreadCount && !hovering && (
-              <span className="shrink-0 min-w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-semibold px-1">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {lastTime && !hovering && (
+                <span className="text-[11px] text-gray-400">{lastTime}</span>
+              )}
+              {/* Unread badge — hidden when hovering to show action buttons */}
+              {!!unreadCount && !hovering && (
+                <span className="min-w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-semibold px-1">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </div>
           </div>
           {lastText && (
             <p className="text-xs text-gray-400 truncate mt-0.5">{lastText}</p>

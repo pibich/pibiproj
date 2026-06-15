@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 interface ReceiptProofModalProps {
   transactionId: string;
   auctionTitle: string;
+  /** Direct (non-middleman) flow: receipt is just a record, no fund release. */
+  directFlow?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -14,6 +16,7 @@ interface ReceiptProofModalProps {
 export function ReceiptProofModal({
   transactionId,
   auctionTitle,
+  directFlow = false,
   onClose,
   onSuccess,
 }: ReceiptProofModalProps) {
@@ -58,14 +61,17 @@ export function ReceiptProofModal({
         .getPublicUrl(path);
       const photoUrl = urlData.publicUrl;
 
-      const res = await fetch(`/api/transactions/${transactionId}/confirm-receipt`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          receipt_photo_url: photoUrl,
-          receipt_notes: notes.trim() || null,
-        }),
-      });
+      const res = await fetch(
+        `/api/transactions/${transactionId}/confirm-receipt`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            receipt_photo_url: photoUrl,
+            receipt_notes: notes.trim() || null,
+          }),
+        },
+      );
 
       if (!res.ok) {
         const data = await res.json();
@@ -100,10 +106,16 @@ export function ReceiptProofModal({
               <h2 className="font-semibold text-gray-900 text-sm leading-tight">
                 Konfirmasi Penerimaan
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{auctionTitle}</p>
+              <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+                {auctionTitle}
+              </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -112,7 +124,9 @@ export function ReceiptProofModal({
 
         <div className="p-5 flex flex-col gap-4">
           <p className="text-xs text-gray-500 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
-            Upload foto paket yang Anda terima sebagai bukti penerimaan. Dana akan segera diproses oleh middleman.
+            {directFlow
+              ? "Upload foto paket yang Anda terima sebagai bukti bahwa barang sudah sampai dengan baik."
+              : "Upload foto paket yang Anda terima sebagai bukti penerimaan. Dana akan segera diproses oleh middleman."}
           </p>
 
           {/* Upload foto */}
@@ -127,11 +141,17 @@ export function ReceiptProofModal({
             >
               {photoPreview ? (
                 // biome-ignore lint/performance/noImgElement: object URL preview
-                <img src={photoPreview} alt="preview" className="h-full w-full object-contain rounded-xl" />
+                <img
+                  src={photoPreview}
+                  alt="preview"
+                  className="h-full w-full object-contain rounded-xl"
+                />
               ) : (
                 <>
                   <Upload className="h-6 w-6 text-gray-400" />
-                  <span className="text-xs text-gray-500">Klik untuk pilih foto</span>
+                  <span className="text-xs text-gray-500">
+                    Klik untuk pilih foto
+                  </span>
                 </>
               )}
             </button>
@@ -147,7 +167,8 @@ export function ReceiptProofModal({
           {/* Catatan kondisi */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Catatan Kondisi <span className="text-gray-400 font-normal">(opsional)</span>
+              Catatan Kondisi{" "}
+              <span className="text-gray-400 font-normal">(opsional)</span>
             </label>
             <textarea
               value={notes}

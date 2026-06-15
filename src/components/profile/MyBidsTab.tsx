@@ -1,14 +1,16 @@
-import { Package } from "lucide-react";
+"use client";
+
+import { Gavel, Package } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { AuctionListCard } from "@/components/profile/AuctionListCard";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
 import type {
   BidWithAuction,
   ProfileTransaction,
   WonAuction,
 } from "@/components/profile/profile-types";
 import { TransactionCard } from "@/components/transaction/TransactionCard";
-import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
-import { formatIDR } from "@/lib/utils";
+import { formatIDR, formatRelativeTime } from "@/lib/utils";
 
 interface MyBidsTabProps {
   bidAktif: BidWithAuction[];
@@ -20,11 +22,62 @@ interface MyBidsTabProps {
   currentUserId: string;
 }
 
+type RowStatus = {
+  label: string;
+  color: string;
+};
+
+function BidRow({ bid, status }: { bid: BidWithAuction; status: RowStatus }) {
+  const a = bid.auction;
+  const ended = a?.status === "closed" || a?.status === "completed";
+  const timeLabel = ended
+    ? "Berakhir"
+    : a?.end_time
+      ? `Berakhir ${formatRelativeTime(a.end_time)}`
+      : "";
+
+  return (
+    <Link
+      href={`/auctions/${a?.id}`}
+      className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 transition-all hover:border-teal-300 hover:shadow-sm"
+    >
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gray-100">
+        {a?.images?.[0] ? (
+          // biome-ignore lint/performance/noImgElement: Supabase CDN URL
+          <img
+            src={a.images[0]}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 to-teal-100">
+            <Gavel className="h-5 w-5 text-teal-400" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-1 text-sm font-semibold text-slate-900">
+          {a?.title ?? "Lelang"}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-400">{timeLabel}</p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="font-mono text-sm font-bold text-slate-900">
+          {formatIDR(bid.amount)}
+        </p>
+        <p className={`text-xs font-semibold ${status.color}`}>
+          {status.label}
+        </p>
+      </div>
+    </Link>
+  );
+}
+
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-      <Package className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-      <p className="text-gray-500 text-sm">{message}</p>
+    <div className="rounded-xl border border-gray-200 bg-white py-12 text-center">
+      <Package className="mx-auto mb-2 h-10 w-10 text-gray-300" />
+      <p className="text-sm text-gray-500">{message}</p>
     </div>
   );
 }
@@ -38,206 +91,146 @@ export function MyBidsTab({
   menangBelumTransaksi,
   currentUserId,
 }: MyBidsTabProps) {
-  const berlangsungCount =
-    bidAktif.length + buyerTransactions.length + menangBelumTransaksi.length;
+  const statusFor = (bid: BidWithAuction): RowStatus => {
+    const a = bid.auction;
+    const ended = a?.status === "closed" || a?.status === "completed";
+    if (!ended) {
+      return bid.is_winning
+        ? { label: "Tertinggi", color: "text-emerald-600" }
+        : { label: "Terlampaui", color: "text-amber-600" };
+    }
+    return a?.winner_id === currentUserId
+      ? { label: "Menang", color: "text-emerald-600" }
+      : { label: "Kalah", color: "text-slate-400" };
+  };
 
-  // Won bids with no transaction record at all (edge case) — surface under Selesai.
+  const semua = [...bidAktif, ...bidMenang, ...bidKalah];
+  const belumDibayarCount =
+    menangBelumTransaksi.length + buyerTransactions.length;
+
+  // Wins with no transaction record at all (edge case) — surface under Selesai.
   const showMenangFallback =
     bidMenang.length > 0 &&
     buyerTransactions.length === 0 &&
-    menangBelumTransaksi.length === 0;
+    menangBelumTransaksi.length === 0 &&
+    completedPurchases.length === 0;
   const selesaiCount =
     completedPurchases.length + (showMenangFallback ? bidMenang.length : 0);
 
-  const berlangsung =
-    berlangsungCount === 0 ? (
-      <EmptyState message="Tidak ada bid atau transaksi yang sedang berjalan." />
-    ) : (
-      <div className="flex flex-col gap-6">
-        {bidAktif.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Bid Aktif
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {bidAktif.length} bid
-              </span>
-            </h3>
-            <div className="flex flex-col gap-2">
-              {bidAktif.map((bid) => (
-                <AuctionListCard
-                  key={bid.id}
-                  image={bid.auction?.images?.[0] ?? null}
-                  title={bid.auction?.title ?? "Lelang"}
-                  href={`/auctions/${bid.auction?.id}`}
-                  price={bid.auction?.current_price ?? 0}
-                  badge={
-                    bid.is_winning
-                      ? { label: "TERTINGGI", variant: "success" }
-                      : { label: "DIKALAHKAN", variant: "warning" }
-                  }
-                  subInfo={`Bid saya: ${formatIDR(bid.amount)} | Saat ini: ${formatIDR(bid.auction?.current_price ?? 0)}`}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+  const filters = [
+    { key: "semua", label: "Semua", count: semua.length },
+    { key: "berlangsung", label: "Berlangsung", count: bidAktif.length },
+    { key: "belum_dibayar", label: "Belum Dibayar", count: belumDibayarCount },
+    { key: "selesai", label: "Selesai", count: selesaiCount },
+    { key: "gagal", label: "Gagal", count: bidKalah.length },
+  ] as const;
 
-        {buyerTransactions.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />
-              Dalam Transaksi
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {buyerTransactions.length} transaksi
-              </span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {buyerTransactions.map((tx) => (
-                <TransactionCard
-                  key={tx.id}
-                  transaction={tx}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          </section>
-        )}
+  const [filter, setFilter] = useState<string>("semua");
 
-        {menangBelumTransaksi.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              Menang — Belum Transaksi
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {menangBelumTransaksi.length} lelang
-              </span>
-            </h3>
-            <div className="flex flex-col gap-2">
-              {menangBelumTransaksi.map((a) => (
-                <div key={a.id} className="flex flex-col gap-1.5">
-                  <AuctionListCard
-                    image={a.images?.[0] ?? null}
-                    title={a.title}
-                    href={`/auctions/${a.id}`}
-                    price={a.current_price}
-                    badge={{ label: "MENANG", variant: "success" }}
-                    subInfo={
-                      a.seller ? `Seller: @${a.seller.username}` : undefined
-                    }
-                    chatHref={`/chat?seller=${a.seller_id}`}
-                  />
-                  {a.confirmation_deadline && (
-                    <ConfirmationCountdown
-                      deadline={a.confirmation_deadline}
-                      label="Batas konfirmasi ke seller"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-    );
-
-  const selesai =
-    selesaiCount === 0 ? (
-      <EmptyState message="Belum ada pembelian yang selesai." />
-    ) : (
-      <div className="flex flex-col gap-6">
-        {completedPurchases.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              Riwayat Pembelian
-              <span className="ml-auto normal-case font-normal text-gray-400">
-                {completedPurchases.length} selesai
-              </span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {completedPurchases.map((tx) => (
-                <TransactionCard
-                  key={tx.id}
-                  transaction={tx}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {showMenangFallback && (
-          <section>
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-              Menang
-            </h3>
-            <div className="flex flex-col gap-2">
-              {bidMenang.map((bid) => (
-                <AuctionListCard
-                  key={bid.id}
-                  image={bid.auction?.images?.[0] ?? null}
-                  title={bid.auction?.title ?? "Lelang"}
-                  href={`/auctions/${bid.auction?.id}`}
-                  price={bid.auction?.current_price ?? 0}
-                  badge={{ label: "MENANG", variant: "success" }}
-                  subInfo={
-                    bid.auction?.transaction_confirmed
-                      ? "Transaksi selesai"
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-          </section>
-        )}
-      </div>
-    );
-
-  const gagal =
-    bidKalah.length === 0 ? (
-      <EmptyState message="Tidak ada bid yang kalah. Semua bid Anda masih berjalan atau menang." />
-    ) : (
+  function List({ bids }: { bids: BidWithAuction[] }) {
+    if (bids.length === 0) {
+      return <EmptyState message="Tidak ada tawaran pada kategori ini." />;
+    }
+    return (
       <div className="flex flex-col gap-2">
-        {bidKalah.map((bid) => (
-          <AuctionListCard
-            key={bid.id}
-            image={bid.auction?.images?.[0] ?? null}
-            title={bid.auction?.title ?? "Lelang"}
-            href={`/auctions/${bid.auction?.id}`}
-            price={bid.auction?.current_price ?? 0}
-            badge={{ label: "TIDAK MENANG", variant: "default" }}
-            subInfo={`Bid saya: ${formatIDR(bid.amount)}`}
-          />
+        {bids.map((bid) => (
+          <BidRow key={bid.id} bid={bid} status={statusFor(bid)} />
         ))}
       </div>
     );
+  }
 
   return (
-    <ProfileTabs
-      variant="secondary"
-      defaultTab="berlangsung"
-      tabs={[
-        {
-          id: "berlangsung",
-          label: "Berlangsung",
-          count: berlangsungCount,
-          content: berlangsung,
-        },
-        {
-          id: "selesai",
-          label: "Selesai",
-          count: selesaiCount,
-          content: selesai,
-        },
-        {
-          id: "gagal",
-          label: "Gagal",
-          count: bidKalah.length,
-          content: gagal,
-        },
-      ]}
-    />
+    <div className="flex flex-col gap-5">
+      {/* Filter pills */}
+      <div className="flex flex-wrap gap-2">
+        {filters.map((f) => {
+          const active = f.key === filter;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                active
+                  ? "bg-slate-900 text-white"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+              }`}
+            >
+              {f.label}
+              <span
+                className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold ${
+                  active
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {f.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content */}
+      {filter === "semua" && <List bids={semua} />}
+      {filter === "berlangsung" && <List bids={bidAktif} />}
+      {filter === "gagal" && <List bids={bidKalah} />}
+
+      {filter === "belum_dibayar" &&
+        (belumDibayarCount === 0 ? (
+          <EmptyState message="Tidak ada pembelian yang menunggu pembayaran." />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {menangBelumTransaksi.map((a) => (
+              <AuctionListCard
+                key={a.id}
+                image={a.images?.[0] ?? null}
+                title={a.title}
+                href={`/auctions/${a.id}`}
+                price={a.current_price}
+                badge={{ label: "BELUM DIBAYAR", variant: "warning" }}
+                subInfo={
+                  a.seller
+                    ? `Seller: @${a.seller.username} · Selesaikan pembayaran ke seller`
+                    : "Selesaikan pembayaran ke seller"
+                }
+                chatHref={`/chat?seller=${a.seller_id}`}
+              />
+            ))}
+            {buyerTransactions.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {buyerTransactions.map((tx) => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+
+      {filter === "selesai" &&
+        (selesaiCount === 0 ? (
+          <EmptyState message="Belum ada pembelian yang selesai." />
+        ) : (
+          <div className="flex flex-col gap-6">
+            {completedPurchases.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {completedPurchases.map((tx) => (
+                  <TransactionCard
+                    key={tx.id}
+                    transaction={tx}
+                    currentUserId={currentUserId}
+                  />
+                ))}
+              </div>
+            )}
+            {showMenangFallback && <List bids={bidMenang} />}
+          </div>
+        ))}
+    </div>
   );
 }

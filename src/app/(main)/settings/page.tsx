@@ -34,9 +34,15 @@ export default async function SettingsPage({
       <MobileBackBar />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pengaturan Akun</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Kelola informasi dan keamanan akun kamu
+          <div className="mb-3 inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-teal-600">
+            <span className="h-px w-8 bg-teal-600" />
+            Akun Saya
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+            Pengaturan
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
+            Kelola informasi dan keamanan akun kamu.
           </p>
         </div>
         <AccountSettingsForm user={user} />

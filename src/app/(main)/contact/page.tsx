@@ -1,4 +1,4 @@
-import { ChevronDown, Clock, Mail, MessageCircle } from "lucide-react";
+import { ChevronDown, Clock, MessageCircle, MessageSquare } from "lucide-react";
 import type { Metadata } from "next";
 import { ComplaintForm } from "@/components/contact/ComplaintForm";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
@@ -8,30 +8,31 @@ export const metadata: Metadata = { title: "Hubungi Kami" };
 
 const faqs = [
   {
-    q: "Bagaimana cara melakukan bid?",
-    a: "Buka halaman detail lelang, masukkan jumlah bid Anda (minimal harga saat ini + kenaikan minimum), lalu klik tombol 'Pasang Bid'.",
+    q: "Bagaimana cara ikut lelang?",
+    a: "Daftar akun, buka lelang yang kamu minati, lalu pasang tawaran di atas harga tertinggi. Saat hitung mundur berakhir, penawar tertinggi memenangkan lelang.",
   },
   {
-    q: "Apa itu sistem Peringatan & Timeout?",
-    a: "Sistem peringatan mencatat pengguna yang terbukti melanggar aturan (bid run, penipuan, tidak membayar, dll.). Peringatan 1–2 kali hanya menampilkan badge peringatan pada profil. Setelah 3 peringatan terkonfirmasi, akun akan di-timeout otomatis selama 7 hari dan tidak dapat melakukan bid, buy now, maupun membuat lelang baru. Admin juga dapat meninjau dan mengelola peringatan secara manual.",
+    q: "Apa itu middleman dan kapan dipakai?",
+    a: "Middleman adalah perantara tepercaya yang menahan pembayaran hingga kartu sampai dengan aman. Cocok dipakai untuk transaksi bernilai tinggi atau saat kamu ingin jaminan ekstra.",
   },
   {
-    q: "Bagaimana cara melaporkan penjual/pembeli bermasalah?",
-    a: "Kunjungi profil pengguna atau halaman detail lelang, lalu klik tombol 'Laporkan'. Pilih alasan dan berikan deskripsi kejadian. Tim admin akan meninjau laporan Anda.",
+    q: "Bagaimana jika kartu tidak sesuai deskripsi?",
+    a: "Jangan konfirmasi transaksi. Laporkan lewat tombol Laporkan atau hubungi CS — dana yang ditahan middleman tidak akan diteruskan ke penjual sebelum masalah selesai.",
   },
   {
-    q: "Bagaimana sistem pembayaran bekerja?",
-    a: "TCG Auction menghubungkan pembeli dan penjual, tetapi tidak memproses pembayaran. Setelah lelang selesai, pembeli dan penjual mengatur pembayaran secara langsung.",
+    q: "Berapa biaya pasang lelang?",
+    a: "Membuat lelang gratis. Biaya hanya berlaku untuk layanan middleman opsional, sesuai kesepakatan antara pembeli dan penjual.",
   },
   {
-    q: "Apa yang terjadi jika pemenang lelang tidak membayar?",
-    a: "Penjual dapat melaporkan pembeli melalui halaman profil atau detail lelang. Jika laporan disetujui admin, pembeli mendapat 1 peringatan. Setelah 3 peringatan, akun akan di-timeout otomatis selama 7 hari.",
-  },
-  {
-    q: "Berapa lama lelang bisa berlangsung?",
-    a: "Penjual bebas menentukan durasi lelang saat membuat listing. Lelang otomatis ditutup saat waktu yang ditentukan berakhir.",
+    q: "Berapa lama lelang ditinjau sebelum tayang?",
+    a: "Lelang baru biasanya ditinjau admin dalam hitungan menit hingga beberapa jam pada jam kerja sebelum tayang ke publik.",
   },
 ];
+
+function formatPhone(raw: string): string {
+  const m = raw.match(/^(\d{2})(\d{3})(\d{4})(\d+)$/);
+  return m ? `+${m[1]} ${m[2]}-${m[3]}-${m[4]}` : `+${raw}`;
+}
 
 export default async function ContactPage() {
   const csPhone = process.env.NEXT_PUBLIC_CS_WHATSAPP ?? "6281234567890";
@@ -39,23 +40,43 @@ export default async function ContactPage() {
   return (
     <>
       <MobileBackBar />
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-10">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4 py-12 sm:px-6 lg:px-8">
+        {/* Heading */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hubungi Kami</h1>
-          <p className="text-gray-500 mt-1">Kami siap membantu Anda</p>
+          <div className="mb-3 inline-flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-teal-600">
+            <span className="h-px w-8 bg-teal-600" />
+            Pusat Bantuan
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+            Ada kendala? Kami bantu.
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600">
+            Hubungi tim CS untuk laporan transaksi, kendala lelang, atau
+            pertanyaan umum. Kami biasanya membalas dalam hitungan menit di jam
+            kerja.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col gap-4">
-            <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center">
-              <MessageCircle className="h-6 w-6 text-white" />
+        {/* Contact cards */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* WhatsApp */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-teal-200 bg-teal-50/60 p-6">
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-teal-600 text-white">
+                <MessageCircle className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  WhatsApp CS
+                </h2>
+                <p className="mt-0.5 text-sm text-slate-600">
+                  Jalur tercepat untuk laporan &amp; kendala mendesak.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">WhatsApp</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Chat langsung dengan customer service kami via WhatsApp
-              </p>
-            </div>
+            <p className="font-mono text-xl font-bold tracking-tight text-slate-900">
+              {formatPhone(csPhone)}
+            </p>
             <a
               href={buildWhatsAppUrl(
                 csPhone,
@@ -63,54 +84,85 @@ export default async function ContactPage() {
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white rounded-xl py-3 font-medium transition-colors"
+              className="flex items-center justify-center gap-2 rounded-full bg-teal-600 py-3.5 text-sm font-bold text-white shadow-sm shadow-teal-200 transition-colors hover:bg-teal-700"
             >
               <MessageCircle className="h-5 w-5" />
               Chat via WhatsApp
             </a>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-4">
-            <div className="w-12 h-12 bg-teal-100 rounded-2xl flex items-center justify-center">
-              <Clock className="h-6 w-6 text-teal-600" />
+          {/* Operating hours */}
+          <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6">
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-teal-50 text-teal-600">
+                <Clock className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Jam Operasional
+                </h2>
+                <p className="mt-0.5 text-sm text-slate-600">
+                  Tim CS siap membantu setiap hari.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">
-                Jam Operasional
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Senin - Jumat: 09.00 - 17.00 WIB
-              </p>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">Senin – Jumat</span>
+                <span className="font-mono font-semibold text-slate-900">
+                  09.00 – 21.00
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-600">Sabtu – Minggu</span>
+                <span className="font-mono font-semibold text-slate-900">
+                  10.00 – 18.00
+                </span>
+              </div>
             </div>
-            <div className="bg-teal-50 rounded-xl p-3 text-sm text-teal-700 flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0" />
-              Waktu respons: 1-2 hari kerja
+            <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-teal-500" />
+              Online — rata-rata balas &lt; 10 menit
             </div>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-5">
-            Form Keluhan
-          </h2>
-          <ComplaintForm csPhone={csPhone} />
+        {/* Report form */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-7">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-5">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-600">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                Kirim Laporan / Pertanyaan
+              </h2>
+              <p className="text-sm text-slate-500">
+                Isi formulir, kami teruskan ke CS lewat WhatsApp.
+              </p>
+            </div>
+          </div>
+          <div className="pt-6">
+            <ComplaintForm csPhone={csPhone} />
+          </div>
         </div>
 
+        {/* FAQ */}
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-5">
+          <h2 className="mb-4 text-xl font-extrabold tracking-tight text-slate-900">
             Pertanyaan Umum
           </h2>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             {faqs.map((faq) => (
               <details
                 key={faq.q}
-                className="group bg-white border border-gray-200 rounded-xl overflow-hidden"
+                className="group overflow-hidden rounded-xl border border-slate-200 bg-white"
               >
-                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer list-none font-medium text-gray-900 hover:bg-gray-50">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 font-semibold text-slate-900 transition-colors hover:bg-slate-50">
                   {faq.q}
-                  <ChevronDown className="h-4 w-4 text-gray-400 transition-transform group-open:rotate-180 shrink-0" />
+                  <ChevronDown className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-open:rotate-180" />
                 </summary>
-                <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed">
+                <div className="px-5 pb-4 text-sm leading-relaxed text-slate-600">
                   {faq.a}
                 </div>
               </details>

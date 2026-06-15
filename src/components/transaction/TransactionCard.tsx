@@ -8,6 +8,7 @@ import {
   Package,
   Star,
   Truck,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -97,6 +98,8 @@ export function TransactionCard({
   const isSeller = tx.seller_id === currentUserId;
   const isBuyer = tx.buyer_id === currentUserId;
   const isMiddleman = tx.middleman_id === currentUserId;
+  // Direct deal: no middleman, so no escrow/shipment lifecycle.
+  const isDirect = !tx.middleman_id;
 
   const currentStep = STATUS_ORDER[tx.status] ?? 0;
 
@@ -158,50 +161,60 @@ export function TransactionCard({
           </Link>
         </div>
 
-        {/* Stepper */}
-        <div className="px-4 py-3">
-          <div className="flex items-center gap-1">
-            {STEPS.map((step, i) => {
-              const done = i <= currentStep;
-              const active = i === currentStep;
-              return (
-                <div
-                  key={step.status}
-                  className="flex items-center flex-1 last:flex-none"
-                >
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={[
-                        "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                        done && !active ? "bg-emerald-500 text-white" : "",
-                        active
-                          ? "bg-teal-600 text-white ring-2 ring-teal-200"
-                          : "",
-                        !done ? "bg-gray-100 text-gray-400" : "",
-                      ].join(" ")}
-                    >
-                      {done && !active ? (
-                        <CheckCircle className="h-3 w-3" />
-                      ) : (
-                        i + 1
-                      )}
-                    </div>
-                    <span
-                      className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-teal-600 font-semibold" : done ? "text-emerald-600" : "text-gray-400"}`}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div
-                      className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-emerald-400" : "bg-gray-200"}`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+        {/* Stepper — only for escrow (middleman) transactions. Direct deals
+            have no shipment tracking, so a full progress bar looks odd. */}
+        {isDirect ? (
+          <div className="px-4 py-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
+              <CheckCircle className="h-3.5 w-3.5" />
+              Transaksi Selesai
+            </span>
           </div>
-        </div>
+        ) : (
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-1">
+              {STEPS.map((step, i) => {
+                const done = i <= currentStep;
+                const active = i === currentStep;
+                return (
+                  <div
+                    key={step.status}
+                    className="flex items-center flex-1 last:flex-none"
+                  >
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={[
+                          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
+                          done && !active ? "bg-emerald-500 text-white" : "",
+                          active
+                            ? "bg-teal-600 text-white ring-2 ring-teal-200"
+                            : "",
+                          !done ? "bg-gray-100 text-gray-400" : "",
+                        ].join(" ")}
+                      >
+                        {done && !active ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          i + 1
+                        )}
+                      </div>
+                      <span
+                        className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-teal-600 font-semibold" : done ? "text-emerald-600" : "text-gray-400"}`}
+                      >
+                        {step.label}
+                      </span>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                      <div
+                        className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-emerald-400" : "bg-gray-200"}`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Status detail */}
         <div className="px-4 pb-3">
@@ -282,8 +295,8 @@ export function TransactionCard({
             </button>
           )}
 
-          {/* Buyer: konfirmasi penerimaan */}
-          {isBuyer && tx.status === "shipped" && (
+          {/* Buyer: konfirmasi penerimaan (escrow) */}
+          {isBuyer && !isDirect && tx.status === "shipped" && (
             <button
               type="button"
               onClick={() => setShowReceipt(true)}
@@ -293,6 +306,30 @@ export function TransactionCard({
               Konfirmasi Penerimaan
             </button>
           )}
+
+          {/* Buyer: upload bukti penerimaan (transaksi direct) */}
+          {isBuyer &&
+            isDirect &&
+            (tx.receipt_photo_url ? (
+              <a
+                href={tx.receipt_photo_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-2 border border-emerald-200 text-sm text-emerald-700 rounded-xl hover:bg-emerald-50"
+              >
+                <Eye className="h-4 w-4" />
+                Lihat Bukti Penerimaan
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowReceipt(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Bukti Penerimaan
+              </button>
+            ))}
 
           {/* Middleman: lepaskan dana */}
           {isMiddleman &&
@@ -397,6 +434,7 @@ export function TransactionCard({
         <ReceiptProofModal
           transactionId={tx.id}
           auctionTitle={auctionTitle}
+          directFlow={isDirect}
           onClose={() => setShowReceipt(false)}
           onSuccess={() => {
             setShowReceipt(false);

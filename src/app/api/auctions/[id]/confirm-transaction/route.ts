@@ -23,7 +23,9 @@ export async function POST(
 
   const { data: auction, error: auctionError } = await db
     .from("auctions")
-    .select("id, seller_id, winner_id, status, transaction_confirmed, title")
+    .select(
+      "id, seller_id, winner_id, status, transaction_confirmed, title, current_price",
+    )
     .eq("id", auctionId)
     .single();
 
@@ -72,6 +74,32 @@ export async function POST(
       { error: "Gagal mengkonfirmasi transaksi" },
       { status: 500 },
     );
+  }
+
+  // Ensure a completed transaction row exists so the buyer can leave a review.
+  // The direct (non-escrow) flow never creates a `transactions` row, but the
+  // review API keys off a completed transaction — so we create/complete one here.
+  const { data: existingTx } = await db
+    .from("transactions")
+    .select("id, status")
+    .eq("auction_id", auctionId)
+    .maybeSingle();
+
+  if (existingTx) {
+    if (existingTx.status !== "completed") {
+      await db
+        .from("transactions")
+        .update({ status: "completed" })
+        .eq("id", existingTx.id);
+    }
+  } else {
+    await db.from("transactions").insert({
+      auction_id: auctionId,
+      seller_id: auction.seller_id,
+      buyer_id: auction.winner_id,
+      amount: auction.current_price,
+      status: "completed",
+    });
   }
 
   // Increment successful_sales for seller

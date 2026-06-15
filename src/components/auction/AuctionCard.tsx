@@ -1,9 +1,8 @@
 "use client";
 
-import { Clock, Eye, Gavel, Truck } from "lucide-react";
+import { Clock, Gavel, ShoppingBag, Star, Truck } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { getCategoryIcon } from "@/lib/categories";
 import { createClient } from "@/lib/supabase/client";
 import { formatIDR, getTimeRemaining } from "@/lib/utils";
@@ -14,7 +13,11 @@ interface AuctionCardProps {
     seller?: Pick<Profile, "username" | "name">;
     category?: Pick<Category, "name" | "slug">;
     _count?: { bids: number };
+    bids?: { count: number }[];
+    sellerRating?: number | null;
   };
+  /** When true, an active card shows a "Tawar Sekarang" hover affordance (still links to the detail page). */
+  enableQuickBid?: boolean;
 }
 
 const conditionLabels: Record<string, string> = {
@@ -27,92 +30,50 @@ const conditionLabels: Record<string, string> = {
   damaged: "Damaged",
 };
 
-const conditionColors: Record<
-  string,
-  "success" | "info" | "warning" | "danger" | "default"
-> = {
-  mint: "success",
-  near_mint: "success",
-  excellent: "info",
-  good: "info",
-  light_play: "warning",
-  heavy_play: "warning",
-  damaged: "danger",
+const conditionDot: Record<string, string> = {
+  mint: "bg-teal-500",
+  near_mint: "bg-teal-500",
+  excellent: "bg-amber-500",
+  good: "bg-amber-500",
+  light_play: "bg-orange-500",
+  heavy_play: "bg-orange-500",
+  damaged: "bg-red-500",
 };
 
-function getStatusLabel(
-  status: Auction["status"],
-  winnerId: string | null,
-): string {
-  if (status === "closed") return winnerId ? "Selesai" : "Gagal";
-  if (status === "completed") return "Terkonfirmasi";
-  if (status === "cancelled") return "Dibatalkan";
-  if (status === "active") return "Aktif";
-  return status;
-}
-
-function getStatusVariant(
-  status: Auction["status"],
-  winnerId: string | null,
-): "success" | "danger" | "warning" | "default" {
-  if (status === "completed") return "success";
-  if (status === "cancelled") return "danger";
-  if (status === "closed") return winnerId ? "default" : "danger";
-  return "default";
-}
-
-function CountdownBadge({
-  endTime,
-  hasWinner,
-}: {
-  endTime: string;
-  hasWinner: boolean;
-}) {
+function Countdown({ endTime }: { endTime: string }) {
   const [time, setTime] = useState<ReturnType<typeof getTimeRemaining> | null>(
     null,
   );
-
   useEffect(() => {
     setTime(getTimeRemaining(endTime));
-    const interval = setInterval(() => {
-      setTime(getTimeRemaining(endTime));
-    }, 1000);
-    return () => clearInterval(interval);
+    const t = setInterval(() => setTime(getTimeRemaining(endTime)), 1000);
+    return () => clearInterval(t);
   }, [endTime]);
 
-  if (time?.expired) {
-    return <Badge variant="danger">{hasWinner ? "Selesai" : "Gagal"}</Badge>;
-  }
-
-  if (!time) return null;
-
-  const isUrgent = time.total < 3600;
-
+  if (!time) return <span>--:--</span>;
+  if (time.expired) return <span>Berakhir</span>;
+  const urgent = time.total < 3600;
   return (
-    <Badge
-      variant={isUrgent ? "danger" : "warning"}
-      className="font-mono text-xs shadow-sm"
-    >
-      <Clock className="h-3 w-3 mr-1" />
+    <span className={urgent ? "text-white" : ""}>
       {time.days > 0
-        ? `${time.days}h ${time.hours}j`
+        ? `${time.days}h ${String(time.hours).padStart(2, "0")}j`
         : `${String(time.hours).padStart(2, "0")}:${String(time.minutes).padStart(2, "0")}:${String(time.seconds).padStart(2, "0")}`}
-    </Badge>
+    </span>
   );
 }
 
-export function AuctionCard({ auction }: AuctionCardProps) {
+export function AuctionCard({
+  auction,
+  enableQuickBid = false,
+}: AuctionCardProps) {
   const [status, setStatus] = useState<Auction["status"]>(auction.status);
   const [winnerId, setWinnerId] = useState<string | null>(auction.winner_id);
-  // Client-side expiry: hides Buy Now as soon as the timer runs out, even if
-  // the DB hasn't been updated yet (lazy close runs on next page load)
   const [clientExpired, setClientExpired] = useState(() =>
     auction.status === "active" && !!auction.end_time
       ? new Date(auction.end_time) < new Date()
       : false,
   );
 
-  // Schedule expiry exactly when end_time hits (no polling)
   useEffect(() => {
     if (status !== "active" || !auction.end_time) return;
     const diff = new Date(auction.end_time).getTime() - Date.now();
@@ -124,7 +85,6 @@ export function AuctionCard({ auction }: AuctionCardProps) {
     return () => clearTimeout(t);
   }, [status, auction.end_time]);
 
-  // Realtime: sync status changes from DB (buy-now, admin close, etc.)
   useEffect(() => {
     if (status !== "active") return;
     const supabase = createClient();
@@ -157,138 +117,153 @@ export function AuctionCard({ auction }: AuctionCardProps) {
 
   const isActive = status === "active" && !clientExpired;
   const hasWinner = !!winnerId;
+  const bidCount = auction._count?.bids ?? auction.bids?.[0]?.count ?? 0;
+  const quickBid = enableQuickBid && isActive;
+  const urgent =
+    isActive && auction.end_time
+      ? new Date(auction.end_time).getTime() - Date.now() < 3600 * 1000
+      : false;
 
-  return (
-    <Link
-      href={`/auctions/${auction.id}`}
-      className="group block bg-white rounded-xl border border-slate-100 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-100/60 transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
-    >
-      {/* Image */}
-      <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-50 to-teal-50 overflow-hidden">
+  const inner = (
+    <>
+      {/* Art */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-slate-100 to-teal-50">
         {auction.images[0] ? (
-          // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
+          // biome-ignore lint/performance/noImgElement: Supabase CDN URL
           <img
             src={auction.images[0]}
             alt={auction.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Gavel className="h-12 w-12 text-slate-200" />
+          <div className="grid h-full w-full place-items-center">
+            <Gavel className="h-10 w-10 text-slate-300" />
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-        {/* Status / countdown badge — top left */}
-        <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
+        {/* Countdown / status — top left */}
+        <div className="absolute left-2.5 top-2.5">
           {isActive && auction.end_time ? (
-            <CountdownBadge endTime={auction.end_time} hasWinner={hasWinner} />
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 font-mono text-xs font-bold text-white shadow-sm ${
+                urgent ? "bg-red-500" : "bg-teal-600"
+              }`}
+            >
+              <Clock className="h-3 w-3" />
+              <Countdown endTime={auction.end_time} />
+            </span>
           ) : (
-            <Badge variant={getStatusVariant(status, winnerId)}>
-              {getStatusLabel(status, winnerId)}
-            </Badge>
+            <span className="inline-flex rounded-lg bg-slate-700/90 px-2.5 py-1 text-xs font-bold text-white">
+              {hasWinner ? "Selesai" : "Gagal"}
+            </span>
           )}
         </div>
 
-        {/* Buy Now badge — top right, only while truly active */}
-        {auction.buy_now_price && isActive && (
-          <div className="absolute top-2 right-2">
-            <Badge variant="info" className="shadow-sm">
-              Buy Now
-            </Badge>
+        {/* Badges — bottom left */}
+        <div className="absolute bottom-2.5 left-2.5 flex flex-wrap gap-1.5">
+          {urgent && isActive && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-red-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+              Hot
+            </span>
+          )}
+          {auction.buy_now_price && isActive && (
+            <span className="inline-flex items-center rounded-md bg-[#28245e] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+              Beli Langsung
+            </span>
+          )}
+          {auction.free_shipping && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-white/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-teal-700 backdrop-blur">
+              <Truck className="h-3 w-3" />
+              Gratis
+            </span>
+          )}
+        </div>
+
+        {/* Hover action */}
+        {quickBid && (
+          <div className="absolute inset-x-2.5 bottom-2.5 translate-y-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+            <span className="flex h-9 items-center justify-center gap-1.5 rounded-lg bg-slate-900 text-[13px] font-bold text-white">
+              <ShoppingBag className="h-4 w-4" />
+              Tawar Sekarang
+            </span>
           </div>
         )}
       </div>
 
-      {/* Card body */}
-      <div className="p-3">
-        {/* Category + condition */}
-        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-          {auction.category && (
-            <span className="flex items-center gap-1 text-xs text-teal-500 font-medium">
-              {getCategoryIcon(auction.category.slug) && (
-                // biome-ignore lint/performance/noImgElement: small local category icon
-                <img
-                  src={getCategoryIcon(auction.category.slug) as string}
-                  alt=""
-                  className="w-4 h-4 object-contain shrink-0"
-                />
-              )}
-              {auction.category.name}
-            </span>
-          )}
-          <span className="text-slate-200">·</span>
-          <Badge
-            variant={conditionColors[auction.condition] ?? "default"}
-            className="text-xs"
-          >
+      {/* Body */}
+      <div className="flex flex-1 flex-col p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="flex min-w-0 items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            {getCategoryIcon(auction.category?.slug ?? "") && (
+              // biome-ignore lint/performance/noImgElement: local icon
+              <img
+                src={getCategoryIcon(auction.category?.slug ?? "") as string}
+                alt=""
+                className="h-3.5 w-3.5 shrink-0 object-contain"
+              />
+            )}
+            <span className="truncate">{auction.category?.name}</span>
+          </span>
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${conditionDot[auction.condition] ?? "bg-slate-400"}`}
+            />
             {conditionLabels[auction.condition] ?? auction.condition}
-          </Badge>
-          {auction.free_shipping && (
-            <Badge variant="success" className="text-xs">
-              <span className="inline-flex items-center gap-1">
-                <Truck className="h-3 w-3" />
-                Gratis Ongkir
-              </span>
-            </Badge>
-          )}
+          </span>
         </div>
 
-        <h3 className="font-semibold text-slate-800 text-sm line-clamp-2 mb-2 group-hover:text-teal-600 transition-colors duration-200">
+        <h3 className="mb-2.5 line-clamp-2 min-h-[2.5rem] text-[13px] font-semibold leading-snug text-slate-900 group-hover:text-teal-600">
           {auction.title}
         </h3>
 
-        {/* Prices */}
-        {auction.buy_now_price && isActive ? (
-          <div className="grid grid-cols-2 gap-2 mb-0">
-            <div className="min-w-0">
-              <p className="text-[10px] text-slate-400 leading-tight">
-                Harga Saat Ini
-              </p>
-              <p className="text-xs font-bold text-teal-600 truncate leading-tight">
-                {formatIDR(auction.current_price)}
-              </p>
-            </div>
-            <div className="text-right min-w-0">
-              <p className="text-[10px] text-slate-400 leading-tight">
-                Buy Now
-              </p>
-              <p className="text-xs font-semibold text-emerald-600 truncate leading-tight">
-                {formatIDR(auction.buy_now_price)}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-0">
-            <p className="text-[10px] text-slate-400 leading-tight">
-              {status === "completed" ? "Harga Final" : "Harga Saat Ini"}
-            </p>
-            <p className="text-sm font-bold text-teal-600 leading-tight">
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[10px] text-slate-400">Tawaran Tertinggi</p>
+            <p className="mt-0.5 font-mono text-base font-bold tracking-tight text-teal-600">
               {formatIDR(auction.current_price)}
             </p>
           </div>
-        )}
+          {auction.buy_now_price && isActive && (
+            <div className="text-right">
+              <p className="text-[10px] text-slate-400">Beli Langsung</p>
+              <p className="mt-0.5 font-mono text-xs font-bold text-indigo-700">
+                {formatIDR(auction.buy_now_price)}
+              </p>
+            </div>
+          )}
+        </div>
 
-        {/* Footer: bids + views + seller */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
-          <div className="flex items-center gap-3 text-xs text-slate-400">
-            <span className="flex items-center gap-1">
-              <Gavel className="h-3 w-3" />
-              {auction._count?.bids ?? 0} bid
-            </span>
-            <span className="flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {auction.view_count}
-            </span>
-          </div>
+        <div className="mt-2.5 flex items-center justify-between border-t border-slate-100 pt-2.5 text-[11px] text-slate-400">
+          <span className="inline-flex items-center gap-1">
+            <Gavel className="h-3 w-3" />
+            {bidCount} tawaran
+          </span>
           {auction.seller && (
-            <span className="text-xs text-slate-400 truncate max-w-[80px]">
-              @{auction.seller.username}
+            <span className="inline-flex items-center gap-1 truncate">
+              <span className="truncate text-slate-500">
+                @{auction.seller.username}
+              </span>
+              {auction.sellerRating != null && (
+                <>
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <span className="font-semibold text-slate-600">
+                    {auction.sellerRating.toFixed(1)}
+                  </span>
+                </>
+              )}
             </span>
           )}
         </div>
       </div>
+    </>
+  );
+
+  const cardCls =
+    "group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg";
+
+  return (
+    <Link href={`/auctions/${auction.id}`} className={cardCls}>
+      {inner}
     </Link>
   );
 }

@@ -4,34 +4,34 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-gradient-to-b from-slate-800 to-slate-900 text-slate-400 mt-auto">
+    <footer className="bg-white border-t border-slate-200 text-slate-500 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-teal-900/30">
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-slate-200">
                 {/* biome-ignore lint/performance/noImgElement: small local SVG logo asset */}
                 <img src="/logo.svg" alt="TCG Auction" className="w-8 h-8" />
               </div>
-              <span className="font-bold text-white">
-                TCG <span className="text-teal-400">Auction</span>
+              <span className="font-bold text-slate-900">
+                TCG <span className="text-teal-600">Auction</span>
               </span>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400">
+            <p className="text-sm leading-relaxed text-slate-500">
               TCG Auction adalah platform lelang kartu TCG terpercaya di
               Indonesia.
             </p>
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wide">
               Tautan
             </h3>
             <ul className="flex flex-col gap-2 text-sm">
               <li>
                 <Link
-                  href="/auctions"
-                  className="hover:text-slate-300 transition-colors"
+                  href="/#lelang"
+                  className="text-slate-600 hover:text-teal-600 transition-colors"
                 >
                   Lelang
                 </Link>
@@ -39,7 +39,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/middleman"
-                  className="hover:text-slate-300 transition-colors"
+                  className="text-slate-600 hover:text-teal-600 transition-colors"
                 >
                   Middleman
                 </Link>
@@ -47,7 +47,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/contact"
-                  className="hover:text-slate-300 transition-colors"
+                  className="text-slate-600 hover:text-teal-600 transition-colors"
                 >
                   Hubungi Kami
                 </Link>
@@ -56,7 +56,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-slate-300 mb-3 uppercase tracking-wide">
+            <h3 className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wide">
               Kontak
             </h3>
             <ul className="flex flex-col gap-2 text-sm">
@@ -65,7 +65,7 @@ export function Footer() {
                   href={`https://wa.me/${process.env.NEXT_PUBLIC_CS_WHATSAPP}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-slate-300 transition-colors"
+                  className="text-slate-600 hover:text-teal-600 transition-colors"
                 >
                   WhatsApp CS
                 </a>
@@ -74,7 +74,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-700/50 mt-8 pt-6 text-xs text-center text-slate-500">
+        <div className="border-t border-slate-200 mt-8 pt-6 text-xs text-center text-slate-400">
           © {year} TCG Auction. Hak cipta dilindungi.
         </div>
       </div>

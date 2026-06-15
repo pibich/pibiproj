@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, Users } from "lucide-react";
+import { ClipboardList, Info, ShieldCheck, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useChannelStateContext, useChatContext } from "stream-chat-react";
 import { getInitials } from "@/lib/utils";
@@ -61,9 +61,21 @@ export function CustomChannelHeader() {
       other?.user?.name ?? (channel.data?.name as string | undefined) ?? "Chat";
   }
 
+  const otherMembers = members.filter((m) => m.user?.id !== currentUserId);
   const displayMembers = isGroup
-    ? members.filter((m) => m.user?.id !== currentUserId).slice(0, 5)
-    : members.filter((m) => m.user?.id !== currentUserId).slice(0, 1);
+    ? otherMembers.slice(0, 5)
+    : otherMembers.slice(0, 1);
+
+  // Presence + subtitle for the conversation header
+  const isOnline = otherMembers.some((m) => m.user?.online);
+  const subtitle = isGroup
+    ? `${memberCount} anggota`
+    : [
+        isOnline ? "Online" : "Offline",
+        hasMiddleman ? "Middleman terverifikasi" : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
   return (
     <>
@@ -75,24 +87,29 @@ export function CustomChannelHeader() {
             const name = m.user?.name ?? "";
             const image = m.user?.image as string | undefined;
             return (
-              <button
-                type="button"
-                key={uid ?? name}
-                onClick={() => uid && setProfileUserId(uid)}
-                title={name}
-                className="w-9 h-9 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-teal-700 text-xs font-semibold overflow-hidden shrink-0 hover:z-10 hover:scale-110 transition-transform relative"
-              >
-                {image ? (
-                  // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
-                  <img
-                    src={image}
-                    alt={name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  getInitials(name)
+              <div key={uid ?? name} className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => uid && setProfileUserId(uid)}
+                  title={name}
+                  className="w-9 h-9 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-teal-700 text-xs font-semibold overflow-hidden hover:z-10 hover:scale-110 transition-transform relative"
+                >
+                  {image ? (
+                    // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
+                    <img
+                      src={image}
+                      alt={name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(name)
+                  )}
+                </button>
+                {/* Online dot — DM only */}
+                {!isGroup && m.user?.online && (
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-teal-500 border-2 border-white" />
                 )}
-              </button>
+              </div>
             );
           })}
           {isGroup && memberCount > displayMembers.length + 1 && (
@@ -107,12 +124,10 @@ export function CustomChannelHeader() {
           <p className="text-sm font-semibold text-gray-900 truncate">
             {title}
           </p>
-          {isGroup && (
-            <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
-              <Users className="h-3 w-3" />
-              <span>{memberCount} anggota</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+            {isGroup && <Users className="h-3 w-3 shrink-0" />}
+            <span className="truncate font-mono">{subtitle}</span>
+          </div>
         </div>
 
         {/* Form Middleman button — grup atau DM yang mengandung middleman */}
@@ -127,7 +142,33 @@ export function CustomChannelHeader() {
             <span className="hidden sm:inline">Form Middleman</span>
           </button>
         )}
+
+        {/* Info — opens the other member's profile (DM) */}
+        {!isGroup && otherMembers[0]?.user?.id && (
+          <button
+            type="button"
+            onClick={() => {
+              const uid = otherMembers[0]?.user?.id;
+              if (uid) setProfileUserId(uid);
+            }}
+            title="Info kontak"
+            className="shrink-0 p-2 rounded-full text-gray-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+          >
+            <Info className="h-5 w-5" />
+          </button>
+        )}
       </div>
+
+      {/* Middleman active banner */}
+      {hasMiddleman && (
+        <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-teal-50 border-b border-teal-100 text-teal-700 text-xs sm:text-sm">
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span>
+            Middleman aktif di percakapan ini — dana ditahan sampai kartu
+            diterima.
+          </span>
+        </div>
+      )}
 
       {profileUserId && (
         <UserProfileModal

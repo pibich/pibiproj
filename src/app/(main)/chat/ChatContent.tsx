@@ -65,8 +65,7 @@ export function ChatContent({
   return (
     <div className="min-h-screen bg-slate-50 py-6 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto flex flex-col gap-4">
-        <h1 className="text-xl font-bold text-gray-900">Pesan</h1>
-        <div style={{ height: "min(calc(100dvh - 10rem), 680px)" }}>
+        <div style={{ height: "min(calc(100dvh - 6rem), 720px)" }}>
           <ChatWidget
             currentUser={currentUser}
             targetUserId={seller}

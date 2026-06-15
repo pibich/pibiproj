@@ -1,21 +1,30 @@
 "use client";
 
 import imageCompression from "browser-image-compression";
-import { AlertCircle, Clock, ImagePlus, Loader2, X } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Gavel,
+  Loader2,
+  Star,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Combobox } from "@/components/ui/Combobox";
-import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { getCategoryIcon } from "@/lib/categories";
 import { containsProfanity } from "@/lib/profanity";
 import { createClient } from "@/lib/supabase/client";
+import { formatIDR, getTimeRemaining } from "@/lib/utils";
 import type { Category } from "@/types/supabase";
 
 const BUCKET = "auction-images";
 const MAX_IMAGES = 5;
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB raw-input guard (compression targets 1 MB output)
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 1,
@@ -33,11 +42,21 @@ const conditionLabels: Record<string, string> = {
   damaged: "Damaged",
 };
 
+const fieldCls =
+  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100";
+const labelCls = "mb-2 block text-sm font-semibold text-slate-700";
+
 interface CreateAuctionFormProps {
   categories: Category[];
+  sellerUsername: string;
+  sellerRating: number | null;
 }
 
-export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
+export function CreateAuctionForm({
+  categories,
+  sellerUsername,
+  sellerRating,
+}: CreateAuctionFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -46,9 +65,15 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
   const [successOpen, setSuccessOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  // Controlled fields (also feed the live preview)
+  const [title, setTitle] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [conditionVal, setConditionVal] = useState("");
+  const [startingPrice, setStartingPrice] = useState("");
+  const [buyNowPrice, setBuyNowPrice] = useState("");
   const [freeShipping, setFreeShipping] = useState(false);
+  const [endAt, setEndAt] = useState("");
 
   const conditions = [
     "mint",
@@ -59,6 +84,16 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
     "heavy_play",
     "damaged",
   ] as const;
+
+  const previewCategory = categories.find((c) => c.id === categoryId);
+  const previewRemaining = (() => {
+    if (!endAt) return null;
+    const t = getTimeRemaining(new Date(endAt));
+    if (t.expired) return null;
+    return t.days > 0
+      ? `${t.days}h ${String(t.hours).padStart(2, "0")}j`
+      : `${String(t.hours).padStart(2, "0")}:${String(t.minutes).padStart(2, "0")}`;
+  })();
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -136,7 +171,6 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
     const form = e.currentTarget;
     const data = new FormData(form);
 
-    const title = data.get("title") as string;
     if (containsProfanity(title)) {
       setError("Judul lelang mengandung kata yang tidak pantas.");
       return;
@@ -147,20 +181,13 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
       return;
     }
 
-    const startDateStr = data.get("start_date") as string;
-    const startTimeVal = data.get("start_time_val") as string;
-    const endDateStr = data.get("end_date") as string;
-    const endTimeVal = data.get("end_time_val") as string;
-    const startingPrice = Number(data.get("starting_price"));
-    const buyNowPrice = data.get("buy_now_price")
-      ? Number(data.get("buy_now_price"))
-      : null;
+    const startStr = data.get("start_at") as string;
+    const endStr = data.get("end_at") as string;
+    const startingPriceNum = Number(startingPrice);
+    const buyNowNum = buyNowPrice ? Number(buyNowPrice) : null;
 
-    const startTimeISO =
-      startDateStr && startTimeVal
-        ? new Date(`${startDateStr}T${startTimeVal}`).toISOString()
-        : null;
-    const endTimeISO = new Date(`${endDateStr}T${endTimeVal}`).toISOString();
+    const startTimeISO = startStr ? new Date(startStr).toISOString() : null;
+    const endTimeISO = new Date(endStr).toISOString();
 
     const effectiveStart = startTimeISO ? new Date(startTimeISO) : new Date();
     const endDate = new Date(endTimeISO);
@@ -170,16 +197,15 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
       return;
     }
 
-    const maxDays = 14;
     const diffDays =
       (endDate.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24);
-    if (diffDays > maxDays) {
+    if (diffDays > 14) {
       setError("Durasi lelang maksimal 2 minggu (14 hari).");
       return;
     }
 
-    if (buyNowPrice !== null && buyNowPrice <= startingPrice) {
-      setError("Harga Buy Now harus lebih tinggi dari harga mulai.");
+    if (buyNowNum !== null && buyNowNum <= startingPriceNum) {
+      setError("Harga Beli Langsung harus lebih tinggi dari harga mulai.");
       return;
     }
 
@@ -188,13 +214,13 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: data.get("title"),
+          title,
           description: data.get("description"),
           category_id: data.get("category_id"),
           condition: data.get("condition"),
-          starting_price: startingPrice,
-          current_price: startingPrice,
-          buy_now_price: buyNowPrice,
+          starting_price: startingPriceNum,
+          current_price: startingPriceNum,
+          buy_now_price: buyNowNum,
           min_bid_increment: Number(data.get("min_bid_increment")) || 1000,
           free_shipping: freeShipping,
           images,
@@ -208,9 +234,6 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
       if (!res.ok) {
         setError(json.error ?? "Gagal membuat lelang");
       } else {
-        // Show a "pending approval" confirmation instead of navigating straight
-        // to the auction page — the new auction is pending and that detail page
-        // is heavy, which previously made the post sometimes feel stuck.
         setSuccessOpen(true);
       }
     });
@@ -220,303 +243,450 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
     setSuccessOpen(false);
     setError(null);
     setImages([]);
+    setTitle("");
     setCategoryId("");
     setConditionVal("");
+    setStartingPrice("");
+    setBuyNowPrice("");
     setFreeShipping(false);
+    setEndAt("");
     formRef.current?.reset();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const checklist = [
+    "Foto kartu yang jelas (depan & belakang) menaikkan kepercayaan pembeli.",
+    "Cantumkan grading & nomor set di deskripsi.",
+    "Gunakan middleman untuk transaksi bernilai tinggi.",
+  ];
+
   return (
     <>
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-5"
-      >
-        {/* ── Cluster 1: Informasi Kartu ────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-          <h2 className="text-sm font-semibold text-gray-700">
-            Informasi Kartu
-          </h2>
+      <form ref={formRef} onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_350px]">
+          {/* ── Left: form sections ── */}
+          <div className="flex flex-col gap-6">
+            {/* Section 1 */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                  1
+                </span>
+                <h2 className="text-base font-bold text-slate-900">
+                  Informasi Kartu
+                </h2>
+              </div>
 
-          <Input
-            id="title"
-            name="title"
-            label="Judul Lelang"
-            placeholder="contoh: Charizard Holo Base Set PSA 10"
-            required
-          />
+              <div className="flex flex-col gap-5">
+                <div>
+                  <label htmlFor="title" className={labelCls}>
+                    Judul Lelang <span className="text-teal-600">*</span>
+                  </label>
+                  <input
+                    id="title"
+                    name="title"
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="contoh: Charizard ex 199/165 Special Art Rare — SV151"
+                    className={fieldCls}
+                  />
+                </div>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="description"
-              className="text-sm font-medium text-gray-700"
-            >
-              Deskripsi
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              rows={4}
-              placeholder="Jelaskan kondisi kartu, nomor set, edisi, dll."
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
-            />
+                <div>
+                  <label htmlFor="description" className={labelCls}>
+                    Deskripsi
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    placeholder="Jelaskan kondisi kartu, nomor set, edisi, grading, dll."
+                    className={`${fieldCls} resize-none`}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="photo-upload" className={labelCls}>
+                    Foto Kartu (maks. {MAX_IMAGES}){" "}
+                    <span className="text-teal-600">*</span>
+                  </label>
+                  <input
+                    id="photo-upload"
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPTED_TYPES.join(",")}
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <div className="flex flex-wrap gap-2.5">
+                    {images.map((img, i) => (
+                      <div key={img} className="group relative">
+                        {/* biome-ignore lint/performance/noImgElement: Supabase CDN URL */}
+                        <img
+                          src={img}
+                          alt={`Gambar ${i + 1}`}
+                          className="h-24 w-24 rounded-xl border border-slate-200 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i)}
+                          className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {images.length < MAX_IMAGES && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="grid h-24 w-24 place-items-center gap-1 rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition-colors hover:border-teal-400 hover:text-teal-500 disabled:opacity-50"
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <span className="flex flex-col items-center gap-1">
+                            <UploadCloud className="h-5 w-5" />
+                            <span className="text-xs font-medium">Upload</span>
+                          </span>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    JPG, PNG, WebP, GIF · dikompres otomatis
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 2 */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                  2
+                </span>
+                <h2 className="text-base font-bold text-slate-900">
+                  Detail Lelang
+                </h2>
+              </div>
+
+              <div className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="category_id" className={labelCls}>
+                      Kategori <span className="text-teal-600">*</span>
+                    </label>
+                    <Combobox
+                      id="category_id"
+                      name="category_id"
+                      options={categories.map((cat) => ({
+                        value: cat.id,
+                        label: cat.name,
+                        icon: getCategoryIcon(cat.slug),
+                      }))}
+                      value={categoryId}
+                      onChange={setCategoryId}
+                      placeholder="Pilih kategori"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="condition" className={labelCls}>
+                      Kondisi <span className="text-teal-600">*</span>
+                    </label>
+                    <Combobox
+                      id="condition"
+                      name="condition"
+                      options={conditions.map((c) => ({
+                        value: c,
+                        label: conditionLabels[c],
+                      }))}
+                      value={conditionVal}
+                      onChange={setConditionVal}
+                      placeholder="Pilih kondisi"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="starting_price" className={labelCls}>
+                      Harga Mulai (Rp) <span className="text-teal-600">*</span>
+                    </label>
+                    <div className="flex items-center rounded-xl border border-slate-200 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+                      <span className="pl-4 pr-1 font-mono text-sm text-slate-400">
+                        Rp
+                      </span>
+                      <input
+                        id="starting_price"
+                        type="number"
+                        min={1000}
+                        required
+                        value={startingPrice}
+                        onChange={(e) => setStartingPrice(e.target.value)}
+                        placeholder="50.000"
+                        className="w-full bg-transparent py-3 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="buy_now_price" className={labelCls}>
+                      Harga Beli Langsung{" "}
+                      <span className="font-normal text-slate-400">
+                        (opsional)
+                      </span>
+                    </label>
+                    <div className="flex items-center rounded-xl border border-slate-200 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+                      <span className="pl-4 pr-1 font-mono text-sm text-slate-400">
+                        Rp
+                      </span>
+                      <input
+                        id="buy_now_price"
+                        type="number"
+                        min={1000}
+                        value={buyNowPrice}
+                        onChange={(e) => setBuyNowPrice(e.target.value)}
+                        placeholder="kosongkan jika tidak ada"
+                        className="w-full bg-transparent py-3 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="min_bid_increment" className={labelCls}>
+                    Kenaikan Bid Minimum (Rp){" "}
+                    <span className="text-teal-600">*</span>
+                  </label>
+                  <div className="flex items-center rounded-xl border border-slate-200 transition-colors focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
+                    <span className="pl-4 pr-1 font-mono text-sm text-slate-400">
+                      Rp
+                    </span>
+                    <input
+                      id="min_bid_increment"
+                      name="min_bid_increment"
+                      type="number"
+                      min={500}
+                      required
+                      defaultValue={50000}
+                      className="w-full bg-transparent py-3 pr-4 text-sm text-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <span className={labelCls}>Ongkos Kirim</span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setFreeShipping(true)}
+                      aria-pressed={freeShipping}
+                      className={`rounded-xl py-3 text-sm font-semibold transition-colors ${
+                        freeShipping
+                          ? "bg-teal-600 text-white"
+                          : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      Gratis Ongkir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFreeShipping(false)}
+                      aria-pressed={!freeShipping}
+                      className={`rounded-xl py-3 text-sm font-semibold transition-colors ${
+                        !freeShipping
+                          ? "bg-slate-900 text-white"
+                          : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                      }`}
+                    >
+                      Ditanggung Pembeli
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    {freeShipping
+                      ? "Kamu (penjual) menanggung biaya pengiriman."
+                      : "Biaya pengiriman ditanggung oleh pemenang lelang."}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Section 3 */}
+            <section className="rounded-2xl border border-slate-200 bg-white p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-900 text-xs font-bold text-white">
+                  3
+                </span>
+                <h2 className="text-base font-bold text-slate-900">
+                  Waktu Lelang
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="start_at" className={labelCls}>
+                    Waktu Mulai{" "}
+                    <span className="font-normal text-slate-400">
+                      (opsional)
+                    </span>
+                  </label>
+                  <input
+                    id="start_at"
+                    name="start_at"
+                    type="datetime-local"
+                    className={fieldCls}
+                  />
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    Kosongkan untuk mulai langsung saat disetujui.
+                  </p>
+                </div>
+                <div>
+                  <label htmlFor="end_at" className={labelCls}>
+                    Waktu Selesai <span className="text-teal-600">*</span>
+                  </label>
+                  <input
+                    id="end_at"
+                    name="end_at"
+                    type="datetime-local"
+                    required
+                    value={endAt}
+                    onChange={(e) => setEndAt(e.target.value)}
+                    className={fieldCls}
+                  />
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    Durasi maksimal 14 hari.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Warning */}
+            <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Lelang akan ditinjau admin/middleman sebelum tampil publik. Kamu
+                akan menerima notifikasi setelah disetujui atau ditolak.
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="rounded-full border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-teal-600 py-3.5 text-sm font-bold text-white shadow-sm shadow-teal-200 transition-colors hover:bg-teal-700 disabled:opacity-50"
+              >
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Gavel className="h-4 w-4" />
+                )}
+                Pasang Lelang
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="photo-upload"
-              className="text-sm font-medium text-gray-700"
-            >
-              Foto Kartu (maks. {MAX_IMAGES}){" "}
-              <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="photo-upload"
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPTED_TYPES.join(",")}
-              multiple
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <div className="flex gap-2 flex-wrap">
-              {images.map((img, i) => (
-                <div key={img} className="relative group">
-                  {/* biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist */}
-                  <img
-                    src={img}
-                    alt={`Gambar ${i + 1}`}
-                    className="h-20 w-20 object-cover rounded-lg border border-gray-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {images.length < MAX_IMAGES && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-teal-400 hover:text-teal-400 transition-colors disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+          {/* ── Right: sticky preview + checklist ── */}
+          <aside className="flex flex-col gap-4 lg:sticky lg:top-20">
+            <div>
+              <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-teal-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+                Pratinjau Langsung
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-gradient-to-br from-slate-100 to-teal-50">
+                  {images[0] ? (
+                    // biome-ignore lint/performance/noImgElement: blob/CDN preview
+                    <img
+                      src={images[0]}
+                      alt="Pratinjau"
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <>
-                      <ImagePlus className="h-5 w-5" />
-                      <span className="text-xs">Upload</span>
-                    </>
+                    <div className="grid h-full w-full place-items-center text-slate-300">
+                      <Gavel className="h-10 w-10" />
+                    </div>
                   )}
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400">
-              JPG, PNG, WebP, GIF · dikompres otomatis
-            </p>
-          </div>
-        </div>
-
-        {/* ── Cluster 2: Detail Lelang ──────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 rounded-lg border border-gray-100 bg-gray-50/50 p-4">
-          <h2 className="text-sm font-semibold text-gray-700">Detail Lelang</h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="category_id"
-                className="text-sm font-medium text-gray-700"
-              >
-                Kategori <span className="text-red-500">*</span>
-              </label>
-              <Combobox
-                id="category_id"
-                name="category_id"
-                options={categories.map((cat) => ({
-                  value: cat.id,
-                  label: cat.name,
-                  icon: getCategoryIcon(cat.slug),
-                }))}
-                value={categoryId}
-                onChange={setCategoryId}
-                placeholder="Pilih kategori"
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="condition"
-                className="text-sm font-medium text-gray-700"
-              >
-                Kondisi <span className="text-red-500">*</span>
-              </label>
-              <Combobox
-                id="condition"
-                name="condition"
-                options={conditions.map((c) => ({
-                  value: c,
-                  label: conditionLabels[c],
-                }))}
-                value={conditionVal}
-                onChange={setConditionVal}
-                placeholder="Pilih kondisi"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              id="starting_price"
-              name="starting_price"
-              type="number"
-              label="Harga Mulai (Rp)"
-              placeholder="50000"
-              min={1000}
-              required
-            />
-            <Input
-              id="buy_now_price"
-              name="buy_now_price"
-              type="number"
-              label="Harga Buy Now (Rp, opsional)"
-              placeholder="kosongkan jika tidak ada"
-              min={1000}
-            />
-          </div>
-
-          <Input
-            id="min_bid_increment"
-            name="min_bid_increment"
-            type="number"
-            label="Kenaikan Bid Minimum (Rp)"
-            placeholder="1000"
-            defaultValue={1000}
-            min={500}
-            required
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-gray-700">
-              Ongkos Kirim
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setFreeShipping(true)}
-                aria-pressed={freeShipping}
-                className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  freeShipping
-                    ? "bg-emerald-600 border-emerald-600 text-white"
-                    : "bg-white border-gray-300 text-gray-600 hover:border-emerald-400"
-                }`}
-              >
-                Gratis Ongkir
-              </button>
-              <button
-                type="button"
-                onClick={() => setFreeShipping(false)}
-                aria-pressed={!freeShipping}
-                className={`py-2 rounded-lg text-sm font-medium border transition-colors ${
-                  !freeShipping
-                    ? "bg-teal-600 border-teal-600 text-white"
-                    : "bg-white border-gray-300 text-gray-600 hover:border-teal-400"
-                }`}
-              >
-                Ongkir Ditanggung Pembeli
-              </button>
-            </div>
-            <p className="text-xs text-gray-400">
-              {freeShipping
-                ? "Anda (penjual) menanggung biaya pengiriman."
-                : "Biaya pengiriman ditanggung oleh pemenang lelang."}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Waktu Mulai (opsional)
-              </label>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-gray-400">Tanggal</span>
-                  <input
-                    id="start_date"
-                    name="start_date"
-                    type="date"
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
-                  />
+                  <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-lg bg-slate-900/90 px-2.5 py-1.5 font-mono text-xs font-semibold text-white">
+                    <Clock className="h-3.5 w-3.5" />
+                    {previewRemaining ?? "—"}
+                  </span>
                 </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-gray-400">Jam</span>
-                  <input
-                    id="start_time_val"
-                    name="start_time_val"
-                    type="time"
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
-                  />
+
+                <div className="px-1.5 pb-1 pt-3">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    {previewCategory &&
+                      getCategoryIcon(previewCategory.slug) && (
+                        // biome-ignore lint/performance/noImgElement: local icon
+                        <img
+                          src={getCategoryIcon(previewCategory.slug) as string}
+                          alt=""
+                          className="h-3.5 w-3.5 object-contain"
+                        />
+                      )}
+                    {previewCategory?.name ?? "Kategori"}
+                    {conditionVal && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        {conditionLabels[conditionVal]}
+                      </>
+                    )}
+                  </div>
+                  <h3 className="mt-1.5 line-clamp-2 text-[15px] font-bold leading-snug text-slate-900">
+                    {title || "Judul lelang kamu akan tampil di sini"}
+                  </h3>
+                  <p className="mt-3 text-[11px] text-slate-400">Harga Mulai</p>
+                  <p className="mt-0.5 font-mono text-xl font-bold tracking-tight text-slate-900">
+                    {startingPrice ? formatIDR(Number(startingPrice)) : "Rp—"}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+                    <span className="inline-flex items-center gap-1">
+                      <Gavel className="h-3 w-3" />0 tawaran
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="text-slate-500">@{sellerUsername}</span>
+                      {sellerRating != null && (
+                        <>
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span className="font-semibold text-slate-600">
+                            {sellerRating.toFixed(1)}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                Waktu Selesai <span className="text-red-500">*</span>
-              </label>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-gray-400">Tanggal</span>
-                  <input
-                    id="end_date"
-                    name="end_date"
-                    type="date"
-                    required
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
-                  />
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs text-gray-400">Jam</span>
-                  <input
-                    id="end_time_val"
-                    name="end_time_val"
-                    type="time"
-                    required
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full"
-                  />
-                </div>
-              </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <p className="font-bold text-slate-900">Sebelum kamu pasang</p>
+              <ul className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-slate-600">
+                {checklist.map((item) => (
+                  <li key={item} className="flex gap-2.5">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-          <span>
-            Lelang akan ditinjau admin/middleman terlebih dahulu sebelum tampil
-            publik. Anda akan menerima notifikasi setelah disetujui atau
-            ditolak.
-          </span>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Batal
-          </Button>
-          <Button type="submit" loading={isPending} className="flex-1">
-            Buat Lelang
-          </Button>
+          </aside>
         </div>
       </form>
 
-      {/* Validation / submit errors as a centered popup so the user doesn't have
-          to scroll to find a banner at the top of the form. */}
+      {/* Error popup */}
       <Modal
         open={!!error}
         onClose={() => setError(null)}
@@ -538,7 +708,7 @@ export function CreateAuctionForm({ categories }: CreateAuctionFormProps) {
         </div>
       </Modal>
 
-      {/* Post-create confirmation: the auction is awaiting admin review. */}
+      {/* Success popup */}
       <Modal
         open={successOpen}
         onClose={() => router.push("/auctions")}

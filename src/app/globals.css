@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm, clean neutral canvas (was cool slate-50 #f8fafc) — keeps the teal
-     identity but makes white cards read softer and less clinical. */
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --primary: #0d9488;
-  --primary-light: #14b8a6;
-  --primary-dark: #0f766e;
+  /* "Live Auction Floor" — warm-neutral catalogue chrome + a single green
+     signal accent. The cool slate/teal scheme has been retired in favour of a
+     warm paper canvas (paper #F2EEE4) with crisp white cards. */
+  --background: #f2eee4;       /* paper */
+  --foreground: #1b1915;       /* ink */
+  --primary: #1f8a5b;          /* accent — live / bid */
+  --primary-light: #2a9163;
+  --primary-dark: #15663f;     /* accent-press */
 }
 
 @theme inline {
@@ -15,6 +16,76 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Palette remap ────────────────────────────────────────────────────────
+   The UI is built on hardcoded Tailwind color utilities. Rather than touch
+   every component, we retune the underlying color tokens so the whole site
+   adopts the warm-neutral + green-accent identity at once:
+
+     teal  + emerald  →  brand green  (anchored on accent #1F8A5B at 600)
+     slate + gray + stone → warm chrome (paper / surface / line / muted / ink)
+     green stays native as a distinct "success" pop; white is left untouched
+     so cards read crisp on the warm paper canvas.
+──────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* brand green (teal) */
+  --color-teal-50:  #edf6f0;
+  --color-teal-100: #d5ecdf;
+  --color-teal-200: #acd9bf;
+  --color-teal-300: #7cc09d;
+  --color-teal-400: #49a578;
+  --color-teal-500: #2a9163;
+  --color-teal-600: #1f8a5b;
+  --color-teal-700: #15663f;
+  --color-teal-800: #114f32;
+  --color-teal-900: #0e3e27;
+
+  /* brand green (emerald, used interchangeably with teal) */
+  --color-emerald-50:  #edf6f0;
+  --color-emerald-100: #d5ecdf;
+  --color-emerald-200: #acd9bf;
+  --color-emerald-300: #7cc09d;
+  --color-emerald-400: #49a578;
+  --color-emerald-500: #2a9163;
+  --color-emerald-600: #1f8a5b;
+  --color-emerald-700: #15663f;
+  --color-emerald-800: #114f32;
+  --color-emerald-900: #0e3e27;
+
+  /* warm chrome (slate) — 50/100 kept lighter/darker than the paper canvas
+     (#f2eee4) so inset panels stay visible against the page background */
+  --color-slate-50:  #f7f3ea;
+  --color-slate-100: #ece6d8;
+  --color-slate-200: #e2dbcb;
+  --color-slate-300: #d3cab5;
+  --color-slate-400: #aca493;
+  --color-slate-500: #8c8576;
+  --color-slate-600: #6b6456;
+  --color-slate-700: #4c463b;
+  --color-slate-800: #2f2b23;
+  --color-slate-900: #1b1915;
+  --color-slate-950: #110f0c;
+
+  /* warm chrome (gray) — see slate note: keep 50/100 distinct from the
+     #f2eee4 paper canvas so inset panels (e.g. tab bars) stay visible */
+  --color-gray-50:  #f7f3ea;
+  --color-gray-100: #ece6d8;
+  --color-gray-200: #e2dbcb;
+  --color-gray-300: #d3cab5;
+  --color-gray-400: #aca493;
+  --color-gray-500: #8c8576;
+  --color-gray-600: #6b6456;
+  --color-gray-700: #4c463b;
+  --color-gray-800: #2f2b23;
+  --color-gray-900: #1b1915;
+  --color-gray-950: #110f0c;
+
+  /* warm chrome (stone) */
+  --color-stone-50:  #f7f3ea;
+  --color-stone-100: #ece6d8;
+  --color-stone-200: #e2dbcb;
+  --color-stone-300: #d3cab5;
 }
 
 body {
@@ -33,14 +104,14 @@ html {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f2eee4;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d3cab5;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0d9488;
+  background: #1f8a5b;
 }
 
 /* Animations */
@@ -164,17 +235,48 @@ html {
   z-index: 20;
 }
 
+/* ─── Stream Chat theme tokens — align accent + surfaces with brand green ──── */
+.str-chat {
+  --str-chat__primary-color: #1f8a5b;
+  --str-chat__active-primary-color: #15663f;
+  --str-chat__primary-color-low-emphasis: #2a9163;
+  --str-chat__on-primary-color: #ffffff;
+  --str-chat__message-list-background-color: #f7f8f8;
+  --str-chat__background-color: #ffffff;
+}
+/* Round, pill-shaped composer with a green circular send button */
+.str-chat__message-input {
+  background: #ffffff;
+  border-top: 1px solid #ece6d8;
+  padding: 0.75rem 1rem;
+}
+.str-chat__message-textarea-container {
+  border-radius: 9999px !important;
+  background: #f7f8f8 !important;
+  border-color: #e2dbcb !important;
+}
+.str-chat__send-button {
+  background: #1f8a5b !important;
+  color: #ffffff !important;
+  border-radius: 9999px !important;
+  width: 2.75rem;
+  height: 2.75rem;
+}
+.str-chat__send-button:not(:disabled):hover {
+  background: #15663f !important;
+}
+
 /* Glass card effect */
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(203, 213, 225, 0.5);
+  border: 1px solid rgba(211, 202, 181, 0.5);
 }
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  background: linear-gradient(135deg, #1f8a5b, #2a9163);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

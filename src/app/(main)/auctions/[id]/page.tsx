@@ -3,35 +3,32 @@ export const dynamic = "force-dynamic";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import {
   AlertTriangle,
-  Calendar,
   CheckCircle2,
   ChevronLeft,
   Clock,
-  Eye,
   Flag,
-  Gavel,
   Info,
   MapPin,
   MessageSquare,
   ShieldCheck,
+  Star,
   Truck,
-  TrendingUp,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuctionApprovalActions } from "@/components/admin/AuctionApprovalActions";
-import { BidForm } from "@/components/auction/BidForm";
+import { AuctionTabs } from "@/components/auction/AuctionTabs";
+import { BidPanel } from "@/components/auction/BidPanel";
 import { ConfirmTransactionButton } from "@/components/auction/ConfirmTransactionButton";
-import { CountdownTimer } from "@/components/auction/CountdownTimer";
+import { FailWinnerButton } from "@/components/auction/FailWinnerButton";
 import { ImageGallery } from "@/components/auction/ImageGallery";
-import { Badge } from "@/components/ui/Badge";
-import { ConfirmationCountdown } from "@/components/ui/ConfirmationCountdown";
+import { BuyerReviewButton } from "@/components/transaction/BuyerReviewButton";
 import { getCategoryIcon } from "@/lib/categories";
 import { getUser } from "@/lib/dal";
 import { createNotification } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatIDR, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import type {
   Auction,
   Bid,
@@ -50,6 +47,16 @@ const conditionLabels: Record<string, string> = {
   damaged: "Damaged",
 };
 
+const conditionDot: Record<string, string> = {
+  mint: "bg-teal-500",
+  near_mint: "bg-teal-500",
+  excellent: "bg-amber-500",
+  good: "bg-amber-500",
+  light_play: "bg-orange-500",
+  heavy_play: "bg-orange-500",
+  damaged: "bg-red-500",
+};
+
 function getStatusLabel(status: string, winnerId: string | null): string {
   if (status === "closed") return winnerId ? "Selesai" : "Gagal";
   if (status === "completed") return "Terkonfirmasi";
@@ -64,7 +71,16 @@ type BidWithBidder = Bid & {
   bidder: Pick<Profile, "username" | "name" | "buyer_warning_count"> | null;
 };
 type FullAuction = Auction & {
-  seller: Pick<Profile, "id" | "username" | "name" | "avatar_url" | "province">;
+  seller: Pick<
+    Profile,
+    | "id"
+    | "username"
+    | "name"
+    | "avatar_url"
+    | "province"
+    | "successful_sales"
+    | "is_middleman"
+  >;
   winner: Pick<Profile, "id" | "username" | "name" | "province"> | null;
   category: Pick<Category, "name" | "slug">;
   bids: BidWithBidder[];
@@ -98,7 +114,7 @@ export default async function AuctionDetailPage({
     .from("auctions")
     .select(
       `*,
-      seller:profiles!seller_id(id, username, name, avatar_url, province),
+      seller:profiles!seller_id(id, username, name, avatar_url, province, successful_sales, is_middleman),
       winner:profiles!winner_id(id, username, name, province),
       category:categories(name, slug),
       bids(*, bidder:profiles!bidder_id(username, name, buyer_warning_count))`,
@@ -116,8 +132,7 @@ export default async function AuctionDetailPage({
   // Lelang yang menunggu persetujuan / ditolak hanya boleh dilihat oleh penjual
   // dan approver (admin/middleman). Pengguna lain → 404 (disembunyikan).
   const isApprover =
-    !!currentUser &&
-    (currentUser.role === "admin" || currentUser.is_middleman);
+    !!currentUser && (currentUser.role === "admin" || currentUser.is_middleman);
   if (
     (auction.status === "pending_approval" || auction.status === "rejected") &&
     currentUser?.id !== auction.seller.id &&
@@ -152,28 +167,17 @@ export default async function AuctionDetailPage({
     auction = { ...auction, status: "closed" } as typeof auction;
   }
 
-  // Fallback: jika confirmation_deadline belum diset tapi lelang sudah tutup dengan winner,
-  // hitung dari end_time atau updated_at + 16 jam
-  if (
-    !auction.confirmation_deadline &&
-    auction.winner_id &&
-    !auction.transaction_confirmed &&
-    (auction.status === "closed" || auction.status === "completed")
-  ) {
-    const base = auction.end_time ?? auction.updated_at;
-    auction = {
-      ...auction,
-      confirmation_deadline: new Date(
-        new Date(base).getTime() + 16 * 60 * 60 * 1000,
-      ).toISOString(),
-    } as typeof auction;
-  }
-
-  const { data: sellerStats } = await supabase
-    .from("auctions")
-    .select("status")
-    .eq("seller_id", auction.seller.id)
-    .neq("status", "cancelled");
+  const [{ data: sellerStats }, { data: sellerReviews }] = await Promise.all([
+    supabase
+      .from("auctions")
+      .select("status")
+      .eq("seller_id", auction.seller.id)
+      .neq("status", "cancelled"),
+    supabase
+      .from("reviews")
+      .select("rating")
+      .eq("seller_id", auction.seller.id),
+  ]);
 
   const totalSellerAuctions = sellerStats?.length ?? 0;
   const completedSellerAuctions =
@@ -182,6 +186,40 @@ export default async function AuctionDetailPage({
     totalSellerAuctions > 0
       ? Math.round((completedSellerAuctions / totalSellerAuctions) * 100)
       : null;
+
+  const sellerReviewCount = sellerReviews?.length ?? 0;
+  const sellerRating =
+    sellerReviews && sellerReviewCount > 0
+      ? sellerReviews.reduce((sum, r) => sum + r.rating, 0) / sellerReviewCount
+      : null;
+
+  // Buyer review state — for the winning buyer once the transaction is confirmed.
+  let buyerTransaction: {
+    id: string;
+    receipt_photo_url: string | null;
+  } | null = null;
+  let buyerHasReviewed = false;
+  if (
+    currentUser &&
+    auction.winner_id === currentUser.id &&
+    auction.transaction_confirmed
+  ) {
+    const { data: tx } = await supabase
+      .from("transactions")
+      .select("id, receipt_photo_url")
+      .eq("auction_id", auction.id)
+      .maybeSingle();
+    buyerTransaction = tx ?? null;
+    if (tx) {
+      const { data: existingReview } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("transaction_id", tx.id)
+        .eq("buyer_id", currentUser.id)
+        .maybeSingle();
+      buyerHasReviewed = !!existingReview;
+    }
+  }
 
   supabase
     .from("auctions")
@@ -201,80 +239,95 @@ export default async function AuctionDetailPage({
     (a, b) => Number(b.amount) - Number(a.amount),
   );
 
-  const conditionColors: Record<
-    string,
-    "success" | "info" | "warning" | "danger" | "default"
-  > = {
-    mint: "success",
-    near_mint: "success",
-    excellent: "info",
-    good: "info",
-    light_play: "warning",
-    heavy_play: "warning",
-    damaged: "danger",
-  };
+  const categoryIcon = auction.category
+    ? getCategoryIcon(auction.category.slug)
+    : null;
+
+  const bidItems = sortedBids.map((b) => ({
+    id: b.id,
+    username: b.bidder?.username ?? "unknown",
+    amount: Number(b.amount),
+    warningCount: b.bidder?.buyer_warning_count ?? 0,
+  }));
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-slate-500">
         <Link
           href="/auctions"
-          className="hover:text-gray-700 flex items-center gap-1"
+          className="flex items-center gap-1 hover:text-slate-700"
         >
           <ChevronLeft className="h-4 w-4" />
           Lelang
         </Link>
+        {auction.category && (
+          <>
+            <span>/</span>
+            <span>{auction.category.name}</span>
+          </>
+        )}
         <span>/</span>
-        <span className="text-gray-900 truncate max-w-xs">{auction.title}</span>
-      </div>
+        <span className="text-slate-900 line-clamp-1">{auction.title}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-10">
+        {/* Left — gallery */}
+        <div>
           <ImageGallery images={auction.images} title={auction.title} />
+        </div>
 
-          <div className="flex gap-2 flex-wrap">
-            {auction.category && (
-              <Badge variant="info">
-                <span className="inline-flex items-center gap-1">
-                  {getCategoryIcon(auction.category.slug) && (
-                    // biome-ignore lint/performance/noImgElement: small local category icon
-                    <img
-                      src={getCategoryIcon(auction.category.slug) as string}
-                      alt=""
-                      className="w-4 h-4 object-contain"
-                    />
-                  )}
-                  {auction.category.name}
-                </span>
-              </Badge>
-            )}
-            <Badge variant={conditionColors[auction.condition] ?? "default"}>
+        {/* Right — info & bidding */}
+        <div className="flex flex-col gap-5">
+          {/* Eyebrow */}
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+            <span
+              className={`h-2.5 w-2.5 rounded-sm ${conditionDot[auction.condition] ?? "bg-slate-400"}`}
+            />
+            {auction.category && <span>{auction.category.name}</span>}
+            <span className="text-slate-300">·</span>
+            <span>
               {conditionLabels[auction.condition] ?? auction.condition}
-            </Badge>
-            <Badge variant={auction.free_shipping ? "success" : "default"}>
-              <span className="inline-flex items-center gap-1">
-                <Truck className="h-3 w-3" />
-                {auction.free_shipping
-                  ? "Gratis Ongkir"
-                  : "Ongkir Ditanggung Pembeli"}
+            </span>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-[1.7rem]">
+            {auction.title}
+          </h1>
+
+          {/* Tag chips */}
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${conditionDot[auction.condition] ?? "bg-slate-400"}`}
+              />
+              {conditionLabels[auction.condition] ?? auction.condition}
+            </span>
+            {auction.category && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                {categoryIcon && (
+                  // biome-ignore lint/performance/noImgElement: small local category icon
+                  <img
+                    src={categoryIcon}
+                    alt=""
+                    className="h-3.5 w-3.5 object-contain"
+                  />
+                )}
+                {auction.category.name}
               </span>
-            </Badge>
-            <Badge
-              variant={
-                auction.status === "active"
-                  ? "success"
-                  : auction.status === "completed"
-                    ? "info"
-                    : auction.status === "pending_approval"
-                      ? "warning"
-                      : auction.status === "rejected" ||
-                          (auction.status === "closed" && !auction.winner_id)
-                        ? "danger"
-                        : "default"
-              }
-            >
-              {getStatusLabel(auction.status, auction.winner_id)}
-            </Badge>
+            )}
+            {auction.free_shipping && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700">
+                <Truck className="h-3 w-3" />
+                Gratis Ongkir
+              </span>
+            )}
+            {!isEnded && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                {getStatusLabel(auction.status, auction.winner_id)}
+              </span>
+            )}
           </div>
 
           {/* Banner status persetujuan — untuk penjual & approver */}
@@ -321,156 +374,126 @@ export default async function AuctionDetailPage({
             </div>
           )}
 
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-3">
-              {auction.title}
-            </h1>
-            {auction.description && (
-              <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                {auction.description}
-              </p>
-            )}
-          </div>
-
-          <div className="flex gap-4 text-sm text-gray-500">
-            <span className="flex items-center gap-1">
-              <Eye className="h-4 w-4" />
-              {auction.view_count} views
-            </span>
-            <span className="flex items-center gap-1">
-              <Gavel className="h-4 w-4" />
-              {sortedBids.length} bids
-            </span>
-            {auction.start_time && (
-              <span className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {formatDate(auction.start_time, "id")}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Harga Saat Ini</p>
-              <p className="text-3xl font-bold text-teal-600">
-                {formatIDR(auction.current_price)}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Mulai: {formatIDR(auction.starting_price)}
-              </p>
+          {/* Bid panel */}
+          {isPending || isRejected ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              {isPending
+                ? "Bid belum dapat dilakukan sampai lelang disetujui."
+                : "Lelang ini ditolak dan tidak menerima bid."}
             </div>
+          ) : (
+            <BidPanel
+              auctionId={auction.id}
+              currentPrice={auction.current_price}
+              minIncrement={auction.min_bid_increment}
+              buyNowPrice={auction.buy_now_price}
+              endTime={auction.end_time}
+              bidCount={sortedBids.length}
+              auctionEnded={isEnded}
+              isLoggedIn={!!currentUser}
+              isSeller={isSeller}
+            />
+          )}
 
-            {auction.end_time && !isEnded && (
-              <CountdownTimer
-                endTime={auction.end_time}
-                auctionId={auction.id}
-              />
-            )}
-
-            {isPending || isRejected ? (
-              <div className="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5">
-                {isPending
-                  ? "Bid belum dapat dilakukan sampai lelang disetujui."
-                  : "Lelang ini ditolak dan tidak menerima bid."}
-              </div>
-            ) : (
-              <BidForm
-                auctionId={auction.id}
-                currentPrice={auction.current_price}
-                minIncrement={auction.min_bid_increment}
-                buyNowPrice={auction.buy_now_price}
-                auctionEnded={isEnded}
-                isLoggedIn={!!currentUser}
-                isSeller={isSeller}
-              />
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Penjual
-            </p>
-            <Link
-              href={`/profile/${auction.seller.username}`}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-semibold text-sm">
-                {auction.seller.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={auction.seller.avatar_url}
-                    alt={auction.seller.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                ) : (
-                  getInitials(auction.seller.name)
-                )}
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">
-                  {auction.seller.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  @{auction.seller.username}
-                </p>
-                {auction.seller.province && (
-                  <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    {auction.seller.province}
+          {/* Seller card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/profile/${auction.seller.username}`}
+                className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80"
+              >
+                <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-900 to-indigo-700 text-sm font-bold text-white">
+                  {auction.seller.avatar_url ? (
+                    // biome-ignore lint/performance/noImgElement: Supabase CDN URL
+                    <img
+                      src={auction.seller.avatar_url}
+                      alt={auction.seller.name}
+                      className="h-11 w-11 object-cover"
+                    />
+                  ) : (
+                    getInitials(auction.seller.name)
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1 truncate text-sm font-bold text-slate-900">
+                    @{auction.seller.username}
+                    {auction.seller.is_middleman && (
+                      <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-teal-600" />
+                    )}
                   </p>
+                  <p className="flex items-center gap-1 text-xs text-slate-500">
+                    {sellerRating != null && (
+                      <>
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span className="font-semibold text-slate-700">
+                          {sellerRating.toFixed(1)}
+                        </span>
+                        <span className="text-slate-300">·</span>
+                      </>
+                    )}
+                    {auction.seller.successful_sales ?? 0} transaksi
+                    {sellerSuccessRate !== null && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        {sellerSuccessRate}% berhasil
+                      </>
+                    )}
+                  </p>
+                </div>
+              </Link>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  href={`/profile/${auction.seller.username}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Profil
+                </Link>
+                {currentUser && !isSeller && !isPending && !isRejected && (
+                  <>
+                    <Link
+                      href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      Chat
+                    </Link>
+                    <Link
+                      href={`/profile/${auction.seller.username}?report=true`}
+                      aria-label="Laporkan penjual"
+                      className="inline-flex items-center justify-center rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50"
+                    >
+                      <Flag className="h-3.5 w-3.5" />
+                    </Link>
+                  </>
                 )}
               </div>
-            </Link>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              {sellerSuccessRate !== null ? (
-                <div className="flex items-center gap-1.5 text-xs">
-                  <TrendingUp
-                    className={`h-3.5 w-3.5 ${sellerSuccessRate >= 60 ? "text-green-500" : "text-yellow-500"}`}
-                  />
-                  <span
-                    className={`font-medium ${sellerSuccessRate >= 60 ? "text-green-700" : "text-yellow-700"}`}
-                  >
-                    {sellerSuccessRate}% keberhasilan
-                  </span>
-                  <span className="text-gray-400">
-                    ({completedSellerAuctions}/{totalSellerAuctions} lelang)
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <Info className="h-3.5 w-3.5" />
-                  Belum ada riwayat lelang
-                </div>
-              )}
             </div>
-
-            {currentUser && !isSeller && !isPending && !isRejected && (
-              <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-                <Link
-                  href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  Chat Penjual
-                </Link>
-                <Link
-                  href={`/profile/${auction.seller.username}?report=true`}
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-red-200 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  aria-label="Laporkan penjual"
-                >
-                  <Flag className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
           </div>
 
+          {/* Middleman notice */}
+          {!isSeller && !isPending && !isRejected && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-sm text-slate-600">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
+              <p>
+                Transaksi bernilai tinggi? Undang{" "}
+                <Link
+                  href="/middleman"
+                  className="font-semibold text-teal-700 hover:underline"
+                >
+                  middleman
+                </Link>{" "}
+                agar dana ditahan sampai kartu diterima.
+              </p>
+            </div>
+          )}
+
+          {/* Panel pemenang — penjual */}
           {isSeller &&
             (auction.status === "completed" || auction.status === "closed") &&
             auction.winner_id &&
             auction.winner && (
-              <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-3">
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-3">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Pemenang
                 </p>
@@ -506,23 +529,20 @@ export default async function AuctionDetailPage({
                     <div className="flex flex-col gap-1.5 text-amber-700 bg-amber-50 rounded-lg px-3 py-2.5">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Clock className="h-4 w-4 shrink-0" />
-                        Menunggu transaksi diselesaikan
+                        Menunggu pembayaran dari pemenang
                       </div>
                       <p className="text-xs leading-relaxed text-amber-700/90">
                         Selesaikan pembayaran &amp; pengiriman dengan pemenang
                         lewat chat. Untuk keamanan tambahan Anda bisa mengundang{" "}
-                        <span className="font-medium">middleman</span> (opsional)
-                        dari halaman chat. Setelah transaksi beres, tekan{" "}
-                        <span className="font-medium">Konfirmasi Transaksi</span>{" "}
-                        di bawah.
+                        <span className="font-medium">middleman</span>{" "}
+                        (opsional) dari halaman chat. Jika sudah dibayar, tekan{" "}
+                        <span className="font-medium">
+                          Konfirmasi Transaksi
+                        </span>
+                        . Jika pemenang menghilang dan tidak membayar, gagalkan
+                        lelang di bawah.
                       </p>
                     </div>
-                    {auction.confirmation_deadline && (
-                      <ConfirmationCountdown
-                        deadline={auction.confirmation_deadline}
-                        label="Batas buyer konfirmasi"
-                      />
-                    )}
                   </>
                 )}
                 <Link
@@ -533,142 +553,121 @@ export default async function AuctionDetailPage({
                   Chat Pemenang
                 </Link>
                 {!auction.transaction_confirmed && (
-                  <ConfirmTransactionButton
-                    auctionId={auction.id}
-                    winnerUsername={auction.winner.username}
-                  />
+                  <>
+                    <ConfirmTransactionButton
+                      auctionId={auction.id}
+                      winnerUsername={auction.winner.username}
+                    />
+                    <FailWinnerButton
+                      auctionId={auction.id}
+                      winnerUsername={auction.winner.username}
+                    />
+                  </>
                 )}
               </div>
             )}
 
+          {/* Panel pemenang — pembeli */}
           {!isSeller &&
             (auction.status === "completed" || auction.status === "closed") &&
             auction.winner_id === currentUser?.id && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Status Transaksi
-              </p>
-              {auction.transaction_confirmed ? (
-                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  Transaksi selesai. Pembelian sukses!
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 text-teal-600 text-sm font-medium bg-teal-50 rounded-lg px-3 py-2">
-                    <Info className="h-4 w-4 shrink-0" />
-                    Selamat, Anda memenangkan lelang ini!
-                  </div>
-
-                  <div className="flex flex-col gap-3 text-sm text-gray-600">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Langkah selanjutnya
-                    </p>
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
-                        1
-                      </span>
-                      <p>
-                        Buka{" "}
-                        <Link
-                          href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
-                          className="text-teal-600 font-medium hover:underline"
-                        >
-                          chat dengan penjual
-                        </Link>{" "}
-                        dan mulai percakapan untuk membahas proses transaksi —
-                        cara pembayaran, pengiriman, dan detail lainnya.
-                      </p>
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Status Transaksi
+                </p>
+                {auction.transaction_confirmed ? (
+                  <>
+                    <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium bg-emerald-50 rounded-lg px-3 py-2">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      Transaksi selesai. Pembelian sukses!
                     </div>
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
-                        2
-                      </span>
-                      <p>
-                        Anda dan penjual bisa langsung bertransaksi tanpa
-                        perantara. Namun untuk keamanan tambahan, Anda{" "}
-                        <span className="font-medium text-gray-800">
-                          boleh mengundang middleman
-                        </span>{" "}
-                        (opsional) — pengguna terverifikasi yang dapat diundang
-                        ke percakapan untuk menjamin transaksi berjalan aman,
-                        langsung dari halaman chat.
-                      </p>
+                    {buyerTransaction && (
+                      <BuyerReviewButton
+                        transactionId={buyerTransaction.id}
+                        auctionTitle={auction.title}
+                        receiptPhotoUrl={buyerTransaction.receipt_photo_url}
+                        alreadyReviewed={buyerHasReviewed}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-teal-600 text-sm font-medium bg-teal-50 rounded-lg px-3 py-2">
+                      <Info className="h-4 w-4 shrink-0" />
+                      Selamat, Anda memenangkan lelang ini!
                     </div>
-                    <div className="flex items-start gap-3">
-                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
-                        3
-                      </span>
-                      <p>
-                        Setelah transaksi selesai, penjual akan menekan{" "}
-                        <span className="font-medium text-gray-800">
-                          Konfirmasi Transaksi
-                        </span>{" "}
-                        dan pembelian Anda otomatis ditandai sukses.
+
+                    <div className="flex flex-col gap-3 text-sm text-gray-600">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Langkah selanjutnya
                       </p>
-                    </div>
-                  </div>
-
-                  <Link
-                    href="/middleman"
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-teal-200 text-sm font-medium text-teal-700 hover:bg-teal-50 transition-colors"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    Pelajari & lihat daftar middleman
-                  </Link>
-
-                  {auction.confirmation_deadline && (
-                    <ConfirmationCountdown
-                      deadline={auction.confirmation_deadline}
-                      label="Batas konfirmasi ke seller"
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-              Riwayat Bid
-            </p>
-            {sortedBids.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-3">
-                Belum ada bid
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
-                {sortedBids.map((bid, i) => (
-                  <div
-                    key={bid.id}
-                    className={`flex items-center justify-between text-sm ${
-                      i === 0 ? "text-teal-600 font-semibold" : "text-gray-600"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium">
-                        {i + 1}
-                      </span>
-                      <span>@{bid.bidder?.username ?? "unknown"}</span>
-                      {(bid.bidder?.buyer_warning_count ?? 0) > 0 && (
-                        <span
-                          title={`Pembeli ini memiliki ${bid.bidder?.buyer_warning_count}x peringatan`}
-                          className="flex items-center gap-0.5 text-orange-500"
-                        >
-                          <AlertTriangle className="h-3 w-3" />
-                          <span className="text-xs">
-                            {bid.bidder?.buyer_warning_count}
-                          </span>
+                      <div className="flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                          1
                         </span>
-                      )}
+                        <p>
+                          Buka{" "}
+                          <Link
+                            href={`/chat?seller=${auction.seller.id}&auction=${auction.id}`}
+                            className="text-teal-600 font-medium hover:underline"
+                          >
+                            chat dengan penjual
+                          </Link>{" "}
+                          dan mulai percakapan untuk membahas proses transaksi —
+                          cara pembayaran, pengiriman, dan detail lainnya.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                          2
+                        </span>
+                        <p>
+                          Anda dan penjual bisa langsung bertransaksi tanpa
+                          perantara. Namun untuk keamanan tambahan, Anda{" "}
+                          <span className="font-medium text-gray-800">
+                            boleh mengundang middleman
+                          </span>{" "}
+                          (opsional) — pengguna terverifikasi yang dapat
+                          diundang ke percakapan untuk menjamin transaksi
+                          berjalan aman, langsung dari halaman chat.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-700 text-xs font-semibold flex items-center justify-center shrink-0 mt-0.5">
+                          3
+                        </span>
+                        <p>
+                          Setelah transaksi selesai, penjual akan menekan{" "}
+                          <span className="font-medium text-gray-800">
+                            Konfirmasi Transaksi
+                          </span>{" "}
+                          dan pembelian Anda otomatis ditandai sukses.
+                        </p>
+                      </div>
                     </div>
-                    <span>{formatIDR(bid.amount)}</span>
-                  </div>
-                ))}
+
+                    <Link
+                      href="/middleman"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-teal-200 text-sm font-medium text-teal-700 hover:bg-teal-50 transition-colors"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Pelajari & lihat daftar middleman
+                    </Link>
+                  </>
+                )}
               </div>
             )}
-          </div>
         </div>
+      </div>
+
+      {/* Tabs — deskripsi / riwayat tawaran / pengiriman */}
+      <div className="mt-10 max-w-3xl">
+        <AuctionTabs
+          description={auction.description}
+          bids={bidItems}
+          freeShipping={auction.free_shipping}
+          province={auction.seller.province}
+        />
       </div>
     </div>
   );

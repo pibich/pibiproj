@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/notifications";
 
 export async function GET() {
@@ -108,6 +108,17 @@ export async function POST(req: NextRequest) {
   if (insertErr) {
     return NextResponse.json({ error: "Gagal membuat transaksi" }, { status: 500 });
   }
+
+  // A transaction now exists for this auction, so mark it confirmed. Without
+  // this the auction stays `transaction_confirmed = false` and re-surfaces as
+  // "Belum Dibayar" in the buyer/seller dashboards once the escrow transaction
+  // completes (and drops out of the "active transaction" set). Use the admin
+  // client so the write isn't blocked by RLS when the buyer initiates it.
+  const adminDb = createAdminClient();
+  await adminDb
+    .from("auctions")
+    .update({ transaction_confirmed: true })
+    .eq("id", auction_id);
 
   // Notifikasi ke middleman jika ada
   if (middleman_id) {

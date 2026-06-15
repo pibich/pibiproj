@@ -23,7 +23,7 @@ export function Button({
 
   const variants = {
     primary:
-      "bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-400 hover:to-teal-500 shadow-sm shadow-teal-200 hover:shadow-md hover:shadow-teal-200 focus:ring-teal-400",
+      "bg-teal-600 text-white hover:bg-teal-700 shadow-sm shadow-teal-200 hover:shadow-md hover:shadow-teal-200 focus:ring-teal-400",
     secondary:
       "bg-slate-600 text-white hover:bg-slate-500 focus:ring-slate-400",
     outline:
