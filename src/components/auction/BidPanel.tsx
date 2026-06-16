@@ -291,7 +291,7 @@ export function BidPanel({
               type="button"
               disabled={isPending}
               onClick={() => placeBid(buyNowPrice, true)}
-              className="inline-flex shrink-0 items-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-slate-800 disabled:opacity-50"
+              className="inline-flex shrink-0 items-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-amber-400 disabled:opacity-50"
             >
               Beli
             </button>

@@ -33,7 +33,9 @@ Pesan:
 ${message}`;
 
     const url = `https://wa.me/${csPhone}?text=${encodeURIComponent(text)}`;
-    window.open(url, "_blank");
+    // Navigate in-place: window.open("_blank") is frequently popup-blocked on
+    // mobile; wa.me redirects to the WhatsApp app reliably this way.
+    window.location.href = url;
   }
 
   return (

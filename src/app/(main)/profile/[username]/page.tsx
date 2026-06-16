@@ -346,7 +346,7 @@ export default async function ProfilePage({
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 mx-2 sm:mx-4 -mt-16 relative">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5">
               {/* Avatar */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-3xl font-bold shrink-0 ring-4 ring-white overflow-hidden -mt-16 sm:-mt-20">
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 text-3xl font-bold shrink-0 ring-4 ring-white overflow-hidden -mt-16 sm:-mt-20">
                 {profile.avatar_url ? (
                   // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
                   <img

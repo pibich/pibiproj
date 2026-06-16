@@ -138,7 +138,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-teal-100 flex items-center justify-center text-teal-700 text-xl font-bold ring-4 ring-slate-100 group shrink-0 focus:outline-none focus:ring-teal-400"
+          className="relative w-20 h-20 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 text-xl font-bold ring-4 ring-slate-100 group shrink-0 focus:outline-none focus:ring-teal-400"
         >
           {avatarUrl ? (
             // biome-ignore lint/performance/noImgElement: user avatar

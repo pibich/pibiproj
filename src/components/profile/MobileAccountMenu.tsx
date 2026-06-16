@@ -5,7 +5,6 @@ import {
   ClipboardCheck,
   LogOut,
   MessageSquare,
-  Settings,
   ShieldCheck,
   UserCog,
 } from "lucide-react";
@@ -29,7 +28,6 @@ export function MobileAccountMenu({
   }
 
   const links = [
-    { href: "/settings", label: "Pengaturan Akun", icon: Settings },
     ...(isMiddleman
       ? [
           {
@@ -40,7 +38,7 @@ export function MobileAccountMenu({
         ]
       : []),
     ...(isAdmin
-      ? [{ href: "/admin", label: "Admin Panel", icon: UserCog }]
+      ? [{ href: "/admin", label: "Dashboard Admin", icon: UserCog }]
       : []),
     { href: "/middleman", label: "Middleman", icon: ShieldCheck },
     { href: "/contact", label: "Hubungi Kami", icon: MessageSquare },

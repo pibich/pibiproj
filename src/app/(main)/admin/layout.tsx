@@ -1,13 +1,8 @@
-import {
-  ClipboardCheck,
-  FileWarning,
-  ShieldCheck,
-  UserCog,
-  Users,
-} from "lucide-react";
-import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 import { getUser } from "@/lib/dal";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminLayout({
   children,
@@ -20,47 +15,40 @@ export default async function AdminLayout({
     redirect("/");
   }
 
+  const supabase = await createClient();
+  const [{ count: pendingReports }, { count: pendingApprovals }] =
+    await Promise.all([
+      supabase
+        .from("reports")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase
+        .from("auctions")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending_approval")
+        .neq("seller_id", user.id),
+    ]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-          <ShieldCheck className="h-4 w-4 text-white" />
+      <div className="flex items-center gap-3.5">
+        <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-gradient-to-br from-teal-600 to-teal-800 text-white shadow-lg shadow-teal-600/30">
+          <ShieldCheck className="h-6 w-6" />
         </div>
-        <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
+            Dashboard Admin
+          </h1>
+          <p className="text-sm text-gray-500">
+            Kelola laporan, persetujuan lelang, dan pengguna
+          </p>
+        </div>
       </div>
 
-      <div className="-mx-4 px-4 overflow-x-auto sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-max">
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            <FileWarning className="h-4 w-4" />
-            Laporan
-          </Link>
-          <Link
-            href="/admin/approvals"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            <ClipboardCheck className="h-4 w-4" />
-            Persetujuan
-          </Link>
-          <Link
-            href="/admin/middleman"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            <Users className="h-4 w-4" />
-            Middleman
-          </Link>
-          <Link
-            href="/admin/users"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-white transition-colors shrink-0 whitespace-nowrap"
-          >
-            <UserCog className="h-4 w-4" />
-            Pengguna
-          </Link>
-        </div>
-      </div>
+      <AdminTabs
+        pendingReports={pendingReports ?? 0}
+        pendingApprovals={pendingApprovals ?? 0}
+      />
 
       {children}
     </div>

@@ -12,6 +12,7 @@ import {
   type PendingAuctionItem,
   PendingAuctionList,
 } from "@/components/admin/PendingAuctionList";
+import { StatTile, type StatTint } from "@/components/dashboard/StatTile";
 import { MobileBackBar } from "@/components/layout/MobileBackBar";
 import { TransactionCard } from "@/components/transaction/TransactionCard";
 import { getUser } from "@/lib/dal";
@@ -55,17 +56,27 @@ export default async function MiddlemanDashboardPage() {
 
   const adminDb = createAdminClient();
 
+  // The dashboard only handles transactions the middleman mediates for OTHER
+  // people. When the middleman is also the buyer or seller it's a personal
+  // transaction — that belongs to their profile only (otherwise the rating /
+  // review / confirmation gets duplicated across both pages). Likewise, an
+  // auction the middleman submitted themselves is reviewed by an admin, not
+  // self-approved here.
   const [activeRes, completedRes, pendingRes] = await Promise.all([
     supabase
       .from("transactions")
       .select(SELECT)
       .eq("middleman_id", user.id)
+      .neq("seller_id", user.id)
+      .neq("buyer_id", user.id)
       .not("status", "in", '("completed","cancelled")')
       .order("updated_at", { ascending: false }),
     supabase
       .from("transactions")
       .select(SELECT)
       .eq("middleman_id", user.id)
+      .neq("seller_id", user.id)
+      .neq("buyer_id", user.id)
       .eq("status", "completed")
       .order("updated_at", { ascending: false })
       .limit(20),
@@ -75,6 +86,7 @@ export default async function MiddlemanDashboardPage() {
         "id, title, images, starting_price, current_price, created_at, end_time, seller:profiles!seller_id(username, name), category:categories(name)",
       )
       .eq("status", "pending_approval")
+      .neq("seller_id", user.id)
       .order("created_at", { ascending: true }),
   ]);
 
@@ -91,34 +103,35 @@ export default async function MiddlemanDashboardPage() {
     (t) => t.status === "awaiting_payment" || t.status === "delivery_confirmed",
   ).length;
 
-  const stats = [
+  const stats: {
+    label: string;
+    value: number;
+    icon: typeof ClipboardCheck;
+    tint: StatTint;
+  }[] = [
     {
       label: "Perlu Persetujuan",
       value: pendingApprovals.length,
       icon: ClipboardCheck,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
+      tint: "blue",
     },
     {
       label: "Perlu Tindakan",
       value: needsAction,
       icon: Clock,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
+      tint: "amber",
     },
     {
       label: "Sedang Berjalan",
       value: active.length,
       icon: ClipboardList,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
+      tint: "blue",
     },
     {
       label: "Selesai",
       value: completed.length,
       icon: CheckCircle2,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      tint: "green",
     },
   ];
 
@@ -127,46 +140,43 @@ export default async function MiddlemanDashboardPage() {
       <MobileBackBar />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-teal-600 rounded-xl flex items-center justify-center">
-            <ShieldCheck className="h-5 w-5 text-white" />
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[13px] bg-gradient-to-br from-teal-600 to-teal-800 text-white shadow-lg shadow-teal-600/30">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">
+                Dashboard Middleman
+              </h1>
+              <p className="text-sm text-gray-500">
+                Kelola dan konfirmasi transaksi yang Anda tangani
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Dashboard Middleman
-            </h1>
-            <p className="text-sm text-gray-500">
-              Kelola dan konfirmasi transaksi yang Anda tangani
-            </p>
-          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 font-mono text-[11px] font-bold tracking-wide text-green-600">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Middleman Terverifikasi
+          </span>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {stats.map((s) => (
-            <div
+            <StatTile
               key={s.label}
-              className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"
-            >
-              <div
-                className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}
-              >
-                <s.icon className={`h-4 w-4 ${s.color}`} />
-              </div>
-              <div>
-                <p className="text-xl font-bold text-gray-900 leading-tight">
-                  {s.value}
-                </p>
-                <p className="text-xs text-gray-500">{s.label}</p>
-              </div>
-            </div>
+              icon={s.icon}
+              value={s.value}
+              label={s.label}
+              tint={s.tint}
+            />
           ))}
         </div>
 
         {/* Lelang menunggu persetujuan */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-[17px] font-bold tracking-tight text-gray-900">
               Lelang Menunggu Persetujuan
             </h2>
             <span className="text-sm text-gray-500">
@@ -178,7 +188,7 @@ export default async function MiddlemanDashboardPage() {
 
         {/* Transaksi aktif */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          <h2 className="text-[17px] font-bold tracking-tight text-gray-900 mb-3">
             Transaksi Aktif
           </h2>
           {active.length === 0 ? (
@@ -204,7 +214,7 @@ export default async function MiddlemanDashboardPage() {
         {/* Riwayat selesai */}
         {completed.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            <h2 className="text-[17px] font-bold tracking-tight text-gray-900 mb-3">
               Riwayat Selesai
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

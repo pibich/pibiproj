@@ -269,7 +269,7 @@ export function NewMessageModal({
                       isSelected ? "bg-teal-50" : "hover:bg-gray-50",
                     ].join(" ")}
                   >
-                    <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-semibold shrink-0 overflow-hidden">
                       {user.avatar_url ? (
                         // biome-ignore lint/performance/noImgElement: external user avatar URL
                         <img

@@ -25,7 +25,7 @@ export function Button({
     primary:
       "bg-teal-600 text-white hover:bg-teal-700 shadow-sm shadow-teal-200 hover:shadow-md hover:shadow-teal-200 focus:ring-teal-400",
     secondary:
-      "bg-slate-600 text-white hover:bg-slate-500 focus:ring-slate-400",
+      "bg-amber-500 text-slate-900 hover:bg-amber-400 shadow-sm shadow-amber-200/60 focus:ring-amber-400",
     outline:
       "border border-slate-200 bg-white text-teal-600 hover:bg-slate-50 hover:border-slate-300 focus:ring-teal-400",
     ghost:

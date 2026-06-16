@@ -10,6 +10,7 @@ import {
   AdminReportTable,
   type ReportRow,
 } from "@/components/admin/AdminReportTable";
+import { StatTile, type StatTint } from "@/components/dashboard/StatTile";
 import { getUser } from "@/lib/dal";
 import { createClient } from "@/lib/supabase/server";
 
@@ -38,7 +39,8 @@ export default async function AdminReportsPage() {
     supabase
       .from("auctions")
       .select("*", { count: "exact", head: true })
-      .eq("status", "pending_approval"),
+      .eq("status", "pending_approval")
+      .neq("seller_id", admin!.id),
     supabase
       .from("profiles")
       .select("*", { count: "exact", head: true })
@@ -60,70 +62,56 @@ export default async function AdminReportsPage() {
 
   const typedReports = (reports ?? []) as unknown as ReportRow[];
 
-  const stats = [
+  const stats: {
+    label: string;
+    value: number;
+    icon: typeof Users;
+    tint: StatTint;
+  }[] = [
     {
       label: "Total Pengguna",
       value: totalUsers ?? 0,
       icon: Users,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
+      tint: "blue",
     },
     {
       label: "Laporan Pending",
       value: pendingReports ?? 0,
       icon: FileWarning,
-      color: "text-orange-600",
-      bg: "bg-orange-50",
+      tint: "amber",
     },
     {
       label: "Lelang Menunggu",
       value: pendingApprovals ?? 0,
       icon: ClipboardCheck,
-      color: "text-teal-600",
-      bg: "bg-teal-50",
+      tint: "blue",
     },
     {
       label: "Middleman Aktif",
       value: activeMiddlemen ?? 0,
       icon: ShieldCheck,
-      color: "text-green-600",
-      bg: "bg-green-50",
+      tint: "green",
     },
-    {
-      label: "User Timeout",
-      value: timedOut ?? 0,
-      icon: Clock,
-      color: "text-red-600",
-      bg: "bg-red-50",
-    },
+    { label: "User Timeout", value: timedOut ?? 0, icon: Clock, tint: "red" },
   ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {stats.map((s) => (
-          <div
+          <StatTile
             key={s.label}
-            className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3"
-          >
-            <div
-              className={`w-9 h-9 rounded-lg ${s.bg} flex items-center justify-center shrink-0`}
-            >
-              <s.icon className={`h-4 w-4 ${s.color}`} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-gray-900 leading-tight">
-                {s.value}
-              </p>
-              <p className="text-xs text-gray-500">{s.label}</p>
-            </div>
-          </div>
+            icon={s.icon}
+            value={s.value}
+            label={s.label}
+            tint={s.tint}
+          />
         ))}
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-[17px] font-bold tracking-tight text-gray-900">
             Laporan Pengguna
           </h2>
           <span className="text-sm text-gray-500">

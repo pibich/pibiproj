@@ -142,7 +142,7 @@ export function AdminUsersTable({
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-xs font-semibold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-semibold shrink-0">
                             {user.avatar_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -195,9 +195,9 @@ export function AdminUsersTable({
 
                       <td className="px-4 py-3">
                         {user.buyer_warning_count > 0 ? (
-                          <div className="flex items-center gap-1 text-orange-600">
+                          <div className="flex items-center gap-1 text-amber-600">
                             <AlertTriangle className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">
+                            <span className="font-mono text-xs font-medium tabular-nums">
                               {user.buyer_warning_count}x
                             </span>
                           </div>

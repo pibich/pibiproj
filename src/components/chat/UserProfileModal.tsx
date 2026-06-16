@@ -53,7 +53,7 @@ export function UserProfileModal({ userId, onClose }: UserProfileModalProps) {
           </div>
         ) : profile ? (
           <div className="flex flex-col items-center px-6 py-8 gap-3">
-            <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-2xl font-semibold overflow-hidden shrink-0">
+            <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-2xl font-semibold overflow-hidden shrink-0">
               {profile.avatar_url ? (
                 // biome-ignore lint/performance/noImgElement: external user avatar URL
                 <img

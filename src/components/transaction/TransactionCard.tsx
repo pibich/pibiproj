@@ -140,7 +140,7 @@ export function TransactionCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-400 to-amber-500">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-teal-600 to-teal-800">
                 <Package className="h-5 w-5 text-white" />
               </div>
             )}
@@ -149,7 +149,7 @@ export function TransactionCard({
             <p className="text-sm font-semibold text-gray-900 line-clamp-1">
               {auctionTitle}
             </p>
-            <p className="text-sm font-bold text-teal-600">
+            <p className="font-mono text-sm font-bold text-teal-600 tabular-nums">
               {formatIDR(tx.amount)}
             </p>
           </div>
@@ -165,7 +165,7 @@ export function TransactionCard({
             have no shipment tracking, so a full progress bar looks odd. */}
         {isDirect ? (
           <div className="px-4 py-2">
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-600">
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-600">
               <CheckCircle className="h-3.5 w-3.5" />
               Transaksi Selesai
             </span>
@@ -185,7 +185,7 @@ export function TransactionCard({
                       <div
                         className={[
                           "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
-                          done && !active ? "bg-emerald-500 text-white" : "",
+                          done && !active ? "bg-green-600 text-white" : "",
                           active
                             ? "bg-teal-600 text-white ring-2 ring-teal-200"
                             : "",
@@ -199,14 +199,14 @@ export function TransactionCard({
                         )}
                       </div>
                       <span
-                        className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-teal-600 font-semibold" : done ? "text-emerald-600" : "text-gray-400"}`}
+                        className={`text-[9px] mt-0.5 text-center leading-tight w-12 ${active ? "text-teal-600 font-semibold" : done ? "text-green-600" : "text-gray-400"}`}
                       >
                         {step.label}
                       </span>
                     </div>
                     {i < STEPS.length - 1 && (
                       <div
-                        className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-emerald-400" : "bg-gray-200"}`}
+                        className={`h-px flex-1 mx-0.5 mb-3 ${i < currentStep ? "bg-green-500" : "bg-gray-200"}`}
                       />
                     )}
                   </div>
@@ -227,7 +227,7 @@ export function TransactionCard({
             </div>
           )}
           {tx.status === "delivery_confirmed" && (
-            <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 rounded-lg px-3 py-2">
               <CheckCircle className="h-3.5 w-3.5 shrink-0" />
               <span>
                 Buyer telah konfirmasi penerimaan. Menunggu middleman melepaskan
@@ -288,7 +288,7 @@ export function TransactionCard({
             <button
               type="button"
               onClick={() => setShowShipping(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-semibold"
             >
               <Truck className="h-4 w-4" />
               Upload Bukti Pengiriman
@@ -300,7 +300,7 @@ export function TransactionCard({
             <button
               type="button"
               onClick={() => setShowReceipt(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold"
             >
               <CheckCircle className="h-4 w-4" />
               Konfirmasi Penerimaan
@@ -315,7 +315,7 @@ export function TransactionCard({
                 href={tx.receipt_photo_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-2 border border-emerald-200 text-sm text-emerald-700 rounded-xl hover:bg-emerald-50"
+                className="w-full flex items-center justify-center gap-2 py-2 border border-green-200 text-sm text-green-700 rounded-xl hover:bg-green-50"
               >
                 <Eye className="h-4 w-4" />
                 Lihat Bukti Penerimaan
@@ -324,7 +324,7 @@ export function TransactionCard({
               <button
                 type="button"
                 onClick={() => setShowReceipt(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold"
               >
                 <Upload className="h-4 w-4" />
                 Upload Bukti Penerimaan
@@ -352,7 +352,7 @@ export function TransactionCard({
                     type="button"
                     onClick={() => callAction("release-funds")}
                     disabled={loading}
-                    className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold disabled:opacity-50"
+                    className="flex-1 py-2 rounded-xl bg-teal-800 hover:bg-teal-900 text-white text-sm font-semibold disabled:opacity-50"
                   >
                     {loading ? "Memproses..." : "Lepaskan Dana"}
                   </button>
@@ -374,7 +374,7 @@ export function TransactionCard({
                 <button
                   type="button"
                   onClick={() => setConfirmRelease(true)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-teal-800 hover:bg-teal-900 text-white rounded-xl text-sm font-semibold"
                 >
                   <Banknote className="h-4 w-4" />
                   Lepaskan Dana ke Seller
@@ -386,8 +386,8 @@ export function TransactionCard({
           {isBuyer &&
             tx.status === "completed" &&
             (tx.reviewed || reviewedLocal ? (
-              <div className="flex items-center gap-2 text-xs text-emerald-600">
-                <Star className="h-3.5 w-3.5 shrink-0 fill-emerald-500 text-emerald-500" />
+              <div className="flex items-center gap-2 text-xs text-green-600">
+                <Star className="h-3.5 w-3.5 shrink-0 fill-green-500 text-green-500" />
                 <span>Ulasan Anda sudah terkirim. Terima kasih!</span>
               </div>
             ) : (

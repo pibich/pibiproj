@@ -100,15 +100,15 @@ export function AdminReportTable({
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-            {f === "all"
-              ? "Semua"
-              : f === "pending"
-                ? "Menunggu"
-                : f === "approved"
-                  ? "Disetujui"
-                  : "Ditolak"}
+              {f === "all"
+                ? "Semua"
+                : f === "pending"
+                  ? "Menunggu"
+                  : f === "approved"
+                    ? "Disetujui"
+                    : "Ditolak"}
               {f === "pending" && (
-                <span className="ml-1.5 bg-yellow-100 text-yellow-700 text-xs px-1.5 py-0.5 rounded-full">
+                <span className="ml-1.5 bg-amber-100 text-amber-700 font-mono text-xs px-1.5 py-0.5 rounded-full tabular-nums">
                   {reports.filter((r) => r.status === "pending").length}
                 </span>
               )}
@@ -167,7 +167,7 @@ export function AdminReportTable({
                           {report.reported?.name ?? "Unknown"}
                         </p>
                         {(report.reported?.buyer_warning_count ?? 0) > 0 && (
-                          <span className="flex items-center gap-0.5 text-xs text-orange-600">
+                          <span className="flex items-center gap-0.5 font-mono text-xs text-amber-600 tabular-nums">
                             <AlertTriangle className="h-3 w-3" />
                             {report.reported?.buyer_warning_count}x
                           </span>

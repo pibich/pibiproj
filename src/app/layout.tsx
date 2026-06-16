@@ -1,15 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  JetBrains_Mono,
+  Plus_Jakarta_Sans,
+} from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// "Trusted Auction Floor" type system: Bricolage Grotesque (display/headings),
+// Plus Jakarta Sans (body/UI default), JetBrains Mono (numbers, IDR, countdown,
+// stats). Exposed as CSS variables and wired into Tailwind tokens in globals.css
+// (font-display / font-sans / font-mono).
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -35,7 +54,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`${bricolage.variable} ${jakarta.variable} ${jetbrains.variable} h-full`}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-screen flex flex-col bg-stone-50 antialiased">

@@ -25,7 +25,7 @@ export default async function AdminMiddlemanPage() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-[17px] font-bold tracking-tight text-gray-900">
             Kelola Middleman
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">

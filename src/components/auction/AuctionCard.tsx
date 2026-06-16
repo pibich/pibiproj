@@ -216,7 +216,7 @@ export function AuctionCard({
           {auction.title}
         </h3>
 
-        <div className="mt-auto flex items-end justify-between gap-2">
+        <div className="mt-auto flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
           <div className="min-w-0">
             <p className="text-[10px] text-slate-400">Tawaran Tertinggi</p>
             <p className="mt-0.5 font-mono text-base font-bold tracking-tight text-teal-600">
@@ -224,9 +224,9 @@ export function AuctionCard({
             </p>
           </div>
           {auction.buy_now_price && isActive && (
-            <div className="text-right">
+            <div className="min-w-0 sm:text-right">
               <p className="text-[10px] text-slate-400">Beli Langsung</p>
-              <p className="mt-0.5 font-mono text-xs font-bold text-indigo-700">
+              <p className="mt-0.5 truncate font-mono text-xs font-bold text-amber-600">
                 {formatIDR(auction.buy_now_price)}
               </p>
             </div>

@@ -10,12 +10,15 @@ import {
   MessageTimestamp,
   QuotedMessage,
   ReactionSelector,
+  useChannelStateContext,
   useMessageContext,
 } from "stream-chat-react";
+import { getInitials } from "@/lib/utils";
 
 export function CustomMessage() {
-  const { message, isMyMessage, handleReaction, handleDelete } =
+  const { message, isMyMessage, groupStyles, handleReaction, handleDelete } =
     useMessageContext();
+  const { channel, members } = useChannelStateContext();
 
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -23,6 +26,27 @@ export function CustomMessage() {
   const isOwn = isMyMessage();
   const isDeleted = message.type === "deleted" || !!message.deleted_at;
   const isSystem = message.type === "system";
+
+  // Group chats (buyer + seller + middleman) need to identify the sender on
+  // incoming messages. DMs don't — the header already names the other person.
+  const memberCount =
+    (channel?.data?.member_count as number | undefined) ??
+    Object.keys(members ?? {}).length;
+  const isGroup = memberCount > 2;
+  const senderName = message.user?.name ?? "";
+  const senderImage = message.user?.image as string | undefined;
+  // `groupStyles` marks a message's position within a run from one sender:
+  // "single"/"top" = first, "single"/"bottom" = last. Show the name once on the
+  // first bubble and anchor the avatar on the last so it sits beside the run.
+  const isFirstOfRun =
+    !groupStyles?.length ||
+    groupStyles.includes("single") ||
+    groupStyles.includes("top");
+  const isLastOfRun =
+    !groupStyles?.length ||
+    groupStyles.includes("single") ||
+    groupStyles.includes("bottom");
+  const showSender = isGroup && !isOwn && !isSystem && !isDeleted;
 
   const hasAttachments = (message.attachments?.length ?? 0) > 0;
   const hasText = !!message.text?.trim();
@@ -48,6 +72,29 @@ export function CustomMessage() {
         isOwn ? "flex-row-reverse" : "flex-row",
       ].join(" ")}
     >
+      {/* Sender avatar gutter — group chats, incoming only. A spacer keeps
+          consecutive bubbles aligned when the avatar is hidden. */}
+      {showSender &&
+        (isLastOfRun ? (
+          <div
+            title={senderName}
+            className="w-7 h-7 self-end shrink-0 rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 text-[11px] font-display font-extrabold"
+          >
+            {senderImage ? (
+              // biome-ignore lint/performance/noImgElement: external Stream CDN avatar
+              <img
+                src={senderImage}
+                alt={senderName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              getInitials(senderName)
+            )}
+          </div>
+        ) : (
+          <div className="w-7 shrink-0" />
+        ))}
+
       {/* Message column */}
       <div
         className={[
@@ -55,6 +102,13 @@ export function CustomMessage() {
           isOwn ? "items-end" : "items-start",
         ].join(" ")}
       >
+        {/* Sender name — once at the top of a run, group chats only */}
+        {showSender && isFirstOfRun && senderName && (
+          <span className="px-1 text-[11px] font-medium text-slate-500">
+            {senderName}
+          </span>
+        )}
+
         {/* Quoted/reply preview */}
         {message.quoted_message && <QuotedMessage />}
 

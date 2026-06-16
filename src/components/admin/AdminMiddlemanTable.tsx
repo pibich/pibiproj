@@ -73,7 +73,7 @@ export function AdminMiddlemanTable({ users }: { users: MiddlemanRow[] }) {
               className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-semibold shrink-0">
                   {user.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img

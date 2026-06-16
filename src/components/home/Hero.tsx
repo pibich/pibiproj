@@ -26,7 +26,7 @@ export function Hero({ featured, stats }: HeroProps) {
           <h1 className="text-4xl font-extrabold leading-[0.98] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
             Tawar kartu langka
             <br />
-            secara <span className="text-teal-600">live</span>.
+            secara <span className="text-amber-500">live</span>.
           </h1>
 
           <p className="mt-5 max-w-[44ch] text-base leading-relaxed text-slate-600">
@@ -45,7 +45,7 @@ export function Hero({ featured, stats }: HeroProps) {
             </a>
             <Link
               href="/cara-kerja"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition-colors hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-6 py-3.5 text-sm font-bold text-amber-700 transition-colors hover:border-amber-400 hover:bg-amber-50"
             >
               Cara Kerja Lelang
               <ArrowRight className="h-4 w-4" />

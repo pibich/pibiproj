@@ -75,7 +75,7 @@ export function Navbar({ user, onLogout, hideOnMobile = false }: NavbarProps) {
 
   return (
     <header
-      className={`sticky top-0 z-40 bg-[#f8f4ec]/85 backdrop-blur-md border-b border-slate-200 shadow-sm shadow-slate-200/40 ${
+      className={`sticky top-0 z-40 bg-[#f8fafc]/85 backdrop-blur-md border-b border-slate-200 shadow-sm shadow-slate-200/40 ${
         hideOnMobile ? "hidden md:block" : ""
       }`}
     >
@@ -147,7 +147,7 @@ export function Navbar({ user, onLogout, hideOnMobile = false }: NavbarProps) {
                     type="button"
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     aria-label="Menu akun"
-                    className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-900 to-indigo-700 text-xs font-bold text-white ring-1 ring-black/10 transition-transform hover:scale-105"
+                    className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-slate-100 text-xs font-bold text-slate-500 ring-1 ring-black/10 transition-transform hover:scale-105"
                   >
                     {user.avatar_url ? (
                       // biome-ignore lint/performance/noImgElement: Supabase CDN URLs not compatible with next/image domain allowlist
@@ -203,7 +203,7 @@ export function Navbar({ user, onLogout, hideOnMobile = false }: NavbarProps) {
                             className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-teal-600 hover:bg-slate-50 transition-colors"
                           >
                             <ShieldCheck className="h-4 w-4" />
-                            Admin Panel
+                            Dashboard Admin
                           </Link>
                         )}
                         <div className="border-t border-slate-50 mt-1 pt-1">
@@ -254,7 +254,7 @@ export function Navbar({ user, onLogout, hideOnMobile = false }: NavbarProps) {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-[#f8f4ec]/95 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden border-t border-slate-200 bg-[#f8fafc]/95 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
           <form
             onSubmit={handleSearch}
             className="mb-2 flex items-center gap-2.5 h-11 rounded-full border border-slate-200 bg-white px-4 focus-within:border-slate-400"

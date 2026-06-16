@@ -293,7 +293,7 @@ function ClickableAvatar({
         title={userName}
         className={[
           sizeClass,
-          "rounded-full overflow-hidden bg-teal-100 flex items-center justify-center text-teal-700 font-semibold shrink-0",
+          "rounded-lg overflow-hidden bg-slate-100 flex items-center justify-center text-slate-500 font-display font-extrabold shrink-0",
           userName ? "cursor-pointer hover:opacity-80 transition-opacity" : "",
           rest.className ?? "",
         ].join(" ")}
@@ -348,8 +348,7 @@ function ChannelListLayout({
   // Display title for a channel, used for client-side search filtering.
   function channelTitle(ch: StreamChannel): string {
     const mems = Object.values(ch.state.members);
-    const count =
-      (ch.data?.member_count as number | undefined) ?? mems.length;
+    const count = (ch.data?.member_count as number | undefined) ?? mems.length;
     if (count > 2) {
       return (
         (ch.data?.name as string | undefined) ??
@@ -361,9 +360,7 @@ function ChannelListLayout({
       );
     }
     const other = mems.find((m) => m.user?.id !== userId);
-    return (
-      other?.user?.name ?? (ch.data?.name as string | undefined) ?? "Chat"
-    );
+    return other?.user?.name ?? (ch.data?.name as string | undefined) ?? "Chat";
   }
 
   useEffect(() => {
@@ -373,16 +370,25 @@ function ChannelListLayout({
     const members = [userId, initialTargetUserId];
     const channelId = buildChannelId(members);
 
-    const watchWithRetry = (ch: ReturnType<typeof client.channel>, attempt = 0): Promise<typeof ch> =>
-      ch.watch().then(() => ch).catch((err) => {
-        if (attempt >= 2) throw err;
-        return new Promise<typeof ch>((resolve, reject) =>
-          setTimeout(
-            () => watchWithRetry(ch, attempt + 1).then(resolve).catch(reject),
-            1000 * (attempt + 1),
-          ),
-        );
-      });
+    const watchWithRetry = (
+      ch: ReturnType<typeof client.channel>,
+      attempt = 0,
+    ): Promise<typeof ch> =>
+      ch
+        .watch()
+        .then(() => ch)
+        .catch((err) => {
+          if (attempt >= 2) throw err;
+          return new Promise<typeof ch>((resolve, reject) =>
+            setTimeout(
+              () =>
+                watchWithRetry(ch, attempt + 1)
+                  .then(resolve)
+                  .catch(reject),
+              1000 * (attempt + 1),
+            ),
+          );
+        });
 
     fetch("/api/stream/group", {
       method: "POST",
@@ -567,7 +573,9 @@ async function getOrConnectClient(
 
   // Already set up as the same user — check if the WS is still healthy.
   if (chatClient.userID === userId) {
-    const ws = (chatClient as unknown as { wsConnection?: { isHealthy?: boolean } }).wsConnection;
+    const ws = (
+      chatClient as unknown as { wsConnection?: { isHealthy?: boolean } }
+    ).wsConnection;
     // If the connection is explicitly unhealthy (dropped), disconnect and re-auth below.
     if (ws && ws.isHealthy === false) {
       await chatClient.disconnectUser().catch(() => {});

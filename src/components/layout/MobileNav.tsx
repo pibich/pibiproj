@@ -1,12 +1,10 @@
 "use client";
 
-import { Gavel, Home, MessageSquare, Plus, User } from "lucide-react";
+import { Gavel, MessageSquare, Plus, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useChatUnread } from "@/hooks/useChatUnread";
 import { cn } from "@/lib/utils";
-
-const navItems = [{ href: "/auctions", label: "Lelang", icon: Gavel }];
 
 interface MobileNavProps {
   userId: string;
@@ -17,52 +15,31 @@ export function MobileNav({ userId, username }: MobileNavProps) {
   const pathname = usePathname();
   const { hasUnread, isOnChatPage } = useChatUnread(userId);
 
-  function isActive(href: string) {
-    if (href === "/") return pathname === "/";
-    return pathname === href || pathname.startsWith(`${href}/`);
-  }
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-[0_-1px_12px_rgba(14,165,233,0.08)]">
+    <nav className="fixed bottom-0 left-0 right-0 md:hidden z-40 bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-[0_-1px_12px_rgba(37,99,235,0.08)]">
       <div className="flex items-center justify-evenly h-14">
-        {/* Beranda */}
+        {/* Lelang / Beranda — home now hosts the unified auction listing */}
         <Link
           href="/"
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
-            isActive("/")
+            pathname === "/" ||
+              (pathname.startsWith("/auctions") &&
+                pathname !== "/auctions/create")
               ? "text-teal-600"
               : "text-slate-400 hover:text-teal-500",
           )}
         >
-          <Home className="h-5 w-5 shrink-0" />
-          <span className="text-[10px] font-medium leading-tight">Beranda</span>
+          <Gavel className="h-5 w-5 shrink-0" />
+          <span className="text-[10px] font-medium leading-tight">Lelang</span>
         </Link>
-
-        {navItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
-              isActive(href)
-                ? "text-teal-600"
-                : "text-slate-400 hover:text-teal-500",
-            )}
-          >
-            <Icon className="h-5 w-5 shrink-0" />
-            <span className="text-[10px] font-medium leading-tight">
-              {label}
-            </span>
-          </Link>
-        ))}
 
         {/* Buat */}
         <Link
           href="/auctions/create"
           className={cn(
             "flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
-            isActive("/auctions/create")
+            pathname === "/auctions/create"
               ? "text-teal-600"
               : "text-slate-400 hover:text-teal-500",
           )}
@@ -76,7 +53,9 @@ export function MobileNav({ userId, username }: MobileNavProps) {
           href="/chat"
           className={cn(
             "relative flex flex-1 flex-col items-center gap-0.5 py-1.5 rounded-xl transition-colors",
-            isOnChatPage ? "text-teal-600" : "text-slate-400 hover:text-teal-500",
+            isOnChatPage
+              ? "text-teal-600"
+              : "text-slate-400 hover:text-teal-500",
           )}
         >
           <div className="relative">

@@ -90,7 +90,7 @@ export function AuctionApprovalActions({
             type="button"
             onClick={handleApprove}
             disabled={isPending}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 transition-colors"
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />

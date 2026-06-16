@@ -135,7 +135,20 @@ export default async function HomePage({
   if (params.category) query = query.eq("category_id", params.category);
   if (params.condition)
     query = query.eq("condition", params.condition as Auction["condition"]);
-  if (params.q) query = query.ilike("title", `%${params.q}%`);
+  if (params.q) {
+    // Match the auction title OR the seller's username/name. Resolve matching
+    // seller ids first, then OR them with the title filter. Strip chars that
+    // would break the PostgREST `.or()` filter syntax (commas / parens).
+    const term = params.q.replace(/[,()]/g, " ").trim();
+    const { data: sellerRows } = await supabase
+      .from("profiles")
+      .select("id")
+      .or(`username.ilike.%${term}%,name.ilike.%${term}%`);
+    const sellerIds = (sellerRows ?? []).map((r) => r.id);
+    query = sellerIds.length
+      ? query.or(`title.ilike.%${term}%,seller_id.in.(${sellerIds.join(",")})`)
+      : query.ilike("title", `%${params.q}%`);
+  }
   if (params.buy === "1") query = query.not("buy_now_price", "is", null);
   if (params.free === "1") query = query.eq("free_shipping", true);
 
@@ -147,9 +160,6 @@ export default async function HomePage({
       break;
     case "recently_ended":
       query = query.order("end_time", { ascending: false });
-      break;
-    case "popular":
-      query = query.order("view_count", { ascending: false });
       break;
     case "price_low":
       query = query.order("current_price", { ascending: true });

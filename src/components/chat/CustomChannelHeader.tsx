@@ -16,7 +16,9 @@ export function CustomChannelHeader() {
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [hasMiddleman, setHasMiddleman] = useState(false);
-  const [middlemanMemberId, setMiddlemanMemberId] = useState<string | undefined>(undefined);
+  const [middlemanMemberId, setMiddlemanMemberId] = useState<
+    string | undefined
+  >(undefined);
 
   async function handleSendSchema(text: string) {
     await channel.sendMessage({ text });
@@ -41,9 +43,11 @@ export function CustomChannelHeader() {
         setHasMiddleman(!!found);
         setMiddlemanMemberId(found?.id);
       })
-      .catch(() => { setHasMiddleman(false); setMiddlemanMemberId(undefined); });
+      .catch(() => {
+        setHasMiddleman(false);
+        setMiddlemanMemberId(undefined);
+      });
   }, [channel.id, memberCount]);
-
 
   let title: string;
 
@@ -92,7 +96,7 @@ export function CustomChannelHeader() {
                   type="button"
                   onClick={() => uid && setProfileUserId(uid)}
                   title={name}
-                  className="w-9 h-9 rounded-full bg-teal-100 border-2 border-white flex items-center justify-center text-teal-700 text-xs font-semibold overflow-hidden hover:z-10 hover:scale-110 transition-transform relative"
+                  className="w-9 h-9 rounded-[10px] bg-slate-100 border-2 border-white flex items-center justify-center text-slate-500 font-display text-xs font-extrabold overflow-hidden hover:z-10 hover:scale-110 transition-transform relative"
                 >
                   {image ? (
                     // biome-ignore lint/performance/noImgElement: external Stream CDN user avatar
@@ -107,7 +111,7 @@ export function CustomChannelHeader() {
                 </button>
                 {/* Online dot — DM only */}
                 {!isGroup && m.user?.online && (
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-teal-500 border-2 border-white" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
                 )}
               </div>
             );
@@ -124,7 +128,11 @@ export function CustomChannelHeader() {
           <p className="text-sm font-semibold text-gray-900 truncate">
             {title}
           </p>
-          <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+          <div
+            className={`flex items-center gap-1 text-xs mt-0.5 ${
+              !isGroup && isOnline ? "text-green-600" : "text-gray-400"
+            }`}
+          >
             {isGroup && <Users className="h-3 w-3 shrink-0" />}
             <span className="truncate font-mono">{subtitle}</span>
           </div>
@@ -187,7 +195,10 @@ export function CustomChannelHeader() {
         channelId={channel.id ?? undefined}
       />
 
-      <MiddlemanGuideModal open={guideOpen} onClose={() => setGuideOpen(false)} />
+      <MiddlemanGuideModal
+        open={guideOpen}
+        onClose={() => setGuideOpen(false)}
+      />
     </>
   );
 }

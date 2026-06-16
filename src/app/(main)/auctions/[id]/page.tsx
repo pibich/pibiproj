@@ -402,7 +402,7 @@ export default async function AuctionDetailPage({
                 href={`/profile/${auction.seller.username}`}
                 className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80"
               >
-                <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-900 to-indigo-700 text-sm font-bold text-white">
+                <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-slate-100 text-sm font-bold text-slate-500">
                   {auction.seller.avatar_url ? (
                     // biome-ignore lint/performance/noImgElement: Supabase CDN URL
                     <img

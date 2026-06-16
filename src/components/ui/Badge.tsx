@@ -13,7 +13,7 @@ export function Badge({
 }: BadgeProps) {
   const variants = {
     default: "bg-slate-100 text-slate-600",
-    success: "bg-emerald-100 text-emerald-700",
+    success: "bg-green-100 text-green-700",
     warning: "bg-amber-100 text-amber-700",
     danger: "bg-red-100 text-red-600",
     info: "bg-slate-100 text-teal-700",

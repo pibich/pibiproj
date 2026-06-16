@@ -60,8 +60,8 @@ export function FeaturedLot({ auction }: { auction: FeaturedAuction }) {
       {/* Floating tag */}
       <div className="absolute -top-3 left-5 z-10 inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-teal-400" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-400" />
         </span>
         Lelang Sorotan · Live
       </div>
@@ -99,7 +99,7 @@ export function FeaturedLot({ auction }: { auction: FeaturedAuction }) {
               </span>
             )}
             {auction.buy_now_price && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-[#28245e] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-900">
                 Beli {formatIDR(auction.buy_now_price)}
               </span>
             )}

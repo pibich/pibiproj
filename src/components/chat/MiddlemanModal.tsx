@@ -95,7 +95,7 @@ export function MiddlemanModal({
                   onClick={() => onSelect(mm.id, mm.name)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-teal-50 text-left transition-colors w-full group"
                 >
-                  <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-sm font-semibold shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-semibold shrink-0">
                     {mm.avatar_url ? (
                       // biome-ignore lint/performance/noImgElement: external user avatar URL
                       <img

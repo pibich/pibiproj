@@ -8,7 +8,6 @@ import {
   LayoutGrid,
   ShoppingBag,
   Truck,
-  Zap,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -31,7 +30,6 @@ interface AuctionBrowserProps {
 const quickChips = [
   { key: "all", label: "Semua", icon: null },
   { key: "ending", label: "Berakhir Segera", icon: Clock },
-  { key: "popular", label: "Paling Diminati", icon: Zap },
   { key: "buy", label: "Beli Langsung", icon: ShoppingBag },
   { key: "free", label: "Gratis Ongkir", icon: Truck },
   { key: "selesai", label: "Selesai", icon: CheckCircle2 },
@@ -64,7 +62,6 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
   if (isEnded) activeChip = "selesai";
   else if (searchParams.get("buy") === "1") activeChip = "buy";
   else if (searchParams.get("free") === "1") activeChip = "free";
-  else if (searchParams.get("sort") === "popular") activeChip = "popular";
   else if (searchParams.get("sort") === "ending_soon") activeChip = "ending";
 
   const sortValue =
@@ -92,9 +89,6 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
     switch (key) {
       case "ending":
         p.set("sort", "ending_soon");
-        break;
-      case "popular":
-        p.set("sort", "popular");
         break;
       case "buy":
         p.set("buy", "1");
@@ -125,7 +119,7 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
         className={[
           "sticky top-16 z-30 transition-shadow",
           stuck
-            ? "border-b border-slate-200 bg-[#f2eee4]/92 backdrop-blur-md shadow-sm"
+            ? "border-b border-slate-200 bg-[#eef2f7]/92 backdrop-blur-md shadow-sm"
             : "border-b border-transparent",
         ].join(" ")}
       >
@@ -180,7 +174,6 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
               ) : (
                 <>
                   <option value="ending_soon">Segera berakhir</option>
-                  <option value="popular">Paling diminati</option>
                   <option value="newest">Terbaru</option>
                   <option value="price_low">Harga terendah</option>
                   <option value="price_high">Harga tertinggi</option>

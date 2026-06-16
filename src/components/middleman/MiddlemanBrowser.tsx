@@ -73,7 +73,7 @@ export function MiddlemanBrowser({
               {/* Identity */}
               <div className="flex items-center gap-3">
                 <Link href={`/profile/${mm.username}`} className="shrink-0">
-                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-900 to-indigo-700 text-sm font-bold text-white">
+                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-xl bg-slate-100 text-sm font-bold text-slate-500">
                     {mm.avatar_url ? (
                       // biome-ignore lint/performance/noImgElement: external user avatar URL
                       <img

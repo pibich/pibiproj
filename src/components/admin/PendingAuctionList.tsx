@@ -75,7 +75,7 @@ export function PendingAuctionList({
                 href={`/profile/${a.seller.username}`}
                 className="flex items-center gap-2 mt-2 w-fit hover:opacity-80 transition-opacity"
               >
-                <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 text-[10px] font-semibold">
+                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px] font-semibold">
                   {getInitials(a.seller.name)}
                 </div>
                 <span className="text-xs text-gray-600">
