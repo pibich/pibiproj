@@ -1,11 +1,11 @@
 "use client";
 
 import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
   CheckCircle2,
   Clock,
   Gavel,
-  Grid3x3,
-  LayoutGrid,
   ShoppingBag,
   Truck,
 } from "lucide-react";
@@ -39,7 +39,6 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
-  const [compact, setCompact] = useState(false);
   const [stuck, setStuck] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +65,10 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
 
   const sortValue =
     searchParams.get("sort") ?? (isEnded ? "recently_ended" : "ending_soon");
+  // The toolbar exposes a single asc/desc axis on price:
+  // asc = cheapest first (price_low), desc = most expensive first (price_high).
+  const priceAsc = sortValue === "price_low";
+  const priceDesc = sortValue === "price_high";
 
   /** Fresh params that keep the rail/search context (category, q). */
   function baseParams() {
@@ -154,56 +157,39 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
             })}
           </div>
 
-          {/* Sort */}
+          {/* Sort direction (price asc/desc) */}
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
-            <label htmlFor="sort" className="text-xs text-slate-400">
-              Urutkan
-            </label>
-            <select
-              id="sort"
-              value={sortValue}
-              onChange={(e) => applySort(e.target.value)}
-              className="h-9 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
-            >
-              {isEnded ? (
-                <>
-                  <option value="recently_ended">Terbaru selesai</option>
-                  <option value="price_high">Harga tertinggi</option>
-                  <option value="price_low">Harga terendah</option>
-                </>
-              ) : (
-                <>
-                  <option value="ending_soon">Segera berakhir</option>
-                  <option value="newest">Terbaru</option>
-                  <option value="price_low">Harga terendah</option>
-                  <option value="price_high">Harga tertinggi</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Density toggle */}
-          <div className="hidden shrink-0 overflow-hidden rounded-lg border border-slate-200 md:inline-flex">
-            <button
-              type="button"
-              onClick={() => setCompact(false)}
-              aria-label="Tampilan renggang"
-              className={`grid h-9 w-9 place-items-center ${
-                !compact ? "bg-slate-900 text-white" : "bg-white text-slate-400"
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setCompact(true)}
-              aria-label="Tampilan padat"
-              className={`grid h-9 w-9 place-items-center border-l border-slate-200 ${
-                compact ? "bg-slate-900 text-white" : "bg-white text-slate-400"
-              }`}
-            >
-              <Grid3x3 className="h-4 w-4" />
-            </button>
+            <span className="text-xs text-slate-400">Harga</span>
+            <div className="inline-flex overflow-hidden rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => applySort("price_low")}
+                aria-label="Harga termurah dulu"
+                aria-pressed={priceAsc}
+                className={`inline-flex h-9 items-center gap-1.5 px-3 text-[13px] font-semibold transition-colors ${
+                  priceAsc
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <ArrowUpNarrowWide className="h-4 w-4" />
+                Termurah
+              </button>
+              <button
+                type="button"
+                onClick={() => applySort("price_high")}
+                aria-label="Harga termahal dulu"
+                aria-pressed={priceDesc}
+                className={`inline-flex h-9 items-center gap-1.5 border-l border-slate-200 px-3 text-[13px] font-semibold transition-colors ${
+                  priceDesc
+                    ? "bg-slate-900 text-white"
+                    : "bg-white text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                <ArrowDownWideNarrow className="h-4 w-4" />
+                Termahal
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -223,13 +209,7 @@ export function AuctionBrowser({ auctions, totalActive }: AuctionBrowserProps) {
             </p>
           </div>
         ) : (
-          <div
-            className={
-              compact
-                ? "grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-                : "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-            }
-          >
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {auctions.map((auction) => (
               <AuctionCard key={auction.id} auction={auction} enableQuickBid />
             ))}
