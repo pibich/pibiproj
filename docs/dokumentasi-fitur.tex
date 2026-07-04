@@ -1,0 +1,435 @@
+% =====================================================================
+%  Dokumentasi Fitur Aplikasi Lelang
+%  Berisi penjelasan 5 sistem inti + referensi lokasi kode.
+%  Salin isi file ini ke Overleaf. Jika ingin dipakai sebagai dokumen
+%  berdiri sendiri, hapus tanda komentar pada blok preamble di bawah.
+% =====================================================================
+
+% ----------------------- PREAMBLE (opsional) -------------------------
+% \documentclass[11pt,a4paper]{article}
+% \usepackage[utf8]{inputenc}
+% \usepackage[T1]{fontenc}
+% \usepackage[bahasa]{babel}
+% \usepackage{listings}
+% \usepackage{xcolor}
+% \usepackage{hyperref}
+% \usepackage{geometry}
+% \geometry{margin=2.5cm}
+%
+% \lstdefinestyle{code}{
+%   basicstyle=\ttfamily\footnotesize,
+%   breaklines=true,
+%   numbers=left,
+%   numberstyle=\tiny\color{gray},
+%   keywordstyle=\color{blue},
+%   commentstyle=\color{gray!70},
+%   stringstyle=\color{teal},
+%   frame=single,
+%   rulecolor=\color{gray!40},
+%   showstringspaces=false,
+%   tabsize=2
+% }
+% \lstset{style=code}
+%
+% \begin{document}
+% \tableofcontents
+% \newpage
+% ---------------------------------------------------------------------
+
+\section{Menampilkan Card Post Lelang}
+\label{sec:card-lelang}
+
+Card lelang dirender oleh komponen \texttt{AuctionCard}
+(\texttt{src/components/auction/AuctionCard.tsx}). Komponen ini menerima
+sebuah objek \texttt{auction} beserta relasi opsional (penjual, kategori,
+jumlah tawaran, dan rating penjual), lalu menampilkannya sebagai kartu yang
+menautkan ke halaman detail \texttt{/auctions/[id]}.
+
+Fitur penting pada card:
+\begin{itemize}
+  \item \textbf{Hitung mundur waktu (\emph{countdown})}. Sub-komponen
+  \texttt{Countdown} memperbarui sisa waktu setiap 1 detik memakai
+  \texttt{setInterval}. Jika sisa waktu $<$ 1 jam, badge berubah menjadi
+  merah (status \emph{urgent}/``Hot'').
+  \item \textbf{Pembaruan status real-time}. Card berlangganan (subscribe)
+  perubahan baris tabel \texttt{auctions} melalui Supabase Realtime, sehingga
+  status lelang (misalnya berubah menjadi ``Selesai'' atau ``Gagal'')
+  langsung tercermin tanpa refresh.
+  \item \textbf{Indikator kondisi barang} (mint, near mint, dsb.) dengan
+  titik warna, harga tawaran tertinggi, harga ``Beli Langsung'' (jika ada),
+  badge ``Gratis'' ongkir, jumlah tawaran, dan rating bintang penjual.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript,caption={Hitung mundur \& deteksi status urgent (AuctionCard.tsx)}]
+function Countdown({ endTime }: { endTime: string }) {
+  const [time, setTime] = useState(null);
+  useEffect(() => {
+    setTime(getTimeRemaining(endTime));
+    const t = setInterval(() => setTime(getTimeRemaining(endTime)), 1000);
+    return () => clearInterval(t);
+  }, [endTime]);
+
+  if (!time) return <span>--:--</span>;
+  if (time.expired) return <span>Berakhir</span>;
+  const urgent = time.total < 3600; // < 1 jam -> tandai "Hot"
+  return (
+    <span>
+      {time.days > 0
+        ? `${time.days}h ${String(time.hours).padStart(2, "0")}j`
+        : `${String(time.hours).padStart(2, "0")}:${String(time.minutes).padStart(2, "0")}:${String(time.seconds).padStart(2, "0")}`}
+    </span>
+  );
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript,caption={Subscribe perubahan status lelang secara real-time}]
+useEffect(() => {
+  if (status !== "active") return;
+  const supabase = createClient();
+  const channel = supabase
+    .channel(`auction-card-${auction.id}`)
+    .on("postgres_changes",
+      { event: "UPDATE", schema: "public", table: "auctions",
+        filter: `id=eq.${auction.id}` },
+      (payload) => {
+        const updated = payload.new;
+        if (updated.status !== "active") {
+          setStatus(updated.status);
+          setWinnerId(updated.winner_id);
+        }
+      })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [auction.id, status]);
+\end{lstlisting}
+
+\paragraph{Referensi kode.}
+\begin{itemize}
+  \item \texttt{src/components/auction/AuctionCard.tsx} --- komponen card.
+  \item \texttt{src/components/auction/AuctionBrowser.tsx} --- daftar/grid card.
+  \item \texttt{src/app/api/auctions/route.ts} --- endpoint pengambilan data lelang.
+\end{itemize}
+
+
+\section{Sistem Kerja Transaksi Middleman}
+\label{sec:middleman}
+
+Middleman berperan sebagai pihak ketiga tepercaya (\emph{escrow}) yang menahan
+dana pembeli sampai barang benar-benar diterima, baru kemudian melepaskannya ke
+penjual. Alur ini melibatkan chat grup (GetStream) dan tabel \texttt{transactions}.
+
+\subsection{Mengundang Middleman}
+Di dalam percakapan, pengguna membuka \texttt{MiddlemanModal}
+(\texttt{src/components/chat/MiddlemanModal.tsx}) yang mengambil daftar middleman
+dari \texttt{/api/middlemen}, menyaring yang belum ada di percakapan, lalu
+memanggil \texttt{onSelect(id, nama)}. Pemanggil kemudian menambahkan middleman
+tersebut ke channel GetStream melalui \texttt{/api/stream/group}
+(lihat Bagian~\ref{sec:getstream}), sehingga pembeli, penjual, dan middleman
+berada dalam satu ruang percakapan yang sama.
+
+\subsection{Membuat Transaksi (Escrow)}
+Endpoint \texttt{POST /api/transactions}
+(\texttt{src/app/api/transactions/route.ts}) memvalidasi bahwa: lelang sudah
+selesai dan punya pemenang, pemohon adalah penjual/pembeli, belum ada transaksi
+untuk lelang tersebut, dan (jika dipilih) middleman memang berstatus middleman.
+Bila valid, sebuah baris transaksi dibuat dan lelang ditandai
+\texttt{transaction\_confirmed = true}.
+
+\begin{lstlisting}[language=JavaScript,caption={Pembuatan baris transaksi (transactions/route.ts)}]
+const { data: transaction } = await supabase
+  .from("transactions")
+  .insert({
+    auction_id,
+    seller_id: auction.seller_id,
+    buyer_id: auction.winner_id,
+    middleman_id: middleman_id ?? null,
+    amount: auction.current_price,
+    tax_bearer: tax_bearer ?? "Buyer",
+    stream_channel_id: stream_channel_id ?? null,
+  })
+  .select().single();
+
+// Notifikasi ke middleman jika ada
+if (middleman_id) {
+  await createNotification(supabase, {
+    user_id: middleman_id,
+    type: "transaction_confirmed",
+    auction_id,
+  });
+}
+\end{lstlisting}
+
+\subsection{Siklus Hidup Transaksi}
+Status transaksi berjalan berurutan (lihat \texttt{TransactionCard.tsx}):
+
+\begin{enumerate}
+  \item \texttt{awaiting\_payment} --- Pembeli membayar; \textbf{middleman}
+  menekan ``Konfirmasi Pembayaran Diterima''
+  ($\rightarrow$ \texttt{/confirm-payment}).
+  \item \texttt{awaiting\_shipment} --- \textbf{Penjual} mengunggah bukti
+  pengiriman + nomor resi ($\rightarrow$ \texttt{/upload-shipping}).
+  \item \texttt{shipped} --- \textbf{Pembeli} mengunggah/menekan konfirmasi
+  penerimaan ($\rightarrow$ \texttt{/confirm-receipt}).
+  \item \texttt{delivery\_confirmed} --- \textbf{Middleman} memverifikasi bukti
+  lalu ``Lepaskan Dana ke Seller'' ($\rightarrow$ \texttt{/release-funds}).
+  \item \texttt{completed} --- Transaksi selesai; statistik penjual \& pembeli
+  bertambah, dan pembeli dapat memberi ulasan.
+\end{enumerate}
+
+Untuk \emph{direct deal} (tanpa middleman), langkah escrow dilewati dan
+transaksi langsung ditampilkan sebagai selesai.
+
+\begin{lstlisting}[language=JavaScript,caption={Pelepasan dana oleh middleman (release-funds/route.ts)}]
+if (transaction.middleman_id !== user.id)
+  return NextResponse.json({ error: "Hanya middleman yang bisa melepaskan dana" }, { status: 403 });
+
+if (transaction.status !== "delivery_confirmed")
+  return NextResponse.json({ error: `Status tidak valid` }, { status: 400 });
+
+await supabase.from("transactions")
+  .update({ status: "completed", updated_at: new Date().toISOString() })
+  .eq("id", id);
+
+// Tambah statistik & kirim notifikasi ke seller + buyer
+await createNotification(supabase, { user_id: transaction.seller_id, type: "funds_released", auction_id: transaction.auction_id });
+await createNotification(supabase, { user_id: transaction.buyer_id, type: "delivery_confirmed", auction_id: transaction.auction_id });
+\end{lstlisting}
+
+\paragraph{Referensi kode.}
+\begin{itemize}
+  \item \texttt{src/components/chat/MiddlemanModal.tsx} --- pemilihan middleman.
+  \item \texttt{src/app/api/transactions/route.ts} --- membuat transaksi.
+  \item \texttt{src/components/transaction/TransactionCard.tsx} --- UI \& stepper siklus.
+  \item \texttt{src/app/api/transactions/[id]/confirm-payment} $|$ \texttt{upload-shipping} $|$ \texttt{confirm-receipt} $|$ \texttt{release-funds} --- transisi status.
+  \item \texttt{supabase/migration-transactions.sql} --- skema tabel transaksi.
+\end{itemize}
+
+
+\section{Sistem Kerja Ulasan}
+\label{sec:ulasan}
+
+Ulasan hanya bisa diberikan oleh \textbf{pembeli} setelah transaksi berstatus
+\texttt{completed}. Alur dimulai dari tombol ``Beri Ulasan Penjual'' di
+\texttt{TransactionCard}, yang membuka \texttt{ReviewModal}
+(\texttt{src/components/transaction/ReviewModal.tsx}).
+
+\subsection{Penyimpanan Ulasan}
+Endpoint \texttt{POST /api/transactions/[id]/review}
+(\texttt{src/app/api/transactions/[id]/review/route.ts}) memvalidasi masukan
+dengan Zod (rating bilangan bulat 1--5, komentar maksimum 1000 karakter), lalu
+memastikan pemohon adalah pembeli dan transaksi sudah selesai. Ulasan disimpan
+ke tabel \texttt{reviews} beserta \emph{snapshot} foto bukti penerimaan agar
+dapat ditampilkan publik. Constraint \texttt{UNIQUE(transaction\_id)} mencegah
+ulasan ganda (error kode \texttt{23505}).
+
+\begin{lstlisting}[language=JavaScript,caption={Validasi \& penyimpanan ulasan (review/route.ts)}]
+const reviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(1000).optional(),
+});
+
+if (transaction.buyer_id !== user.id)
+  return NextResponse.json({ error: "Hanya pembeli yang bisa memberi ulasan" }, { status: 403 });
+if (transaction.status !== "completed")
+  return NextResponse.json({ error: "Ulasan hanya setelah transaksi selesai." }, { status: 400 });
+
+const { error: insertErr } = await supabase.from("reviews").insert({
+  transaction_id: transaction.id,
+  auction_id: transaction.auction_id,
+  seller_id: transaction.seller_id,
+  buyer_id: user.id,
+  rating,
+  comment: comment || null,
+  receipt_photo_url: transaction.receipt_photo_url ?? null,
+});
+
+if (insertErr?.code === "23505")
+  return NextResponse.json({ error: "Anda sudah memberi ulasan." }, { status: 409 });
+\end{lstlisting}
+
+\subsection{Menampilkan Ulasan}
+Komponen \texttt{SellerReviews}
+(\texttt{src/components/profile/SellerReviews.tsx}) menampilkan rata-rata
+rating, distribusi bintang 1--5 (dalam bentuk bar persentase), dan daftar
+ulasan. Setiap ulasan menampilkan pembeli, waktu relatif, komentar, tautan ke
+postingan pembelian, serta \emph{lightbox} foto bukti penerimaan.
+
+\paragraph{Referensi kode.}
+\begin{itemize}
+  \item \texttt{src/components/transaction/ReviewModal.tsx} --- form ulasan.
+  \item \texttt{src/app/api/transactions/[id]/review/route.ts} --- endpoint simpan ulasan.
+  \item \texttt{src/components/profile/SellerReviews.tsx} --- tampilan ulasan penjual.
+  \item \texttt{src/components/ui/StarRating.tsx} --- komponen bintang.
+  \item \texttt{supabase/migration-seller-reviews.sql} --- skema tabel \texttt{reviews}.
+\end{itemize}
+
+
+\section{Sistem Kerja API GetStream (Chat)}
+\label{sec:getstream}
+
+Fitur chat memakai layanan \textbf{GetStream}. Prinsip keamanannya:
+\texttt{API\_SECRET} \emph{hanya} boleh ada di server; browser cukup memakai
+\texttt{API\_KEY} publik + \emph{token} pengguna.
+
+\subsection{Server Client}
+\texttt{src/lib/stream/client.ts} membuat koneksi GetStream sisi server dengan
+hak admin (key + secret) sebagai \emph{singleton} agar tidak dibuat ulang tiap
+request.
+
+\begin{lstlisting}[language=JavaScript,caption={Server client GetStream (client.ts)}]
+import { StreamChat } from "stream-chat";
+let client: StreamChat | null = null;
+
+export function getStreamServerClient(): StreamChat {
+  if (!client) {
+    client = StreamChat.getInstance(
+      process.env.NEXT_PUBLIC_STREAM_API_KEY!, // key publik
+      process.env.STREAM_API_SECRET!,          // secret (HANYA server)
+    );
+  }
+  return client;
+}
+\end{lstlisting}
+
+\subsection{Pengambilan Token}
+Endpoint \texttt{POST /api/stream-token}
+(\texttt{src/app/api/stream-token/route.ts}) adalah pintu masuk chat:
+(1) memverifikasi sesi login Supabase, (2) mengambil profil,
+(3) menyinkronkan profil ke GetStream (\texttt{upsertUser}), lalu
+(4) membuat token JWT untuk pengguna. Token ditandatangani secara lokal memakai
+secret sehingga cepat dan aman.
+
+\begin{lstlisting}[language=JavaScript,caption={Membuat token GetStream (stream-token/route.ts)}]
+const streamClient = getStreamServerClient();
+
+// Sinkronkan profil ke Stream (fire-and-forget agar tidak memblok)
+streamClient.upsertUser({
+  id: profile.id,
+  name: profile.name,
+  username: profile.username,
+  image: profile.avatar_url ?? undefined,
+}).catch(console.error);
+
+// createToken() = penandatanganan JWT lokal memakai API secret
+const token = streamClient.createToken(profile.id);
+
+return NextResponse.json({
+  token,
+  apiKey: process.env.NEXT_PUBLIC_STREAM_API_KEY!,
+  userId: profile.id,
+});
+\end{lstlisting}
+
+\subsection{Pembuatan Channel / Grup}
+Endpoint \texttt{POST /api/stream/group}
+(\texttt{src/app/api/stream/group/route.ts}) membuat channel dan menambahkan
+anggota. Untuk fitur middleman, pembeli, penjual, dan middleman dimasukkan ke
+satu channel. Keamanan: pemohon wajib termasuk dalam daftar member.
+
+\begin{lstlisting}[language=JavaScript,caption={Membuat channel & menambah member (stream/group/route.ts)}]
+if (!memberIds.includes(user.id))
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+const streamClient = getStreamServerClient();
+const channel = streamClient.channel("messaging", channelId, {
+  ...(name ? { name } : {}),
+  created_by_id: user.id,
+});
+
+await channel.create();          // inisialisasi channel
+await channel.addMembers(memberIds); // daftarkan anggota
+\end{lstlisting}
+
+\paragraph{Referensi kode.}
+\begin{itemize}
+  \item \texttt{src/lib/stream/client.ts} --- server client (key + secret).
+  \item \texttt{src/app/api/stream-token/route.ts} --- pembuatan token.
+  \item \texttt{src/app/api/stream/group/route.ts} --- pembuatan channel/grup.
+  \item \texttt{src/components/chat/ChatWidget.tsx} --- koneksi browser (\texttt{connectUser}).
+  \item \texttt{src/hooks/useChatUnread.ts} --- hitungan pesan belum dibaca.
+\end{itemize}
+
+
+\section{Sistem Kerja Notifikasi}
+\label{sec:notifikasi}
+
+Notifikasi disimpan di tabel \texttt{notifications} dan dikirim secara
+real-time ke pengguna melalui Supabase Realtime.
+
+\subsection{Membuat Notifikasi}
+Helper \texttt{createNotification} (\texttt{src/lib/notifications.ts})
+menyisipkan satu baris notifikasi. Tipe notifikasi bersifat terbatas (union
+type), misalnya \texttt{auction\_won}, \texttt{transaction\_confirmed},
+\texttt{funds\_released}, dan \texttt{auction\_approved}. Constraint
+\texttt{UNIQUE(user\_id, type, auction\_id)} mencegah notifikasi duplikat.
+
+\begin{lstlisting}[language=JavaScript,caption={Helper pembuat notifikasi (notifications.ts)}]
+export async function createNotification(supabase, payload: {
+  user_id: string;
+  type: NotificationType;
+  auction_id?: string;
+}): Promise<void> {
+  await supabase.from("notifications").insert({
+    user_id: payload.user_id,
+    type: payload.type,
+    auction_id: payload.auction_id ?? null,
+  });
+  // Duplikat dicegah oleh UNIQUE (user_id, type, auction_id)
+}
+\end{lstlisting}
+
+Helper ini dipanggil dari berbagai endpoint, misalnya saat lelang ditutup
+(\texttt{cron/close-expired}), transaksi dikonfirmasi, dan dana dilepaskan
+(Bagian~\ref{sec:middleman}).
+
+\subsection{Mengambil Notifikasi}
+Endpoint \texttt{GET /api/notifications}
+(\texttt{src/app/api/notifications/route.ts}) mengambil 20 notifikasi terbaru
+milik pengguna beserta relasi lelang, dan menghitung jumlah yang belum dibaca.
+
+\begin{lstlisting}[language=JavaScript,caption={Pengambilan notifikasi (notifications/route.ts)}]
+const { data: notifications } = await supabase
+  .from("notifications")
+  .select("*, auction:auctions(id, title)")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false })
+  .limit(20);
+
+const unread_count = notifList.filter((n) => !n.is_read).length;
+return NextResponse.json({ notifications: notifList, unread_count });
+\end{lstlisting}
+
+\subsection{Tampilan \& Real-time (Bell)}
+Komponen \texttt{NotificationBell}
+(\texttt{src/components/notifications/NotificationBell.tsx}) mengambil
+notifikasi awal via REST, lalu \emph{subscribe} event \texttt{INSERT} pada tabel
+\texttt{notifications} yang difilter per \texttt{user\_id}. Notifikasi baru
+langsung muncul di dropdown dan badge angka bertambah. Saat dropdown dibuka,
+notifikasi ditandai sudah dibaca melalui
+\texttt{PATCH /api/notifications/read-all}.
+
+\begin{lstlisting}[language=JavaScript,caption={Subscribe notifikasi real-time (NotificationBell.tsx)}]
+const channel = supabase
+  .channel(`notifications-bell-${channelId}-${userId}`)
+  .on("postgres_changes",
+    { event: "INSERT", schema: "public", table: "notifications",
+      filter: `user_id=eq.${userId}` },
+    (payload) => {
+      const newNotif = payload.new;
+      setNotifications((prev) => [newNotif, ...prev]);
+      setUnreadCount((c) => c + 1);
+    })
+  .subscribe();
+\end{lstlisting}
+
+\paragraph{Referensi kode.}
+\begin{itemize}
+  \item \texttt{src/lib/notifications.ts} --- helper pembuat notifikasi.
+  \item \texttt{src/app/api/notifications/route.ts} --- pengambilan notifikasi.
+  \item \texttt{src/app/api/notifications/read-all/route.ts} --- tandai sudah dibaca.
+  \item \texttt{src/components/notifications/NotificationBell.tsx} --- lonceng \& real-time.
+  \item \texttt{src/components/notifications/NotificationItem.tsx} --- item notifikasi.
+  \item \texttt{supabase/migration-notifications-ratings.sql} --- skema tabel notifikasi.
+\end{itemize}
+
+% \end{document}   % <- aktifkan jika memakai blok preamble di atas

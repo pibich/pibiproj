@@ -1,5 +1,13 @@
 "use client";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Komponen: MiddlemanModal  —  Popup memilih middleman untuk diundang ke chat
+// ─────────────────────────────────────────────────────────────────────────────
+// Saat dibuka, mengambil daftar middleman dari /api/middlemen, lalu menyaring
+// middleman yang BELUM ada di percakapan (currentMemberIds). Ketika dipilih,
+// memanggil onSelect(id, nama) -> pemanggil yang menambahkan middleman ke
+// channel GetStream (lewat /api/stream/group).
+
 import { Loader2, MessageSquare, ShieldCheck, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getInitials } from "@/lib/utils";

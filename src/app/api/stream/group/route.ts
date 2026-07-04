@@ -1,8 +1,19 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// API: POST /api/stream/group  —  Membuat channel chat (termasuk grup middleman)
+// ─────────────────────────────────────────────────────────────────────────────
+// Dipakai untuk membuat ruang percakapan di GetStream, lalu memasukkan anggota.
+// Pada fitur middleman: pembeli, penjual, dan middleman dijadikan member dari
+// satu channel yang sama sehingga bisa transaksi diawasi di satu tempat.
+//
+// Kenapa lewat server (bukan langsung dari browser)? Karena membuat channel &
+// menambah member butuh hak admin (API secret), yang hanya boleh ada di server.
+
 import { type NextRequest, NextResponse } from "next/server";
 import { getStreamServerClient } from "@/lib/stream/client";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
+  // 1) Pastikan user login.
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,6 +22,10 @@ export async function POST(req: NextRequest) {
   if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // 2) Baca data dari body request:
+  //    - channelId : ID unik channel (dibuat dari gabungan ID semua member)
+  //    - memberIds : daftar user yang akan jadi anggota (min. 2 orang)
+  //    - name      : nama channel (opsional, biasanya untuk grup)
   const { channelId, memberIds, name } = (await req.json()) as {
     channelId: string;
     memberIds: string[];
@@ -24,11 +39,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Ensure the requesting user is in the member list
+  // 3) Keamanan: user yang meminta WAJIB ada di daftar member. Mencegah orang
+  //    membuat channel lalu menyusupkan dirinya ke percakapan orang lain.
   if (!memberIds.includes(user.id)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // 4) Buat channel via GetStream (hak admin dari server client).
   const streamClient = getStreamServerClient();
 
   const channel = streamClient.channel("messaging", channelId, {

@@ -1,5 +1,16 @@
 "use client";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hook: useChatUnread  —  Indikator titik merah "ada pesan belum dibaca"
+// ─────────────────────────────────────────────────────────────────────────────
+// Dipakai navbar untuk menampilkan badge notifikasi chat. Cara kerjanya:
+//   1. Ambil token GetStream (lewat /api/stream-token) lalu connect sebagai user.
+//   2. Cek total_unread_count awal milik user.
+//   3. Dengarkan event real-time dari GetStream:
+//        - "notification.message_new"  -> ada pesan masuk  -> nyalakan badge.
+//        - "notification.mark_read"    -> pesan sudah dibaca -> matikan badge.
+//   Badge tidak muncul jika user sedang berada di halaman /chat itu sendiri.
+
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { StreamChat } from "stream-chat";
